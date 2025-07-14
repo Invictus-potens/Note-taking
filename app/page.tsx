@@ -146,6 +146,7 @@ export default function Home() {
 
     try {
       setIsSyncing(true);
+      const now = new Date().toISOString();
       const newNote = {
         title: '',
         content: '',
@@ -153,11 +154,13 @@ export default function Home() {
         tags: [],
         isPinned: false,
         isPrivate: false,
-        userId: user.id
+        userId: user.id,
+        createdAt: now,
+        updatedAt: now,
       };
       
       const noteId = await NotesService.addNote(newNote);
-      const createdNote = { ...newNote, id: noteId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      const createdNote = { ...newNote, id: noteId };
       
       setSelectedNote(noteId);
       setCurrentNote(createdNote);
