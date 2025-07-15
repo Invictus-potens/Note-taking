@@ -2,9 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut, User } from 'firebase/auth';
-import { auth } from '../lib/firebase';
-import { NotesService, FoldersService, TagsService } from '../lib/firestore';
+import { User } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+import { NotesService, FoldersService, TagsService } from '../lib/supabaseServices';
+import { Note } from '../lib/database';
 import Header from '../components/Layout/Header';
 import Sidebar from '../components/Notes/Sidebar';
 import NotesList from '../components/Notes/NotesList';
@@ -12,18 +13,7 @@ import AuthModal from '../components/Auth/AuthModal';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 
-interface Note {
-  id: string;
-  title: string;
-  content: string;
-  folder: string;
-  tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  isPinned: boolean;
-  isPrivate: boolean;
-  userId: string;
-}
+
 
 interface AppUser {
   id: string;
@@ -34,7 +24,7 @@ interface AppUser {
 export default function Home() {
   const [isDark, setIsDark] = useState(false);
   const [user, setUser] = useState<AppUser | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<User | null>(null);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
@@ -50,22 +40,36 @@ export default function Home() {
   const [tags, setTags] = useState<any[]>([]);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      setIsLoading(true);
-      if (firebaseUser) {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
         const appUser = {
-          id: firebaseUser.uid,
-          name: firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
-          email: firebaseUser.email || ''
+          id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || ''
         };
         setUser(appUser);
-        setFirebaseUser(firebaseUser);
-        
-        // Load user data
-        await loadUserData(firebaseUser.uid);
+        setSupabaseUser(session.user);
+        loadUserData(session.user.id);
+      }
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      setIsLoading(true);
+      if (session?.user) {
+        const appUser = {
+          id: session.user.id,
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          email: session.user.email || ''
+        };
+        setUser(appUser);
+        setSupabaseUser(session.user);
+        await loadUserData(session.user.id);
       } else {
         setUser(null);
-        setFirebaseUser(null);
+        setSupabaseUser(null);
         setNotes([]);
         setFolders([]);
         setTags([]);
@@ -80,7 +84,7 @@ export default function Home() {
       document.documentElement.classList.add('dark');
     }
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   const loadUserData = async (userId: string) => {
@@ -123,7 +127,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
     } catch (error) {
       console.error('Error signing out:', error);
     }
@@ -152,11 +156,9 @@ export default function Home() {
         content: '',
         folder: selectedFolder === 'all' ? 'personal' : selectedFolder,
         tags: [],
-        isPinned: false,
-        isPrivate: false,
-        userId: user.id,
-        createdAt: now,
-        updatedAt: now,
+        is_pinned: false,
+        is_private: false,
+        user_id: user.id,
       };
       
       const noteId = await NotesService.addNote(newNote);
@@ -187,7 +189,7 @@ export default function Home() {
 
     try {
       setIsSyncing(true);
-      await NotesService.updateNote(noteId, { isPinned: !note.isPinned });
+      await NotesService.updateNote(noteId, { is_pinned: !note.is_pinned });
     } catch (error) {
       console.error('Error toggling pin:', error);
     } finally {
@@ -220,8 +222,8 @@ export default function Home() {
         content: currentNote.content,
         folder: currentNote.folder,
         tags: currentNote.tags,
-        isPinned: currentNote.isPinned,
-        isPrivate: currentNote.isPrivate
+        is_pinned: currentNote.is_pinned,
+        is_private: currentNote.is_private
       });
       setIsEditing(false);
     } catch (error) {

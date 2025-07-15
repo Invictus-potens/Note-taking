@@ -2,8 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth } from '../../lib/firebase';
+import { supabase } from '../../lib/supabase';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 
@@ -57,12 +56,22 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
 
     try {
       if (isLogin) {
-        await signInWithEmailAndPassword(auth, formData.email, formData.password);
-      } else {
-        const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-        await updateProfile(userCredential.user, {
-          displayName: formData.name
+        const { error } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password,
         });
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.auth.signUp({
+          email: formData.email,
+          password: formData.password,
+          options: {
+            data: {
+              full_name: formData.name,
+            }
+          }
+        });
+        if (error) throw error;
       }
       onAuthSuccess();
       onClose();
@@ -86,6 +95,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
           <button
             onClick={onClose}
             className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-600 cursor-pointer"
+            title="Close modal"
           >
             <i className="ri-close-line text-xl"></i>
           </button>
