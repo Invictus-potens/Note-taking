@@ -162,11 +162,18 @@ export default function Home() {
       };
       
       const noteId = await NotesService.addNote(newNote);
-      const createdNote = { ...newNote, id: noteId };
-      
-      setSelectedNote(noteId);
-      setCurrentNote(createdNote);
-      setIsEditing(true);
+      // Fetch the full note from Supabase to get created_at and updated_at
+      const { data: noteData } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('id', noteId)
+        .single();
+
+      if (noteData) {
+        setSelectedNote(noteId);
+        setCurrentNote(noteData);
+        setIsEditing(true);
+      }
     } catch (error) {
       console.error('Error creating note:', error);
     } finally {
