@@ -6,10 +6,10 @@ interface Note {
   content: string;
   folder: string;
   tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  isPinned: boolean;
-  isPrivate: boolean;
+  created_at: string;
+  updated_at: string;
+  is_pinned: boolean;
+  is_private: boolean;
 }
 
 interface NotesListProps {
@@ -34,8 +34,8 @@ export default function NotesList({
     note.content.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const pinnedNotes = filteredNotes.filter(note => note.isPinned);
-  const regularNotes = filteredNotes.filter(note => !note.isPinned);
+  const pinnedNotes = filteredNotes.filter(note => note.is_pinned);
+  const regularNotes = filteredNotes.filter(note => !note.is_pinned);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -59,10 +59,10 @@ export default function NotesList({
     >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center space-x-2">
-          {note.isPinned && (
+          {note.is_pinned && (
             <i className="ri-pushpin-fill text-blue-500 text-sm"></i>
           )}
-          {note.isPrivate && (
+          {note.is_private && (
             <i className="ri-lock-fill text-yellow-500 text-sm"></i>
           )}
           <h3 className="font-medium text-gray-900 dark:text-white truncate">
@@ -77,8 +77,9 @@ export default function NotesList({
               onTogglePin(note.id);
             }}
             className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-blue-500 cursor-pointer"
+            title="Toggle pin"
           >
-            <i className={`${note.isPinned ? 'ri-pushpin-fill' : 'ri-pushpin-line'} text-sm`}></i>
+            <i className={`${note.is_pinned ? 'ri-pushpin-fill' : 'ri-pushpin-line'} text-sm`}></i>
           </button>
           <button
             onClick={(e) => {
@@ -86,6 +87,7 @@ export default function NotesList({
               onDeleteNote(note.id);
             }}
             className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 cursor-pointer"
+            title="Delete note"
           >
             <i className="ri-delete-bin-line text-sm"></i>
           </button>
@@ -108,7 +110,7 @@ export default function NotesList({
           ))}
         </div>
         <span className="text-xs text-gray-500 dark:text-gray-400">
-          {formatDate(note.updatedAt)}
+          {formatDate(note.updated_at)}
         </span>
       </div>
     </div>
