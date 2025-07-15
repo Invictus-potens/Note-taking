@@ -1,0 +1,30 @@
+
+'use client';
+
+interface HeaderProps {
+  onToggleTheme?: () => void;
+  isDark?: boolean;
+}
+
+export default function Header({ onToggleTheme, isDark }: HeaderProps) {
+  return (
+    <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white font-pacifico">
+            NotesApp
+          </h1>
+        </div>
+
+        <div className="flex items-center space-x-4">
+          <button
+            onClick={onToggleTheme}
+            className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+          >
+            <i className={`${isDark ? 'ri-sun-line' : 'ri-moon-line'} text-lg text-gray-600 dark:text-gray-300`}></i>
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+}
