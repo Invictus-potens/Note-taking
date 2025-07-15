@@ -1,165 +1,77 @@
-'use client';
+import React from 'react';
+import NoteCard from './NoteCard';
 
 interface Note {
   id: string;
   title: string;
   content: string;
-  folder: string;
   tags: string[];
-  created_at: string;
-  updated_at: string;
-  is_pinned: boolean;
-  is_private: boolean;
+  date: string;
+  pinned?: boolean;
 }
 
 interface NotesListProps {
   notes: Note[];
-  selectedNote?: string;
-  onNoteSelect: (noteId: string) => void;
-  onTogglePin: (noteId: string) => void;
-  onDeleteNote: (noteId: string) => void;
+  pinnedNotes: Note[];
   searchTerm: string;
+  selectedNoteId: string;
+  onNoteSelect: (id: string) => void;
+  onSearch: (term: string) => void;
 }
 
-export default function NotesList({ 
-  notes, 
-  selectedNote, 
-  onNoteSelect, 
-  onTogglePin, 
-  onDeleteNote,
-  searchTerm 
-}: NotesListProps) {
-  const filteredNotes = notes.filter(note => 
-    note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    note.content.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const pinnedNotes = filteredNotes.filter(note => note.is_pinned);
-  const regularNotes = filteredNotes.filter(note => !note.is_pinned);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffTime = Math.abs(now.getTime() - date.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 1) return 'Today';
-    if (diffDays === 2) return 'Yesterday';
-    if (diffDays <= 7) return `${diffDays - 1} days ago`;
-    return date.toLocaleDateString();
-  };
-
-  const renderNote = (note: Note) => (
-    <div
-      key={note.id}
-      onClick={() => onNoteSelect(note.id)}
-      className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
-        selectedNote === note.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
-      }`}
-    >
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex items-center space-x-2">
-          {note.is_pinned && (
-            <i className="ri-pushpin-fill text-blue-500 text-sm"></i>
-          )}
-          {note.is_private && (
-            <i className="ri-lock-fill text-yellow-500 text-sm"></i>
-          )}
-          <h3 className="font-medium text-gray-900 dark:text-white truncate">
-            {note.title || 'Untitled'}
-          </h3>
-        </div>
-        
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onTogglePin(note.id);
-            }}
-            className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-blue-500 cursor-pointer"
-            title="Toggle pin"
-          >
-            <i className={`${note.is_pinned ? 'ri-pushpin-fill' : 'ri-pushpin-line'} text-sm`}></i>
-          </button>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onDeleteNote(note.id);
-            }}
-            className="w-6 h-6 flex items-center justify-center text-gray-400 hover:text-red-500 cursor-pointer"
-            title="Delete note"
-          >
-            <i className="ri-delete-bin-line text-sm"></i>
-          </button>
-        </div>
-      </div>
-
-      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-2">
-        {note.content || 'No content'}
-      </p>
-
-      <div className="flex items-center justify-between">
-        <div className="flex flex-wrap gap-1">
-          {note.tags.map((tag) => (
-            <span
-              key={tag}
-              className="px-2 py-1 bg-gray-100 dark:bg-gray-700 text-xs text-gray-600 dark:text-gray-300 rounded-full"
-            >
-              #{tag}
-            </span>
-          ))}
-        </div>
-        <span className="text-xs text-gray-500 dark:text-gray-400">
-          {formatDate(note.updated_at)}
-        </span>
-      </div>
-    </div>
-  );
-
+const NotesList: React.FC<NotesListProps> = ({
+  notes,
+  pinnedNotes,
+  searchTerm,
+  selectedNoteId,
+  onNoteSelect,
+  onSearch,
+}: NotesListProps) => {
   return (
-    <div className="flex-1 overflow-y-auto">
-      {pinnedNotes.length > 0 && (
-        <div>
-          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Pinned Notes
-            </h4>
-          </div>
-          <div className="group">
-            {pinnedNotes.map(renderNote)}
-          </div>
-        </div>
-      )}
-
-      {regularNotes.length > 0 && (
-        <div>
-          {pinnedNotes.length > 0 && (
-            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                All Notes
-              </h4>
-            </div>
-          )}
-          <div className="group">
-            {regularNotes.map(renderNote)}
-          </div>
-        </div>
-      )}
-
-      {filteredNotes.length === 0 && (
-        <div className="flex flex-col items-center justify-center h-64 text-center p-8">
-          <i className="ri-file-text-line text-4xl text-gray-300 dark:text-gray-600 mb-4"></i>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-            {searchTerm ? 'No notes found' : 'No notes yet'}
-          </h3>
-          <p className="text-gray-500 dark:text-gray-400 max-w-sm">
-            {searchTerm 
-              ? 'Try adjusting your search terms or create a new note.'
-              : 'Create your first note to get started with organizing your thoughts.'
-            }
-          </p>
-        </div>
-      )}
+    <div className="flex-1 flex flex-col bg-gray-900 border-r border-gray-800">
+      <div className="p-4">
+        <input
+          type="text"
+          placeholder="Search notes..."
+          value={searchTerm}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => onSearch(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg bg-gray-800 text-white placeholder-gray-400 border border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+      <div className="px-4 pb-2">
+        {pinnedNotes.length > 0 && (
+          <>
+            <div className="text-xs text-gray-400 font-semibold mb-2">PINNED NOTES</div>
+            {pinnedNotes.map(note => (
+              <NoteCard
+                key={note.id}
+                title={note.title}
+                content={note.content}
+                tags={note.tags}
+                date={note.date}
+                pinned={note.pinned}
+                onClick={() => onNoteSelect(note.id)}
+                selected={selectedNoteId === note.id}
+              />
+            ))}
+          </>
+        )}
+        <div className="text-xs text-gray-400 font-semibold mt-4 mb-2">ALL NOTES</div>
+        {notes.map(note => (
+          <NoteCard
+            key={note.id}
+            title={note.title}
+            content={note.content}
+            tags={note.tags}
+            date={note.date}
+            pinned={note.pinned}
+            onClick={() => onNoteSelect(note.id)}
+            selected={selectedNoteId === note.id}
+          />
+        ))}
+      </div>
     </div>
   );
-}
+};
+
+export default NotesList;
