@@ -378,10 +378,10 @@ export default function Home() {
                 <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <div className="flex items-center space-x-2">
-                      {currentNote.isPinned && (
+                      {currentNote.is_pinned && (
                         <i className="ri-pushpin-fill text-blue-500"></i>
                       )}
-                      {currentNote.isPrivate && (
+                      {currentNote.is_private && (
                         <i className="ri-lock-fill text-yellow-500"></i>
                       )}
                     </div>
