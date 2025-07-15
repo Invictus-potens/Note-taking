@@ -1,58 +1,87 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Layout/Sidebar';
 import NotesList from '../components/Notes/NotesList';
 import NoteDetail from '../components/Notes/NoteDetail';
-
-// Mock data for demonstration
-const mockFolders = [
-  { id: 'all', name: 'All Notes', count: 2 },
-  { id: 'personal', name: 'Personal', count: 0 },
-  { id: 'work', name: 'Work', count: 0 },
-  { id: 'projects', name: 'Projects', count: 0 },
-];
-const mockTags = [
-  { id: 'important', name: 'important', count: 0 },
-  { id: 'ideas', name: 'ideas', count: 0 },
-  { id: 'todo', name: 'To-Do', count: 0 },
-];
-const mockNotes = [
-  {
-    id: '1',
-    title: 'Welcome to NotesApp',
-    content: 'This is your first note! You can edit, organize, and manage all your notes here.',
-    tags: ['important'],
-    date: 'Today',
-    pinned: true,
-  },
-  {
-    id: '2',
-    title: 'Meeting Notes',
-    content: 'Remember to discuss project timeline and budget allocation.',
-    tags: ['todo'],
-    date: 'Today',
-    pinned: false,
-  },
-];
+import { supabase } from '../lib/supabase';
+import { NotesService, FoldersService, TagsService } from '../lib/supabaseServices';
 
 export default function Home() {
+  const [folders, setFolders] = useState<any[]>([]);
+  const [tags, setTags] = useState<any[]>([]);
+  const [notes, setNotes] = useState<any[]>([]);
   const [selectedFolder, setSelectedFolder] = useState('all');
   const [selectedTag, setSelectedTag] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedNoteId, setSelectedNoteId] = useState('');
+  const [userId, setUserId] = useState<string | null>(null);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
 
-  // Filter notes by folder/tag/search
-  const filteredNotes = mockNotes.filter(note => {
-    if (selectedFolder !== 'all') return false; // Demo: only show all notes
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUserId(session.user.id);
+        loadUserData(session.user.id);
+      }
+    });
+  }, []);
+
+  const loadUserData = async (userId: string) => {
+    const [userFolders, userTags] = await Promise.all([
+      FoldersService.getFolders(userId),
+      TagsService.getTags(userId)
+    ]);
+    setFolders([{ id: 'all', name: 'All Notes', count: 0 }, ...userFolders]);
+    setTags(userTags);
+    NotesService.subscribeToNotes(userId, (notes) => {
+      setNotes(notes);
+    });
+  };
+
+  const handleAddFolder = async () => {
+    if (!userId || !newFolderName.trim()) return;
+    await FoldersService.addFolder(newFolderName.trim(), userId);
+    setNewFolderName('');
+    loadUserData(userId);
+  };
+
+  const handleAddTag = async () => {
+    if (!userId || !newTagName.trim()) return;
+    await TagsService.addTag(newTagName.trim(), userId);
+    setNewTagName('');
+    loadUserData(userId);
+  };
+
+  const handleNewNote = async () => {
+    if (!userId) return;
+    const now = new Date().toISOString();
+    const newNote = {
+      title: 'Untitled',
+      content: '',
+      folder: selectedFolder === 'all' ? 'personal' : selectedFolder,
+      tags: [],
+      is_pinned: false,
+      is_private: false,
+      user_id: userId,
+      created_at: now,
+      updated_at: now,
+    };
+    const noteId = await NotesService.addNote(newNote);
+    setSelectedNoteId(noteId);
+  };
+
+  const filteredNotes = notes.filter(note => {
+    if (selectedFolder !== 'all' && note.folder !== selectedFolder) return false;
     if (selectedTag && !note.tags.includes(selectedTag)) return false;
     if (searchTerm && !note.title.toLowerCase().includes(searchTerm.toLowerCase()) && !note.content.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
-  const pinnedNotes = filteredNotes.filter(note => note.pinned);
-  const regularNotes = filteredNotes.filter(note => !note.pinned);
-  const selectedNote = mockNotes.find(note => note.id === selectedNoteId);
+  const pinnedNotes = filteredNotes.filter(note => note.is_pinned);
+  const regularNotes = filteredNotes.filter(note => !note.is_pinned);
+  const selectedNote = notes.find(note => note.id === selectedNoteId);
 
   return (
     <div className="h-screen flex flex-col bg-gray-900">
@@ -64,13 +93,19 @@ export default function Home() {
       </header>
       <div className="flex flex-1 overflow-hidden">
         <Sidebar
-          folders={mockFolders}
-          tags={mockTags}
+          folders={folders}
+          tags={tags}
           selectedFolder={selectedFolder}
           selectedTag={selectedTag}
           onFolderSelect={setSelectedFolder}
           onTagSelect={setSelectedTag}
-          onNewNote={() => {}}
+          onNewNote={handleNewNote}
+          onAddFolder={handleAddFolder}
+          onAddTag={handleAddTag}
+          newFolderName={newFolderName}
+          setNewFolderName={setNewFolderName}
+          newTagName={newTagName}
+          setNewTagName={setNewTagName}
         />
         <NotesList
           notes={regularNotes}
