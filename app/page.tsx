@@ -387,7 +387,7 @@ export default function Home() {
                     </div>
                     
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Last updated: {new Date(currentNote.updatedAt).toLocaleDateString()}
+                      Last updated: {new Date(currentNote.updated_at).toLocaleDateString()}
                     </div>
                   </div>
                   
