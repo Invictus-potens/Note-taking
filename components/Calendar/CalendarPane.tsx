@@ -193,30 +193,90 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
       }}
     >
       {/* Header: Month and Week Navigation + Collapse Button */}
-      <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
-        <button onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() - 7)))} aria-label="Previous week" className="text-xl">←</button>
-        <div className="text-lg font-semibold">
-          {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+      <div className="flex items-center justify-between px-6 py-4 rounded-t-xl shadow-md bg-gray-900 border-b border-gray-800">
+        {/* Left: Calendar Icon and Month/Year */}
+        <div className="flex items-center gap-3">
+          {/* Calendar Icon (Heroicons) */}
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 text-blue-500">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 7.5h16.5M4.5 21h15a.75.75 0 00.75-.75V6.75A2.25 2.25 0 0018 4.5H6A2.25 2.25 0 003.75 6.75v13.5c0 .414.336.75.75.75z" />
+          </svg>
+          <span className="text-xl font-bold text-white select-none">
+            {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </span>
         </div>
-        <button onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() + 7)))} aria-label="Next week" className="text-xl">→</button>
-        <button onClick={onToggle} aria-label={expanded ? 'Hide calendar' : 'Show calendar'} className="ml-4 px-2 py-1 rounded bg-transparent text-base text-gray-400 hover:text-blue-500 border border-transparent hover:border-blue-500 transition">{expanded ? '→' : '📅'}</button>
+        {/* Center: Navigation */}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() - 7)))}
+            aria-label="Previous week"
+            className="p-2 rounded-full hover:bg-gray-800 text-gray-300 hover:text-blue-400 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+            </svg>
+          </button>
+          <button
+            onClick={() => setSelectedDate(new Date())}
+            className="px-3 py-1 rounded-md bg-blue-600 text-white font-medium hover:bg-blue-700 transition shadow"
+          >
+            Today
+          </button>
+          <button
+            onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() + 7)))}
+            aria-label="Next week"
+            className="p-2 rounded-full hover:bg-gray-800 text-gray-300 hover:text-blue-400 transition"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        </div>
+        {/* Right: Collapse Button */}
+        <button
+          onClick={onToggle}
+          className="ml-4 p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-blue-400 transition"
+          aria-label={expanded ? 'Collapse calendar' : 'Expand calendar'}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-6 h-6 transform transition-transform ${expanded ? '' : 'rotate-180'}`}> 
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
+          </svg>
+        </button>
       </div>
         {/* Day Selection Bar */}
-        <div className="flex justify-between px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
-          {weekDates.map((date, idx) => (
-            <button
-              key={idx}
-              className={`flex flex-col items-center px-2 py-1 rounded transition text-xs ${formatDate(date) === formatDate(selectedDate) ? 'bg-blue-600 text-white' : 'hover:bg-blue-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-200'}`}
-              onClick={() => setSelectedDate(new Date(date))}
-            >
-              <span>{daysOfWeek[date.getDay()]}</span>
-              <span className="font-bold text-base">{date.getDate()}</span>
-            </button>
-          ))}
+        <div className="flex justify-between px-6 py-2 border-b border-gray-800 bg-gray-900">
+          {weekDates.map((date, idx) => {
+            const isToday = formatDate(date) === formatDate(new Date());
+            const isSelected = formatDate(date) === formatDate(selectedDate);
+            return (
+              <button
+                key={idx}
+                className={`flex flex-col items-center px-2 py-1 rounded-lg transition text-xs font-medium
+                  ${isSelected ? 'bg-blue-600 text-white shadow' :
+                    isToday ? 'border border-blue-500 text-blue-400' :
+                    'hover:bg-gray-800 text-gray-300'}
+                `}
+                onClick={() => setSelectedDate(new Date(date))}
+              >
+                <span>{daysOfWeek[date.getDay()]}</span>
+                <span className="font-bold text-base">{date.getDate()}</span>
+              </button>
+            );
+          })}
         </div>
         {/* Daily Agenda View */}
-        <div className="flex-1 overflow-y-auto relative px-6 py-2">
+        <div className="flex-1 overflow-y-auto relative px-6 py-2 bg-gray-950">
           <div className="relative">
+            {/* Empty state if no events for the day */}
+            {dayEvents.length === 0 && (
+              <div className="flex flex-col items-center justify-center h-64 text-gray-500 select-none">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 mb-2 text-gray-700">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" fill="none" />
+                </svg>
+                <span className="text-lg font-semibold">No events for this day</span>
+                <span className="text-sm">Click a time slot or "+ Novo evento" to add one!</span>
+              </div>
+            )}
             {hours.map((hour, idx) => {
               // Find event for this hour
               const event = dayEvents.find(e => e.time === hour);
@@ -225,37 +285,34 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
                 formatDate(selectedDate) === formatDate(now) &&
                 now.getHours() === idx;
               return (
-                <div key={hour} className="relative flex items-center group h-12 border-b border-gray-100 dark:border-gray-800">
-                  <div className="w-16 text-xs text-gray-400">{hour}</div>
+                <div key={hour} className="relative flex items-center group h-12 border-b border-gray-800">
+                  <div className="w-16 text-xs text-gray-500">{hour}</div>
                   <div className="flex-1 h-8">
                     {event ? (
                       <div
-                        className="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 rounded px-2 py-1 cursor-pointer"
+                        className="bg-gradient-to-r from-blue-900 via-blue-800 to-gray-900 text-blue-100 rounded-lg px-3 py-2 shadow-md cursor-pointer border border-blue-800 hover:scale-[1.02] hover:shadow-lg transition-all duration-150"
                         onClick={() => openModal(hour, event)}
                       >
-                        <div className="font-semibold">{event.title}</div>
-                        {event.location && <div className="text-xs">{event.location}</div>}
-                        {event.note_id && (
-                          <div className="text-xs mt-1">
-                            <span className="text-gray-500">Linked Note: </span>
-                            {(() => {
-                              const note = notes.find(n => n.id === event.note_id);
-                              return note ? (
-                                <a
-                                  href={`#note-${note.id}`}
-                                  className="text-blue-600 underline hover:text-blue-800"
-                                  title={note.title}
-                                >
-                                  {note.title}
-                                </a>
-                              ) : null;
-                            })()}
-                          </div>
-                        )}
+                        <div className="font-semibold text-base flex items-center gap-2">
+                          <span>{event.title}</span>
+                          {event.note_id && (() => {
+                            const note = notes.find(n => n.id === event.note_id);
+                            return note ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-700 text-xs text-white ml-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 mr-1">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v-1.125A2.625 2.625 0 0013.875 2.25h-3.75A2.625 2.625 0 007.5 4.875V6" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6h16.5M4.5 21h15a.75.75 0 00.75-.75V6.75A2.25 2.25 0 0018 4.5H6A2.25 2.25 0 003.75 6.75v13.5c0 .414.336.75.75.75z" />
+                                </svg>
+                                {note.title}
+                              </span>
+                            ) : null;
+                          })()}
+                        </div>
+                        {event.location && <div className="text-xs text-blue-200 mt-1">{event.location}</div>}
                       </div>
                     ) : (
                       <button
-                        className="w-full h-8 text-left text-xs text-gray-400 hover:text-blue-600"
+                        className="w-full h-8 text-left text-xs text-gray-600 hover:text-blue-400 hover:bg-gray-800 rounded transition"
                         onClick={() => openModal(hour)}
                       >
                         +
@@ -271,11 +328,15 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
           </div>
         </div>
         {/* + Novo evento Button */}
-        <div className="px-6 py-3 border-t border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
+        <div className="px-6 py-4 border-t border-gray-800 bg-gray-900 rounded-b-xl shadow-inner flex justify-end">
           <button
-            className="text-blue-600 hover:text-blue-800 font-semibold text-sm"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 text-white font-semibold text-base shadow hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400 transition-all duration-150"
             onClick={() => openModal()}
+            aria-label="Add new event"
           >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
             + Novo evento
           </button>
         </div>
