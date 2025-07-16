@@ -20,6 +20,18 @@ interface Note {
   isPrivate: boolean;
 }
 
+interface Folder {
+  id: string;
+  name: string;
+  count: number;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  count: number;
+}
+
 export default function Home() {
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
@@ -29,13 +41,20 @@ export default function Home() {
   const [isEditing, setIsEditing] = useState(false);
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
 
+  // Modal states
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [showTagModal, setShowTagModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [newTagName, setNewTagName] = useState('');
+  const [modalError, setModalError] = useState('');
+
   const [notes, setNotes] = useState<Note[]>([]);
-  const [folders, setFolders] = useState<any[]>([
+  const [folders, setFolders] = useState<Folder[]>([
     { id: 'personal', name: 'Personal', count: 0 },
     { id: 'work', name: 'Work', count: 0 },
     { id: 'projects', name: 'Projects', count: 0 }
   ]);
-  const [tags, setTags] = useState<any[]>([
+  const [tags, setTags] = useState<Tag[]>([
     { id: 'important', name: 'Important', count: 0 },
     { id: 'ideas', name: 'Ideas', count: 0 },
     { id: 'todo', name: 'To-Do', count: 0 }
@@ -44,6 +63,9 @@ export default function Home() {
   useEffect(() => {
     // Load data from localStorage
     const savedNotes = localStorage.getItem('notes');
+    const savedFolders = localStorage.getItem('folders');
+    const savedTags = localStorage.getItem('tags');
+    
     if (savedNotes) {
       setNotes(JSON.parse(savedNotes));
     } else {
@@ -76,16 +98,47 @@ export default function Home() {
       localStorage.setItem('notes', JSON.stringify(sampleNotes));
     }
 
+    if (savedFolders) {
+      setFolders(JSON.parse(savedFolders));
+    }
+
+    if (savedTags) {
+      setTags(JSON.parse(savedTags));
+    }
+
     // Always start with dark theme
     setIsDark(true);
     document.documentElement.setAttribute('data-theme', 'dark');
   }, []);
 
-  // Save notes to localStorage whenever notes change
+  // Save data to localStorage whenever it changes
   useEffect(() => {
     if (notes.length > 0) {
       localStorage.setItem('notes', JSON.stringify(notes));
     }
+  }, [notes]);
+
+  useEffect(() => {
+    localStorage.setItem('folders', JSON.stringify(folders));
+  }, [folders]);
+
+  useEffect(() => {
+    localStorage.setItem('tags', JSON.stringify(tags));
+  }, [tags]);
+
+  // Update folder and tag counts
+  useEffect(() => {
+    const updatedFolders = folders.map(folder => ({
+      ...folder,
+      count: notes.filter(note => note.folder === folder.id).length
+    }));
+    setFolders(updatedFolders);
+
+    const updatedTags = tags.map(tag => ({
+      ...tag,
+      count: notes.filter(note => note.tags.includes(tag.id)).length
+    }));
+    setTags(updatedTags);
   }, [notes]);
 
   const handleToggleTheme = () => {
@@ -162,6 +215,86 @@ export default function Home() {
     }
   };
 
+  // Folder and Tag creation functions
+  const handleCreateFolder = () => {
+    if (!newFolderName.trim()) {
+      setModalError('Folder name cannot be empty');
+      return;
+    }
+
+    const folderId = newFolderName.toLowerCase().replace(/\s+/g, '-');
+    const existingFolder = folders.find(f => f.id === folderId);
+    
+    if (existingFolder) {
+      setModalError('A folder with this name already exists');
+      return;
+    }
+
+    const newFolder: Folder = {
+      id: folderId,
+      name: newFolderName.trim(),
+      count: 0
+    };
+
+    setFolders(prev => [...prev, newFolder]);
+    setNewFolderName('');
+    setModalError('');
+    setShowFolderModal(false);
+  };
+
+  const handleCreateTag = () => {
+    if (!newTagName.trim()) {
+      setModalError('Tag name cannot be empty');
+      return;
+    }
+
+    const tagId = newTagName.toLowerCase().replace(/\s+/g, '-');
+    const existingTag = tags.find(t => t.id === tagId);
+    
+    if (existingTag) {
+      setModalError('A tag with this name already exists');
+      return;
+    }
+
+    const newTag: Tag = {
+      id: tagId,
+      name: newTagName.trim(),
+      count: 0
+    };
+
+    setTags(prev => [...prev, newTag]);
+    setNewTagName('');
+    setModalError('');
+    setShowTagModal(false);
+  };
+
+  const handleDeleteFolder = (folderId: string) => {
+    // Move notes from deleted folder to 'personal'
+    setNotes(prev => prev.map(note => 
+      note.folder === folderId ? { ...note, folder: 'personal' } : note
+    ));
+    
+    setFolders(prev => prev.filter(folder => folder.id !== folderId));
+    
+    if (selectedFolder === folderId) {
+      setSelectedFolder('all');
+    }
+  };
+
+  const handleDeleteTag = (tagId: string) => {
+    // Remove tag from all notes
+    setNotes(prev => prev.map(note => ({
+      ...note,
+      tags: note.tags.filter(tag => tag !== tagId)
+    })));
+    
+    setTags(prev => prev.filter(tag => tag.id !== tagId));
+    
+    if (selectedTag === tagId) {
+      setSelectedTag('');
+    }
+  };
+
   const filteredNotes = notes.filter(note => {
     if (selectedFolder !== 'all' && note.folder !== selectedFolder) return false;
     if (selectedTag && !note.tags.includes(selectedTag)) return false;
@@ -201,14 +334,25 @@ export default function Home() {
           New Note
         </button>
 
-        <div className="section-title">Folders</div>
+        <div className="section-header">
+          <div className="section-title">Folders</div>
+          <button 
+            className="add-btn"
+            onClick={() => setShowFolderModal(true)}
+            aria-label="Add new folder"
+          >
+            <i className="ri-add-line"></i>
+          </button>
+        </div>
+        
         <div className="sidebar-item" onClick={() => setSelectedFolder('all')}>
           <div className="sidebar-item-left">
-            <i className="ri-folder-line sidebar-icon"></i>
+            <i className="ri-file-text-line sidebar-icon"></i>
             <span>All Notes</span>
           </div>
           <div className="badge">{notes.length}</div>
         </div>
+        
         {folders.map(folder => (
           <div 
             key={folder.id} 
@@ -219,11 +363,33 @@ export default function Home() {
               <i className="ri-folder-line sidebar-icon"></i>
               <span>{folder.name}</span>
             </div>
-            <div className="badge">{notes.filter(note => note.folder === folder.id).length}</div>
+            <div className="sidebar-item-right">
+              <div className="badge">{folder.count}</div>
+              <button 
+                className="delete-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteFolder(folder.id);
+                }}
+                aria-label={`Delete folder ${folder.name}`}
+              >
+                <i className="ri-delete-bin-line"></i>
+              </button>
+            </div>
           </div>
         ))}
 
-        <div className="section-title">Tags</div>
+        <div className="section-header">
+          <div className="section-title">Tags</div>
+          <button 
+            className="add-btn"
+            onClick={() => setShowTagModal(true)}
+            aria-label="Add new tag"
+          >
+            <i className="ri-add-line"></i>
+          </button>
+        </div>
+        
         {tags.map(tag => (
           <div 
             key={tag.id} 
@@ -234,7 +400,19 @@ export default function Home() {
               <i className="ri-price-tag-3-line sidebar-icon"></i>
               <span>#{tag.name}</span>
             </div>
-            <div className="badge">{notes.filter(note => note.tags.includes(tag.id)).length}</div>
+            <div className="sidebar-item-right">
+              <div className="badge">{tag.count}</div>
+              <button 
+                className="delete-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDeleteTag(tag.id);
+                }}
+                aria-label={`Delete tag ${tag.name}`}
+              >
+                <i className="ri-delete-bin-line"></i>
+              </button>
+            </div>
           </div>
         ))}
       </div>
@@ -406,6 +584,82 @@ export default function Home() {
           </div>
         )}
       </div>
+
+      {/* Folder Creation Modal */}
+      {showFolderModal && (
+        <div className="modal-overlay" onClick={() => setShowFolderModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Create New Folder</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowFolderModal(false)}
+                aria-label="Close modal"
+              >
+                <i className="ri-close-line"></i>
+              </button>
+            </div>
+            <div className="modal-content">
+              <input
+                type="text"
+                className="modal-input"
+                placeholder="Enter folder name..."
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
+                autoFocus
+              />
+              {modalError && <div className="modal-error">{modalError}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn" onClick={() => setShowFolderModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-btn primary" onClick={handleCreateFolder}>
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Tag Creation Modal */}
+      {showTagModal && (
+        <div className="modal-overlay" onClick={() => setShowTagModal(false)}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Create New Tag</h3>
+              <button 
+                className="modal-close"
+                onClick={() => setShowTagModal(false)}
+                aria-label="Close modal"
+              >
+                <i className="ri-close-line"></i>
+              </button>
+            </div>
+            <div className="modal-content">
+              <input
+                type="text"
+                className="modal-input"
+                placeholder="Enter tag name..."
+                value={newTagName}
+                onChange={(e) => setNewTagName(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
+                autoFocus
+              />
+              {modalError && <div className="modal-error">{modalError}</div>}
+            </div>
+            <div className="modal-actions">
+              <button className="modal-btn" onClick={() => setShowTagModal(false)}>
+                Cancel
+              </button>
+              <button className="modal-btn primary" onClick={handleCreateTag}>
+                Create
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
