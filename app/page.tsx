@@ -18,10 +18,11 @@ interface Note {
   content: string;
   folder: string;
   tags: string[];
-  createdAt: string;
-  updatedAt: string;
-  isPinned: boolean;
-  isPrivate: boolean;
+  created_at: string;
+  updated_at: string;
+  is_pinned: boolean;
+  is_private: boolean;
+  user_id: string;
 }
 
 interface Folder {
@@ -73,7 +74,7 @@ function NotesApp() {
         .from('notes')
         .select('*')
         .eq('user_id', user.id)
-        .order('updatedAt', { ascending: false });
+        .order('updated_at', { ascending: false });
       if (!error && data) setNotes(data);
     };
     fetchNotes();
@@ -85,18 +86,17 @@ function NotesApp() {
   // Create a new note in Supabase
   const handleNewNote = async () => {
     if (!user) return;
-    const newNote: Note = {
-      id: Date.now().toString(),
+    const newNote = {
+      user_id: user.id,
       title: '',
       content: '',
       folder: selectedFolder === 'all' ? 'personal' : selectedFolder,
       tags: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      isPinned: false,
-      isPrivate: false,
-      user_id: user.id,
-    } as Note & { user_id: string };
+      is_pinned: false,
+      is_private: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
     const { data, error } = await supabase.from('notes').insert([newNote]).select();
     if (!error && data && data[0]) {
       setNotes(prev => [data[0], ...prev]);
@@ -109,7 +109,7 @@ function NotesApp() {
   // Update a note in Supabase
   const handleSaveNote = async () => {
     if (!currentNote || !user) return;
-    const updatedNote = { ...currentNote, updatedAt: new Date().toISOString() };
+    const updatedNote = { ...currentNote, updated_at: new Date().toISOString() };
     const { data, error } = await supabase
       .from('notes')
       .update(updatedNote)
@@ -146,7 +146,7 @@ function NotesApp() {
     if (!note) return;
     const { data, error } = await supabase
       .from('notes')
-      .update({ isPinned: !note.isPinned, updatedAt: new Date().toISOString() })
+      .update({ is_pinned: !note.is_pinned, updated_at: new Date().toISOString() })
       .eq('id', noteId)
       .eq('user_id', user.id)
       .select();
@@ -260,8 +260,8 @@ function NotesApp() {
     return true;
   });
 
-  const pinnedNotes = filteredNotes.filter((note: Note) => note.isPinned);
-  const unpinnedNotes = filteredNotes.filter((note: Note) => !note.isPinned);
+  const pinnedNotes = filteredNotes.filter((note: Note) => note.is_pinned);
+  const unpinnedNotes = filteredNotes.filter((note: Note) => !note.is_pinned);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -427,7 +427,7 @@ function NotesApp() {
                     >
                       <div className="note-header">
                         <div className="note-title">{note.title || 'Untitled'}</div>
-                        <div className="note-date">{formatDate(note.updatedAt)}</div>
+                        <div className="note-date">{formatDate(note.updated_at)}</div>
                       </div>
                       <div className="note-preview">{note.content}</div>
                       {note.tags.length > 0 && (
@@ -444,7 +444,7 @@ function NotesApp() {
                             e.stopPropagation();
                             handleTogglePin(note.id);
                           }}
-                          aria-label={note.isPinned ? "Unpin note" : "Pin note"}
+                          aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
                         >
                           <i className="ri-pushpin-fill minimalist-icon">📌</i>
                         </button>
@@ -474,7 +474,7 @@ function NotesApp() {
                   >
                     <div className="note-header">
                       <div className="note-title">{note.title || 'Untitled'}</div>
-                      <div className="note-date">{formatDate(note.updatedAt)}</div>
+                      <div className="note-date">{formatDate(note.updated_at)}</div>
                     </div>
                     <div className="note-preview">{note.content}</div>
                     {note.tags.length > 0 && (
@@ -494,7 +494,7 @@ function NotesApp() {
                           e.stopPropagation();
                           handleTogglePin(note.id);
                         }}
-                        aria-label={note.isPinned ? "Unpin note" : "Pin note"}
+                        aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
                       >
                         <i className="ri-pushpin-fill minimalist-icon">📌</i>
                       </button>
