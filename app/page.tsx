@@ -21,7 +21,7 @@ interface Note {
 }
 
 export default function Home() {
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
   const [selectedTag, setSelectedTag] = useState('');
@@ -76,12 +76,9 @@ export default function Home() {
       localStorage.setItem('notes', JSON.stringify(sampleNotes));
     }
 
-    // Check for dark mode preference
-    const savedTheme = localStorage.getItem('notesapp_theme');
-    if (savedTheme === 'dark') {
-      setIsDark(true);
-      document.documentElement.classList.add('dark');
-    }
+    // Always start with dark theme
+    setIsDark(true);
+    document.documentElement.classList.add('dark');
   }, []);
 
   // Save notes to localStorage whenever notes change
@@ -163,141 +160,203 @@ export default function Home() {
     return true;
   });
 
+  const pinnedNotes = filteredNotes.filter(note => note.isPinned);
+  const unpinnedNotes = filteredNotes.filter(note => !note.isPinned);
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffTime = Math.abs(now.getTime() - date.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 1) return 'Today';
+    if (diffDays === 2) return 'Yesterday';
+    if (diffDays <= 7) return `${diffDays - 1} days ago`;
+    return date.toLocaleDateString();
+  };
+
   return (
-    <div className="h-screen bg-white dark:bg-gray-900 flex flex-col">
-      <Header 
-        onToggleTheme={handleToggleTheme} 
-        isDark={isDark} 
-      />
-      
-      <div className="flex flex-1 overflow-hidden">
-        <Sidebar
-          folders={folders}
-          tags={tags}
-          selectedFolder={selectedFolder}
-          selectedTag={selectedTag}
-          onFolderSelect={setSelectedFolder}
-          onTagSelect={setSelectedTag}
-          onNewNote={handleNewNote}
-        />
-        
-        <div className="flex-1 flex">
-          <div className="w-80 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex flex-col">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700">
-              <div className="relative">
-                <i className="ri-search-line absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
-                <Input
-                  type="text"
-                  placeholder="Search notes..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10 text-sm"
-                />
-              </div>
-            </div>
-            
-            <NotesList
-              notes={filteredNotes}
-              selectedNote={selectedNote}
-              onNoteSelect={handleNoteSelect}
-              onTogglePin={handleTogglePin}
-              onDeleteNote={handleDeleteNote}
-              searchTerm={searchTerm}
-            />
+    <div className="app-container">
+      {/* Top Bar */}
+      <div className="top-bar">
+        <div className="app-title">NotesApp</div>
+        <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
+          <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <div className="sidebar">
+        <button className="new-note-btn" onClick={handleNewNote}>
+          <i className="ri-add-line"></i>
+          New Note
+        </button>
+
+        <div className="section-title">Folders</div>
+        <div className="sidebar-item" onClick={() => setSelectedFolder('all')}>
+          <div className="sidebar-item-left">
+            <i className="ri-folder-line sidebar-icon"></i>
+            <span>All Notes</span>
           </div>
-          
-          <div className="flex-1 flex flex-col">
-            {currentNote ? (
-              <>
-                <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      {currentNote.isPinned && (
-                        <i className="ri-pushpin-fill text-blue-500"></i>
-                      )}
-                      {currentNote.isPrivate && (
-                        <i className="ri-lock-fill text-yellow-500"></i>
-                      )}
-                    </div>
-                    
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      Last updated: {new Date(currentNote.updatedAt).toLocaleDateString()}
-                    </div>
+          <div className="badge">{notes.length}</div>
+        </div>
+        {folders.map(folder => (
+          <div 
+            key={folder.id} 
+            className={`sidebar-item ${selectedFolder === folder.id ? 'selected' : ''}`}
+            onClick={() => setSelectedFolder(folder.id)}
+          >
+            <div className="sidebar-item-left">
+              <i className="ri-folder-line sidebar-icon"></i>
+              <span>{folder.name}</span>
+            </div>
+            <div className="badge">{notes.filter(note => note.folder === folder.id).length}</div>
+          </div>
+        ))}
+
+        <div className="section-title">Tags</div>
+        {tags.map(tag => (
+          <div 
+            key={tag.id} 
+            className={`sidebar-item ${selectedTag === tag.id ? 'selected' : ''}`}
+            onClick={() => setSelectedTag(selectedTag === tag.id ? '' : tag.id)}
+          >
+            <div className="sidebar-item-left">
+              <i className="ri-price-tag-3-line sidebar-icon"></i>
+              <span>#{tag.name}</span>
+            </div>
+            <div className="badge">{notes.filter(note => note.tags.includes(tag.id)).length}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Middle Column */}
+      <div className="middle-column">
+        <div className="search-container">
+          <input
+            type="text"
+            className="search-input"
+            placeholder="Search notes..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+
+        <div className="notes-container">
+          {pinnedNotes.length > 0 && (
+            <div className="notes-section">
+              <div className="notes-section-title">Pinned Notes</div>
+              {pinnedNotes.map(note => (
+                <div 
+                  key={note.id}
+                  className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
+                  onClick={() => handleNoteSelect(note.id)}
+                >
+                  <div className="note-header">
+                    <div className="note-title">{note.title || 'Untitled'}</div>
+                    <div className="note-date">{formatDate(note.updatedAt)}</div>
                   </div>
-                  
-                  <div className="flex items-center space-x-2">
-                    {isEditing ? (
-                      <>
-                        <Button 
-                          onClick={() => setIsEditing(false)} 
-                          variant="outline" 
-                          size="sm"
-                        >
-                          Cancel
-                        </Button>
-                        <Button onClick={handleSaveNote} variant="primary" size="sm">
-                          Save
-                        </Button>
-                      </>
-                    ) : (
-                      <Button 
-                        onClick={() => setIsEditing(true)} 
-                        variant="primary" 
-                        size="sm"
-                      >
-                        <i className="ri-edit-line mr-1"></i>
-                        Edit
-                      </Button>
-                    )}
-                  </div>
-                </div>
-                
-                <div className="flex-1 p-6 overflow-y-auto">
-                  {isEditing ? (
-                    <div className="space-y-4">
-                      <Input
-                        type="text"
-                        value={currentNote.title}
-                        onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
-                        placeholder="Note title..."
-                        className="text-2xl font-bold border-none p-0 focus:ring-0"
-                      />
-                      <textarea
-                        value={currentNote.content}
-                        onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
-                        placeholder="Start writing your note..."
-                        className="w-full h-96 p-0 border-none resize-none focus:outline-none focus:ring-0 text-gray-700 dark:text-gray-300 bg-transparent"
-                      />
-                    </div>
-                  ) : (
-                    <div>
-                      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
-                        {currentNote.title || 'Untitled'}
-                      </h1>
-                      <div className="prose prose-lg dark:prose-invert max-w-none">
-                        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                          {currentNote.content || 'No content'}
-                        </p>
-                      </div>
+                  <div className="note-preview">{note.content}</div>
+                  {note.tags.length > 0 && (
+                    <div className="note-tags">
+                      {note.tags.map(tag => (
+                        <span key={tag} className="tag-pill">#{tag}</span>
+                      ))}
                     </div>
                   )}
+                  <div className="note-actions">
+                    <button 
+                      className="action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTogglePin(note.id);
+                      }}
+                      aria-label={note.isPinned ? "Unpin note" : "Pin note"}
+                    >
+                      <i className="ri-pushpin-fill"></i>
+                    </button>
+                    <button 
+                      className="action-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteNote(note.id);
+                      }}
+                      aria-label="Delete note"
+                    >
+                      <i className="ri-delete-bin-line"></i>
+                    </button>
+                  </div>
                 </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center">
-                <div className="text-center">
-                  <i className="ri-file-text-line text-6xl text-gray-300 dark:text-gray-600 mb-4"></i>
-                  <h3 className="text-xl font-medium text-gray-900 dark:text-white mb-2">
-                    Select a note to view
-                  </h3>
-                  <p className="text-gray-500 dark:text-gray-400">
-                    Choose a note from the sidebar or create a new one
-                  </p>
+              ))}
+            </div>
+          )}
+
+          <div className="notes-section">
+            <div className="notes-section-title">All Notes</div>
+            {unpinnedNotes.map(note => (
+              <div 
+                key={note.id}
+                className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
+                onClick={() => handleNoteSelect(note.id)}
+              >
+                <div className="note-header">
+                  <div className="note-title">{note.title || 'Untitled'}</div>
+                  <div className="note-date">{formatDate(note.updatedAt)}</div>
                 </div>
+                <div className="note-preview">{note.content}</div>
+                {note.tags.length > 0 && (
+                  <div className="note-tags">
+                    {note.tags.map(tag => (
+                      <span key={tag} className="tag-pill">#{tag}</span>
+                    ))}
+                  </div>
+                )}
+                                 <div className="note-actions">
+                   <button 
+                     className="action-btn"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       handleTogglePin(note.id);
+                     }}
+                     aria-label={note.isPinned ? "Unpin note" : "Pin note"}
+                   >
+                     <i className="ri-pushpin-fill"></i>
+                   </button>
+                   <button 
+                     className="action-btn"
+                     onClick={(e) => {
+                       e.stopPropagation();
+                       handleDeleteNote(note.id);
+                     }}
+                     aria-label="Delete note"
+                   >
+                     <i className="ri-delete-bin-line"></i>
+                   </button>
+                 </div>
               </div>
-            )}
+            ))}
           </div>
         </div>
+      </div>
+
+      {/* Right Pane */}
+      <div className="right-pane">
+        {currentNote ? (
+          <div className="note-editor">
+            {/* Note editor content will go here */}
+            <div className="empty-state">
+              <div className="empty-icon">📝</div>
+              <div className="empty-title">Note Editor</div>
+              <div className="empty-subtitle">Note editing functionality will be implemented here</div>
+            </div>
+          </div>
+        ) : (
+          <div className="empty-state">
+            <div className="empty-icon">📄</div>
+            <div className="empty-title">Select a note to view</div>
+            <div className="empty-subtitle">Choose a note from the sidebar or create a new one</div>
+          </div>
+        )}
       </div>
     </div>
   );
