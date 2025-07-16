@@ -174,8 +174,8 @@ html, body {
 .sidebar-header {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  margin-bottom: 24px;
+  gap: 0;
+  margin-bottom: 20px;
 }
 
 .sidebar-title {
@@ -183,11 +183,14 @@ html, body {
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
+  padding: 0;
+  line-height: 1.1;
 }
 
 .new-note-btn {
-  width: 100%;
+  margin: 0;
   padding: 10px 16px;
+  width: 100%;
   background: var(--bg-blue);
   color: white;
   border: none;
@@ -200,7 +203,6 @@ html, body {
   justify-content: center;
   gap: 8px;
   font-size: 14px;
-  margin: 0;
 }
 
 .new-note-btn:hover {
