@@ -180,24 +180,20 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
   // UI
   return (
     <div
-      className={`calendar-pane flex flex-col h-full border-l`}
+      className={`calendar-pane flex flex-col h-full border-l transition-all duration-300 ${expanded ? 'sm:w-[clamp(280px,32vw,500px)] w-full' : 'w-0 min-w-0'} overflow-hidden`}
       style={{
         background: 'var(--bg-card)',
         borderColor: 'var(--border-color)',
         color: 'var(--text-primary)',
-        minWidth: expanded ? 400 : 0,
-        width: expanded ? 400 : 0,
-        transition: 'width 0.3s cubic-bezier(.4,0,.2,1)',
-        overflow: expanded ? 'visible' : 'hidden',
         boxShadow: expanded ? '0 0 24px 0 rgba(0,0,0,0.12)' : 'none',
       }}
     >
       {/* Header: Month and Week Navigation + Collapse Button */}
       <div className="flex items-center justify-between px-6 py-4 rounded-t-xl shadow-md bg-gray-900 border-b border-gray-800">
         {/* Left: Calendar Icon and Month/Year */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {/* Calendar Icon (Heroicons) */}
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-7 h-7 text-blue-500">
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 text-blue-500">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3.75 7.5h16.5M4.5 21h15a.75.75 0 00.75-.75V6.75A2.25 2.25 0 0018 4.5H6A2.25 2.25 0 003.75 6.75v13.5c0 .414.336.75.75.75z" />
           </svg>
           <span className="text-xl font-bold text-white select-none">
@@ -205,13 +201,13 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
           </span>
         </div>
         {/* Center: Navigation */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1">
           <button
             onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() - 7)))}
             aria-label="Previous week"
             className="p-2 rounded-full hover:bg-gray-800 text-gray-300 hover:text-blue-400 transition"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
             </svg>
           </button>
@@ -226,7 +222,7 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
             aria-label="Next week"
             className="p-2 rounded-full hover:bg-gray-800 text-gray-300 hover:text-blue-400 transition"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
             </svg>
           </button>
@@ -234,10 +230,10 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
         {/* Right: Collapse Button */}
         <button
           onClick={onToggle}
-          className="ml-4 p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-blue-400 transition"
+          className="ml-2 p-2 rounded-full hover:bg-gray-800 text-gray-400 hover:text-blue-400 transition"
           aria-label={expanded ? 'Collapse calendar' : 'Expand calendar'}
         >
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-6 h-6 transform transition-transform ${expanded ? '' : 'rotate-180'}`}> 
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className={`w-5 h-5 transform transition-transform ${expanded ? '' : 'rotate-180'}`}> 
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 12h-15" />
           </svg>
         </button>
@@ -269,7 +265,7 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
             {/* Empty state if no events for the day */}
             {dayEvents.length === 0 && (
               <div className="flex flex-col items-center justify-center h-64 text-gray-500 select-none">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-12 h-12 mb-2 text-gray-700">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8 mb-2 text-gray-700">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6l4 2" />
                   <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.5" fill="none" />
                 </svg>
@@ -299,7 +295,7 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
                             const note = notes.find(n => n.id === event.note_id);
                             return note ? (
                               <span className="inline-flex items-center px-2 py-0.5 rounded bg-blue-700 text-xs text-white ml-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-3 h-3 mr-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4 mr-1">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v-1.125A2.625 2.625 0 0013.875 2.25h-3.75A2.625 2.625 0 007.5 4.875V6" />
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6h16.5M4.5 21h15a.75.75 0 00.75-.75V6.75A2.25 2.25 0 0018 4.5H6A2.25 2.25 0 003.75 6.75v13.5c0 .414.336.75.75.75z" />
                                 </svg>
@@ -334,7 +330,7 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
             onClick={() => openModal()}
             aria-label="Add new event"
           >
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
             </svg>
             + Novo evento
