@@ -980,3 +980,46 @@ html, body {
   color: var(--text-secondary);
   font-size: 14px;
 }
+
+/* Editor Tag Selection Styles */
+.editor-tags {
+  margin-top: 16px;
+}
+.editor-tags-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+.editor-tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.editor-tag-btn {
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 2px 10px;
+  border-radius: 9999px;
+  transition: all 0.15s;
+  outline: none;
+}
+.editor-tag-btn.selected,
+.editor-tag-btn:active {
+  background: var(--bg-blue);
+  color: #fff;
+  border-color: var(--bg-blue);
+}
+.editor-tag-btn:hover {
+  background: var(--bg-blue-hover);
+  color: #fff;
+  border-color: var(--bg-blue-hover);
+}
+.editor-tags-empty {
+  color: var(--text-secondary);
+  font-size: 12px;
+  opacity: 0.7;
+  padding: 4px 0;
+}

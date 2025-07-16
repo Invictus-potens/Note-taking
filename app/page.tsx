@@ -588,6 +588,36 @@ function NotesApp() {
                     onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
                     placeholder="Start writing your note..."
                   />
+                  <div className="editor-tags">
+                    <div className="editor-tags-label">Tags:</div>
+                    <div className="editor-tags-list">
+                      {tags.length === 0 && (
+                        <span className="editor-tags-empty">No tags created yet.</span>
+                      )}
+                      {tags.map(tag => (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.id) ? ' selected' : ''}`}
+                          onClick={() => {
+                            if (currentNote.tags.includes(tag.id)) {
+                              setCurrentNote({
+                                ...currentNote,
+                                tags: currentNote.tags.filter(t => t !== tag.id)
+                              });
+                            } else {
+                              setCurrentNote({
+                                ...currentNote,
+                                tags: [...currentNote.tags, tag.id]
+                              });
+                            }
+                          }}
+                        >
+                          #{tag.name}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </>
               ) : (
                 <>
@@ -595,6 +625,16 @@ function NotesApp() {
                   <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap' }}>
                     {currentNote.content || 'No content'}
                   </div>
+                  {currentNote.tags.length > 0 && (
+                    <div className="note-tags" style={{ marginTop: '16px' }}>
+                      {currentNote.tags.map(tagId => {
+                        const tag = tags.find(t => t.id === tagId);
+                        return tag ? (
+                          <span key={tag.id} className="tag-pill">#{tag.name}</span>
+                        ) : null;
+                      })}
+                    </div>
+                  )}
                 </>
               )}
             </div>
