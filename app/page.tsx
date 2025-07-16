@@ -349,10 +349,13 @@ function NotesApp() {
 
       {/* Sidebar */}
       <div className="sidebar">
-        <button className="new-note-btn" onClick={handleNewNote}>
-          <i className="ri-add-line"></i>
-          New Note
-        </button>
+        <div className="sidebar-header">
+          <h2 className="sidebar-title">NotesApp</h2>
+          <button className="new-note-btn" onClick={handleNewNote}>
+            <i className="ri-add-line"></i>
+            New Note
+          </button>
+        </div>
 
         <div className="section-header">
           <div className="section-title">Folders</div>
