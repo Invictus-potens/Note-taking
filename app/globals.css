@@ -332,7 +332,9 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex: 1;
+  width: 30%;
+  min-width: 0;
+  max-width: 30%;
 }
 
 .search-container {
@@ -482,7 +484,9 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 40px;
-  flex: 1;
+  width: 70%;
+  min-width: 0;
+  max-width: 70%;
 }
 
 .empty-state {

@@ -440,23 +440,71 @@ function NotesApp() {
           </div>
         </div>
 
-        {/* Middle Column */}
-        <div className="middle-column">
-          <div className="search-container">
-            <input
-              type="text"
-              className="search-input"
-              placeholder="Search notes..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
-          </div>
+        <div className="main-content-columns">
+          {/* Middle Column */}
+          <div className="middle-column">
+            <div className="search-container">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Search notes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
 
-          <div className="notes-container">
-            {pinnedNotes.length > 0 && (
+            <div className="notes-container">
+              {pinnedNotes.length > 0 && (
+                <div className="notes-section">
+                  <div className="notes-section-title">Pinned Notes</div>
+                  {pinnedNotes.map(note => (
+                    <div 
+                      key={note.id}
+                      className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
+                      onClick={() => handleNoteSelect(note.id)}
+                    >
+                      <div className="note-header">
+                        <div className="note-title">{note.title || 'Untitled'}</div>
+                        <div className="note-date">{formatDate(note.updatedAt)}</div>
+                      </div>
+                      <div className="note-preview">{note.content}</div>
+                      {note.tags.length > 0 && (
+                        <div className="note-tags">
+                          {note.tags.map(tag => (
+                            <span key={tag} className="tag-pill">#{tag}</span>
+                          ))}
+                        </div>
+                      )}
+                      <div className="note-actions">
+                        <button 
+                          className="action-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTogglePin(note.id);
+                          }}
+                          aria-label={note.isPinned ? "Unpin note" : "Pin note"}
+                        >
+                          <i className="ri-pushpin-fill minimalist-icon">📌</i>
+                        </button>
+                        <button 
+                          className="action-btn"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteNote(note.id);
+                          }}
+                          aria-label="Delete note"
+                        >
+                          <i className="ri-delete-bin-line minimalist-icon">✕</i>
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
               <div className="notes-section">
-                <div className="notes-section-title">Pinned Notes</div>
-                {pinnedNotes.map(note => (
+                <div className="notes-section-title">All Notes</div>
+                {unpinnedNotes.map(note => (
                   <div 
                     key={note.id}
                     className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
@@ -499,153 +547,107 @@ function NotesApp() {
                   </div>
                 ))}
               </div>
-            )}
-
-            <div className="notes-section">
-              <div className="notes-section-title">All Notes</div>
-              {unpinnedNotes.map(note => (
-                <div 
-                  key={note.id}
-                  className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
-                  onClick={() => handleNoteSelect(note.id)}
-                >
-                  <div className="note-header">
-                    <div className="note-title">{note.title || 'Untitled'}</div>
-                    <div className="note-date">{formatDate(note.updatedAt)}</div>
-                  </div>
-                  <div className="note-preview">{note.content}</div>
-                  {note.tags.length > 0 && (
-                    <div className="note-tags">
-                      {note.tags.map(tag => (
-                        <span key={tag} className="tag-pill">#{tag}</span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="note-actions">
-                    <button 
-                      className="action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTogglePin(note.id);
-                      }}
-                      aria-label={note.isPinned ? "Unpin note" : "Pin note"}
-                    >
-                      <i className="ri-pushpin-fill minimalist-icon">📌</i>
-                    </button>
-                    <button 
-                      className="action-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteNote(note.id);
-                      }}
-                      aria-label="Delete note"
-                    >
-                      <i className="ri-delete-bin-line minimalist-icon">✕</i>
-                    </button>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
-        </div>
 
-        {/* Right Pane */}
-        <div className="right-pane">
-          {currentNote ? (
-            <div className="note-editor">
-              <div className="editor-header">
-                <div className="editor-title">Note Editor</div>
-                <div className="editor-actions">
+          {/* Right Pane */}
+          <div className="right-pane">
+            {currentNote ? (
+              <div className="note-editor">
+                <div className="editor-header">
+                  <div className="editor-title">Note Editor</div>
+                  <div className="editor-actions">
+                    {isEditing ? (
+                      <>
+                        <button className="editor-btn" onClick={handleCancelEdit}>
+                          Cancel
+                        </button>
+                        <button className="editor-btn primary" onClick={handleSaveNote}>
+                          Save
+                        </button>
+                      </>
+                    ) : (
+                      <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
+                        Edit
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="editor-content">
                   {isEditing ? (
                     <>
-                      <button className="editor-btn" onClick={handleCancelEdit}>
-                        Cancel
-                      </button>
-                      <button className="editor-btn primary" onClick={handleSaveNote}>
-                        Save
-                      </button>
+                      <input
+                        type="text"
+                        className="editor-input"
+                        value={currentNote.title}
+                        onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                        placeholder="Note title..."
+                      />
+                      <textarea
+                        className="editor-textarea"
+                        value={currentNote.content}
+                        onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
+                        placeholder="Start writing your note..."
+                      />
+                      <div className="editor-tags">
+                        <div className="editor-tags-label">Tags:</div>
+                        <div className="editor-tags-list">
+                          {tags.length === 0 && (
+                            <span className="editor-tags-empty">No tags created yet.</span>
+                          )}
+                          {tags.map(tag => (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.id) ? ' selected' : ''}`}
+                              onClick={() => {
+                                if (currentNote.tags.includes(tag.id)) {
+                                  setCurrentNote({
+                                    ...currentNote,
+                                    tags: currentNote.tags.filter(t => t !== tag.id)
+                                  });
+                                } else {
+                                  setCurrentNote({
+                                    ...currentNote,
+                                    tags: [...currentNote.tags, tag.id]
+                                  });
+                                }
+                              }}
+                            >
+                              #{tag.name}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </>
                   ) : (
-                    <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
-                      Edit
-                    </button>
+                    <>
+                      <h1 className="editor-input">{currentNote.title || 'Untitled'}</h1>
+                      <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap' }}>
+                        {currentNote.content || 'No content'}
+                      </div>
+                      {currentNote.tags.length > 0 && (
+                        <div className="note-tags" style={{ marginTop: '16px' }}>
+                          {currentNote.tags.map(tagId => {
+                            const tag = tags.find(t => t.id === tagId);
+                            return tag ? (
+                              <span key={tag.id} className="tag-pill">#{tag.name}</span>
+                            ) : null;
+                          })}
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>
-              <div className="editor-content">
-                {isEditing ? (
-                  <>
-                    <input
-                      type="text"
-                      className="editor-input"
-                      value={currentNote.title}
-                      onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
-                      placeholder="Note title..."
-                    />
-                    <textarea
-                      className="editor-textarea"
-                      value={currentNote.content}
-                      onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
-                      placeholder="Start writing your note..."
-                    />
-                    <div className="editor-tags">
-                      <div className="editor-tags-label">Tags:</div>
-                      <div className="editor-tags-list">
-                        {tags.length === 0 && (
-                          <span className="editor-tags-empty">No tags created yet.</span>
-                        )}
-                        {tags.map(tag => (
-                          <button
-                            key={tag.id}
-                            type="button"
-                            className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.id) ? ' selected' : ''}`}
-                            onClick={() => {
-                              if (currentNote.tags.includes(tag.id)) {
-                                setCurrentNote({
-                                  ...currentNote,
-                                  tags: currentNote.tags.filter(t => t !== tag.id)
-                                });
-                              } else {
-                                setCurrentNote({
-                                  ...currentNote,
-                                  tags: [...currentNote.tags, tag.id]
-                                });
-                              }
-                            }}
-                          >
-                            #{tag.name}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <h1 className="editor-input">{currentNote.title || 'Untitled'}</h1>
-                    <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap' }}>
-                      {currentNote.content || 'No content'}
-                    </div>
-                    {currentNote.tags.length > 0 && (
-                      <div className="note-tags" style={{ marginTop: '16px' }}>
-                        {currentNote.tags.map(tagId => {
-                          const tag = tags.find(t => t.id === tagId);
-                          return tag ? (
-                            <span key={tag.id} className="tag-pill">#{tag.name}</span>
-                          ) : null;
-                        })}
-                      </div>
-                    )}
-                  </>
-                )}
+            ) : (
+              <div className="empty-state">
+                <div className="empty-icon">📝</div>
+                <div className="empty-title">Note Editor</div>
+                <div className="empty-subtitle">Note editing functionality will be implemented here</div>
               </div>
-            </div>
-          ) : (
-            <div className="empty-state">
-              <div className="empty-icon">📝</div>
-              <div className="empty-title">Note Editor</div>
-              <div className="empty-subtitle">Note editing functionality will be implemented here</div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
