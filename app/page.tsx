@@ -275,6 +275,22 @@ function NotesApp() {
     return date.toLocaleDateString();
   };
 
+  const handleToggleTheme = () => {
+    const newIsDark = !isDark;
+    setIsDark(newIsDark);
+    if (newIsDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('notesapp_theme', 'dark');
+    } else {
+      document.documentElement.setAttribute('data-theme', 'light');
+      localStorage.setItem('notesapp_theme', 'light');
+    }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+  };
+
   return (
     <div className="app-container">
       {/* Sidebar */}
