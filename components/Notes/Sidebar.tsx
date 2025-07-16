@@ -50,7 +50,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="w-64 bg-gray-900 text-white flex flex-col h-full border-r border-gray-800">
       <div className="p-4">
-        <Button onClick={onNewNote} variant="primary" className="w-full mb-4">
+        <Button onClick={onNewNote} className="w-full mb-4">
           + New Note
         </Button>
       </div>
