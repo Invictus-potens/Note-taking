@@ -86,3 +86,44 @@ create table notes (
 ```
 
 Be sure to adjust the schema to match your app's needs and set up Row Level Security (RLS) as appropriate.
+
+---
+
+## 📝 Plan to Use Supabase for Calendar Events
+
+1. **Create a `calendar_events` table** in Supabase with columns:
+   - `id` (uuid, primary key, default: uuid_generate_v4())
+   - `user_id` (uuid, references auth.users)
+   - `title` (text)
+   - `date` (date)
+   - `time` (text, e.g., '15:00')
+   - `location` (text, optional)
+   - `reminders` (text[], optional)
+   - `calendar` (text, optional)
+   - `meeting_link` (text, optional)
+   - `created_at` (timestamp, default: now())
+   - `updated_at` (timestamp, default: now())
+
+2. **Add RLS policies** so users can only access their own events.
+
+3. **Update `CalendarPane.tsx`:**
+   - Fetch events from Supabase for the logged-in user and selected week.
+   - Insert new events into Supabase.
+   - Update and delete events in Supabase.
+   - Use local state for UI responsiveness, but always sync with Supabase.
+
+---
+
+## 1. SQL for Supabase Table
+
+```sql
+<code_block_to_apply_changes_from>
+```
+
+---
+
+## 2. Would you like me to:
+- Proceed with the code changes in `CalendarPane.tsx` to use Supabase for all event CRUD?
+- Or do you want to set up the table and policies in Supabase first?
+
+**Let me know when your table is ready, or if you want to proceed with the code now!**

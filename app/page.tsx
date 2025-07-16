@@ -11,6 +11,7 @@ import NotesList from '../components/Notes/NotesList';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { supabase } from '../lib/supabaseClient';
+import CalendarPane from '../components/Calendar/CalendarPane';
 
 interface Note {
   id: string;
@@ -691,6 +692,7 @@ function NotesApp() {
           </div>
         </div>
       )}
+      <CalendarPane />
     </div>
   );
 }
