@@ -1,7 +1,8 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, ChangeEvent } from 'react';
+import * as React from 'react';
 import { useAuth } from '../lib/authContext';
 import ProtectedRoute from '../components/Auth/ProtectedRoute';
 import Header from '../components/Layout/Header';
@@ -136,15 +137,15 @@ function NotesApp() {
 
   // Update folder and tag counts
   useEffect(() => {
-    const updatedFolders = folders.map(folder => ({
+    const updatedFolders = folders.map((folder: Folder) => ({
       ...folder,
-      count: notes.filter(note => note.folder === folder.id).length
+      count: notes.filter((note: Note) => note.folder === folder.id).length
     }));
     setFolders(updatedFolders);
 
-    const updatedTags = tags.map(tag => ({
+    const updatedTags = tags.map((tag: Tag) => ({
       ...tag,
-      count: notes.filter(note => note.tags.includes(tag.id)).length
+      count: notes.filter((note: Note) => note.tags.includes(tag.id)).length
     }));
     setTags(updatedTags);
   }, [notes]);
@@ -178,14 +179,14 @@ function NotesApp() {
       isPrivate: false
     };
     
-    setNotes(prev => [newNote, ...prev]);
+    setNotes((prev: Note[]) => [newNote, ...prev]);
     setSelectedNote(newNote.id);
     setCurrentNote(newNote);
     setIsEditing(true);
   };
 
   const handleNoteSelect = (noteId: string) => {
-    const note = notes.find(n => n.id === noteId);
+    const note = notes.find((n: Note) => n.id === noteId);
     if (note) {
       setSelectedNote(noteId);
       setCurrentNote(note);
@@ -194,13 +195,13 @@ function NotesApp() {
   };
 
   const handleTogglePin = (noteId: string) => {
-    setNotes(prev => prev.map(note => 
+    setNotes((prev: Note[]) => prev.map((note: Note) => 
       note.id === noteId ? { ...note, isPinned: !note.isPinned } : note
     ));
   };
 
   const handleDeleteNote = (noteId: string) => {
-    setNotes(prev => prev.filter(note => note.id !== noteId));
+    setNotes((prev: Note[]) => prev.filter((note: Note) => note.id !== noteId));
     if (selectedNote === noteId) {
       setSelectedNote('');
       setCurrentNote(null);
@@ -210,7 +211,7 @@ function NotesApp() {
   const handleSaveNote = () => {
     if (!currentNote) return;
 
-    setNotes(prev => prev.map(note => 
+    setNotes((prev: Note[]) => prev.map((note: Note) => 
       note.id === currentNote.id 
         ? { ...currentNote, updatedAt: new Date().toISOString() }
         : note
@@ -221,7 +222,7 @@ function NotesApp() {
   const handleCancelEdit = () => {
     setIsEditing(false);
     // Restore original note content
-    const originalNote = notes.find(n => n.id === currentNote?.id);
+    const originalNote = notes.find((n: Note) => n.id === currentNote?.id);
     if (originalNote) {
       setCurrentNote(originalNote);
     }
@@ -235,7 +236,7 @@ function NotesApp() {
     }
 
     const folderId = newFolderName.toLowerCase().replace(/\s+/g, '-');
-    const existingFolder = folders.find(f => f.id === folderId);
+    const existingFolder = folders.find((f: Folder) => f.id === folderId);
     
     if (existingFolder) {
       setModalError('A folder with this name already exists');
@@ -248,7 +249,7 @@ function NotesApp() {
       count: 0
     };
 
-    setFolders(prev => [...prev, newFolder]);
+    setFolders((prev: Folder[]) => [...prev, newFolder]);
     setNewFolderName('');
     setModalError('');
     setShowFolderModal(false);
@@ -261,7 +262,7 @@ function NotesApp() {
     }
 
     const tagId = newTagName.toLowerCase().replace(/\s+/g, '-');
-    const existingTag = tags.find(t => t.id === tagId);
+    const existingTag = tags.find((t: Tag) => t.id === tagId);
     
     if (existingTag) {
       setModalError('A tag with this name already exists');
@@ -274,7 +275,7 @@ function NotesApp() {
       count: 0
     };
 
-    setTags(prev => [...prev, newTag]);
+    setTags((prev: Tag[]) => [...prev, newTag]);
     setNewTagName('');
     setModalError('');
     setShowTagModal(false);
@@ -282,11 +283,11 @@ function NotesApp() {
 
   const handleDeleteFolder = (folderId: string) => {
     // Move notes from deleted folder to 'personal'
-    setNotes(prev => prev.map(note => 
+    setNotes((prev: Note[]) => prev.map((note: Note) => 
       note.folder === folderId ? { ...note, folder: 'personal' } : note
     ));
     
-    setFolders(prev => prev.filter(folder => folder.id !== folderId));
+    setFolders((prev: Folder[]) => prev.filter((folder: Folder) => folder.id !== folderId));
     
     if (selectedFolder === folderId) {
       setSelectedFolder('all');
@@ -295,27 +296,27 @@ function NotesApp() {
 
   const handleDeleteTag = (tagId: string) => {
     // Remove tag from all notes
-    setNotes(prev => prev.map(note => ({
+    setNotes((prev: Note[]) => prev.map((note: Note) => ({
       ...note,
-      tags: note.tags.filter(tag => tag !== tagId)
+      tags: note.tags.filter((tag: string) => tag !== tagId)
     })));
     
-    setTags(prev => prev.filter(tag => tag.id !== tagId));
+    setTags((prev: Tag[]) => prev.filter((tag: Tag) => tag.id !== tagId));
     
     if (selectedTag === tagId) {
       setSelectedTag('');
     }
   };
 
-  const filteredNotes = notes.filter(note => {
+  const filteredNotes = notes.filter((note: Note) => {
     if (selectedFolder !== 'all' && note.folder !== selectedFolder) return false;
     if (selectedTag && !note.tags.includes(selectedTag)) return false;
     if (searchTerm && !note.title.toLowerCase().includes(searchTerm.toLowerCase()) && !note.content.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
 
-  const pinnedNotes = filteredNotes.filter(note => note.isPinned);
-  const unpinnedNotes = filteredNotes.filter(note => !note.isPinned);
+  const pinnedNotes = filteredNotes.filter((note: Note) => note.isPinned);
+  const unpinnedNotes = filteredNotes.filter((note: Note) => !note.isPinned);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -359,7 +360,7 @@ function NotesApp() {
           <div className="badge">{notes.length}</div>
         </div>
         
-        {folders.map(folder => (
+        {folders.map((folder: Folder) => (
           <div 
             key={folder.id} 
             className={`sidebar-item ${selectedFolder === folder.id ? 'selected' : ''}`}
@@ -396,7 +397,7 @@ function NotesApp() {
           </button>
         </div>
         
-        {tags.map(tag => (
+        {tags.map((tag: Tag) => (
           <div 
             key={tag.id} 
             className={`sidebar-item ${selectedTag === tag.id ? 'selected' : ''}`}
@@ -449,7 +450,7 @@ function NotesApp() {
                 className="search-input"
                 placeholder="Search notes..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
               />
             </div>
 
@@ -457,7 +458,7 @@ function NotesApp() {
               {pinnedNotes.length > 0 && (
                 <div className="notes-section">
                   <div className="notes-section-title">Pinned Notes</div>
-                  {pinnedNotes.map(note => (
+                  {pinnedNotes.map((note: Note) => (
                     <div 
                       key={note.id}
                       className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
@@ -470,7 +471,7 @@ function NotesApp() {
                       <div className="note-preview">{note.content}</div>
                       {note.tags.length > 0 && (
                         <div className="note-tags">
-                          {note.tags.map(tag => (
+                          {note.tags.map((tag: string) => (
                             <span key={tag} className="tag-pill">#{tag}</span>
                           ))}
                         </div>
@@ -504,7 +505,7 @@ function NotesApp() {
 
               <div className="notes-section">
                 <div className="notes-section-title">All Notes</div>
-                {unpinnedNotes.map(note => (
+                {unpinnedNotes.map((note: Note) => (
                   <div 
                     key={note.id}
                     className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
@@ -517,9 +518,12 @@ function NotesApp() {
                     <div className="note-preview">{note.content}</div>
                     {note.tags.length > 0 && (
                       <div className="note-tags">
-                        {note.tags.map(tag => (
-                          <span key={tag} className="tag-pill">#{tag}</span>
-                        ))}
+                        {note.tags.map((tag: string) => {
+                          const tagObj = tags.find(t => t.id === tag);
+                          return tagObj ? (
+                            <span key={tag} className="tag-pill">#{tagObj.name}</span>
+                          ) : null;
+                        })}
                       </div>
                     )}
                     <div className="note-actions">
@@ -580,13 +584,13 @@ function NotesApp() {
                         type="text"
                         className="editor-input"
                         value={currentNote.title}
-                        onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                        onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
                         placeholder="Note title..."
                       />
                       <textarea
                         className="editor-textarea"
                         value={currentNote.content}
-                        onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
+                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCurrentNote({ ...currentNote, content: e.target.value })}
                         placeholder="Start writing your note..."
                       />
                       <div className="editor-tags">
@@ -595,7 +599,7 @@ function NotesApp() {
                           {tags.length === 0 && (
                             <span className="editor-tags-empty">No tags created yet.</span>
                           )}
-                          {tags.map(tag => (
+                          {tags.map((tag: Tag) => (
                             <button
                               key={tag.id}
                               type="button"
@@ -628,7 +632,7 @@ function NotesApp() {
                       </div>
                       {currentNote.tags.length > 0 && (
                         <div className="note-tags" style={{ marginTop: '16px' }}>
-                          {currentNote.tags.map(tagId => {
+                          {currentNote.tags.map((tagId: string) => {
                             const tag = tags.find(t => t.id === tagId);
                             return tag ? (
                               <span key={tag.id} className="tag-pill">#{tag.name}</span>
@@ -671,7 +675,7 @@ function NotesApp() {
                 className="modal-input"
                 placeholder="Enter folder name..."
                 value={newFolderName}
-                onChange={(e) => setNewFolderName(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewFolderName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
                 autoFocus
               />
@@ -709,7 +713,7 @@ function NotesApp() {
                 className="modal-input"
                 placeholder="Enter tag name..."
                 value={newTagName}
-                onChange={(e) => setNewTagName(e.target.value)}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
                 autoFocus
               />
