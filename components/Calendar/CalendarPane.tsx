@@ -37,9 +37,8 @@ function formatDate(date: Date) {
   return date.toISOString().split('T')[0];
 }
 
-const CalendarPane: React.FC = () => {
+const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ expanded, onToggle }) => {
   const { user } = useAuth();
-  const [expanded, setExpanded] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [showModal, setShowModal] = useState(false);
@@ -49,7 +48,8 @@ const CalendarPane: React.FC = () => {
   const [notes, setNotes] = useState<Note[]>([]);
 
   // For week navigation
-  const startOfWeek = getStartOfWeek(selectedDate);
+  const startOfWeek = React.useMemo(() => getStartOfWeek(selectedDate), [selectedDate]);
+  const weekStartStr = formatDate(startOfWeek);
   const weekDates = Array.from({ length: 7 }, (_, i) => {
     const d = new Date(startOfWeek);
     d.setDate(d.getDate() + i);
@@ -61,13 +61,12 @@ const CalendarPane: React.FC = () => {
     if (!user) return;
     setLoading(true);
     const fetchEvents = async () => {
-      const weekStart = formatDate(startOfWeek);
       const weekEnd = formatDate(new Date(startOfWeek.getTime() + 6 * 24 * 60 * 60 * 1000));
       const { data, error } = await supabase
         .from('calendar_events')
         .select('*')
         .eq('user_id', user.id)
-        .gte('date', weekStart)
+        .gte('date', weekStartStr)
         .lte('date', weekEnd)
         .order('date', { ascending: true })
         .order('time', { ascending: true });
@@ -75,7 +74,7 @@ const CalendarPane: React.FC = () => {
       setLoading(false);
     };
     fetchEvents();
-  }, [user, startOfWeek]);
+  }, [user, weekStartStr]);
 
   // Fetch notes for linking
   useEffect(() => {
@@ -180,28 +179,28 @@ const CalendarPane: React.FC = () => {
 
   // UI
   return (
-    <>
-      {/* Expand/Collapse Button */}
-      <button
-        className="fixed top-1/2 right-0 z-40 bg-blue-600 text-white px-3 py-2 rounded-l-lg shadow-lg hover:bg-blue-700 transition"
-        style={{ transform: 'translateY(-50%)' }}
-        onClick={() => setExpanded(e => !e)}
-        aria-label={expanded ? 'Hide calendar' : 'Show calendar'}
-      >
-        📅
-      </button>
-      {/* Calendar Pane */}
-      <div
-        className={`fixed top-0 right-0 h-full bg-white dark:bg-gray-900 shadow-2xl z-30 transition-transform duration-300 flex flex-col ${expanded ? 'translate-x-0' : 'translate-x-full'} w-[400px]`}
-      >
-        {/* Header: Month and Week Navigation */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-          <button onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() - 7)))} aria-label="Previous week" className="text-xl">←</button>
-          <div className="text-lg font-semibold">
-            {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
-          </div>
-          <button onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() + 7)))} aria-label="Next week" className="text-xl">→</button>
+    <div
+      className={`calendar-pane flex flex-col h-full border-l`}
+      style={{
+        background: 'var(--bg-card)',
+        borderColor: 'var(--border-color)',
+        color: 'var(--text-primary)',
+        minWidth: expanded ? 400 : 0,
+        width: expanded ? 400 : 0,
+        transition: 'width 0.3s cubic-bezier(.4,0,.2,1)',
+        overflow: expanded ? 'visible' : 'hidden',
+        boxShadow: expanded ? '0 0 24px 0 rgba(0,0,0,0.12)' : 'none',
+      }}
+    >
+      {/* Header: Month and Week Navigation + Collapse Button */}
+      <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-color)' }}>
+        <button onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() - 7)))} aria-label="Previous week" className="text-xl">←</button>
+        <div className="text-lg font-semibold">
+          {selectedDate.toLocaleString('default', { month: 'long', year: 'numeric' })}
         </div>
+        <button onClick={() => setSelectedDate(d => new Date(d.setDate(d.getDate() + 7)))} aria-label="Next week" className="text-xl">→</button>
+        <button onClick={onToggle} aria-label={expanded ? 'Hide calendar' : 'Show calendar'} className="ml-4 px-2 py-1 rounded bg-transparent text-base text-gray-400 hover:text-blue-500 border border-transparent hover:border-blue-500 transition">{expanded ? '→' : '📅'}</button>
+      </div>
         {/* Day Selection Bar */}
         <div className="flex justify-between px-6 py-2 border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800">
           {weekDates.map((date, idx) => (
@@ -338,8 +337,7 @@ const CalendarPane: React.FC = () => {
             </div>
           </div>
         )}
-      </div>
-    </>
+    </div>
   );
 };
 

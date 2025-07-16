@@ -67,6 +67,8 @@ function NotesApp() {
     { id: 'todo', name: 'To-Do', count: 0 }
   ]);
 
+  const [calendarExpanded, setCalendarExpanded] = useState(false);
+
   // Fetch notes from Supabase on load
   useEffect(() => {
     if (!user) return;
@@ -400,10 +402,17 @@ function NotesApp() {
             <button className="signout-btn" onClick={handleSignOut} aria-label="Sign out">
               <i className="ri-logout-box-line"></i>
             </button>
+            <button
+              className="ml-2 px-2 py-1 rounded bg-transparent text-base text-gray-400 hover:text-blue-500 border border-transparent hover:border-blue-500 transition"
+              onClick={() => setCalendarExpanded(e => !e)}
+              aria-label={calendarExpanded ? 'Hide calendar' : 'Show calendar'}
+            >
+              {calendarExpanded ? '→' : '📅'}
+            </button>
           </div>
         </div>
 
-        <div className="main-content-columns">
+        <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
           {/* Middle Column */}
           <div className="middle-column">
             <div className="search-container">
@@ -614,6 +623,7 @@ function NotesApp() {
               </div>
             )}
           </div>
+          <CalendarPane expanded={calendarExpanded} onToggle={() => setCalendarExpanded(e => !e)} />
         </div>
       </div>
 
@@ -692,7 +702,6 @@ function NotesApp() {
           </div>
         </div>
       )}
-      <CalendarPane />
     </div>
   );
 }
