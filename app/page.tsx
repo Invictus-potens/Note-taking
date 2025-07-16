@@ -2,6 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useAuth } from '../lib/authContext';
+import ProtectedRoute from '../components/Auth/ProtectedRoute';
 import Header from '../components/Layout/Header';
 import Sidebar from '../components/Notes/Sidebar';
 import NotesList from '../components/Notes/NotesList';
@@ -32,7 +34,8 @@ interface Tag {
   count: number;
 }
 
-export default function Home() {
+function NotesApp() {
+  const { user, signOut } = useAuth();
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
@@ -61,10 +64,11 @@ export default function Home() {
   ]);
 
   useEffect(() => {
-    // Load data from localStorage
-    const savedNotes = localStorage.getItem('notes');
-    const savedFolders = localStorage.getItem('folders');
-    const savedTags = localStorage.getItem('tags');
+    // Load data from localStorage with user-specific keys
+    const userKey = user?.id || 'default';
+    const savedNotes = localStorage.getItem(`notes_${userKey}`);
+    const savedFolders = localStorage.getItem(`folders_${userKey}`);
+    const savedTags = localStorage.getItem(`tags_${userKey}`);
     
     if (savedNotes) {
       setNotes(JSON.parse(savedNotes));
@@ -95,7 +99,7 @@ export default function Home() {
         }
       ];
       setNotes(sampleNotes);
-      localStorage.setItem('notes', JSON.stringify(sampleNotes));
+      localStorage.setItem(`notes_${userKey}`, JSON.stringify(sampleNotes));
     }
 
     if (savedFolders) {
@@ -109,22 +113,26 @@ export default function Home() {
     // Always start with dark theme
     setIsDark(true);
     document.documentElement.setAttribute('data-theme', 'dark');
-  }, []);
+  }, [user]);
 
   // Save data to localStorage whenever it changes
   useEffect(() => {
-    if (notes.length > 0) {
-      localStorage.setItem('notes', JSON.stringify(notes));
+    if (notes.length > 0 && user) {
+      localStorage.setItem(`notes_${user.id}`, JSON.stringify(notes));
     }
-  }, [notes]);
+  }, [notes, user]);
 
   useEffect(() => {
-    localStorage.setItem('folders', JSON.stringify(folders));
-  }, [folders]);
+    if (user) {
+      localStorage.setItem(`folders_${user.id}`, JSON.stringify(folders));
+    }
+  }, [folders, user]);
 
   useEffect(() => {
-    localStorage.setItem('tags', JSON.stringify(tags));
-  }, [tags]);
+    if (user) {
+      localStorage.setItem(`tags_${user.id}`, JSON.stringify(tags));
+    }
+  }, [tags, user]);
 
   // Update folder and tag counts
   useEffect(() => {
@@ -151,6 +159,10 @@ export default function Home() {
       document.documentElement.setAttribute('data-theme', 'light');
       localStorage.setItem('notesapp_theme', 'light');
     }
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
   };
 
   const handleNewNote = () => {
@@ -322,9 +334,17 @@ export default function Home() {
       {/* Top Bar */}
       <div className="top-bar">
         <div className="app-title">NotesApp</div>
-        <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
-          <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
-        </button>
+        <div className="top-bar-actions">
+          <div className="user-info">
+            <span className="user-email">{user?.email}</span>
+          </div>
+          <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
+            <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
+          </button>
+          <button className="signout-btn" onClick={handleSignOut} aria-label="Sign out">
+            <i className="ri-logout-box-line"></i>
+          </button>
+        </div>
       </div>
 
       {/* Sidebar */}
@@ -661,5 +681,13 @@ export default function Home() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <ProtectedRoute>
+      <NotesApp />
+    </ProtectedRoute>
   );
 }
