@@ -350,7 +350,7 @@ function NotesApp() {
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
-          <h2 className="sidebar-title">NotesApp</h2>
+          {/* Removed the NotesApp title here */}
           <button className="new-note-btn" onClick={handleNewNote}>
             <i className="ri-add-line"></i>
             New Note
@@ -364,13 +364,13 @@ function NotesApp() {
             onClick={() => setShowFolderModal(true)}
             aria-label="Add new folder"
           >
-            <i className="ri-add-line"></i>
+            <i className="ri-add-line minimalist-icon">+</i>
           </button>
         </div>
         
         <div className="sidebar-item" onClick={() => setSelectedFolder('all')}>
           <div className="sidebar-item-left">
-            <i className="ri-file-text-line sidebar-icon"></i>
+            <i className="ri-file-text-line minimalist-icon">🗒️</i>
             <span>All Notes</span>
           </div>
           <div className="badge">{notes.length}</div>
@@ -383,7 +383,7 @@ function NotesApp() {
             onClick={() => setSelectedFolder(folder.id)}
           >
             <div className="sidebar-item-left">
-              <i className="ri-folder-line sidebar-icon"></i>
+              <i className="ri-folder-line minimalist-icon">▣</i>
               <span>{folder.name}</span>
             </div>
             <div className="sidebar-item-right">
@@ -396,7 +396,7 @@ function NotesApp() {
                 }}
                 aria-label={`Delete folder ${folder.name}`}
               >
-                <i className="ri-delete-bin-line"></i>
+                <i className="ri-delete-bin-line minimalist-icon">✕</i>
               </button>
             </div>
           </div>
@@ -409,7 +409,7 @@ function NotesApp() {
             onClick={() => setShowTagModal(true)}
             aria-label="Add new tag"
           >
-            <i className="ri-add-line"></i>
+            <i className="ri-add-line minimalist-icon">+</i>
           </button>
         </div>
         
@@ -420,7 +420,7 @@ function NotesApp() {
             onClick={() => setSelectedTag(selectedTag === tag.id ? '' : tag.id)}
           >
             <div className="sidebar-item-left">
-              <i className="ri-price-tag-3-line sidebar-icon"></i>
+              <i className="ri-price-tag-3-line minimalist-icon">#</i>
               <span>#{tag.name}</span>
             </div>
             <div className="sidebar-item-right">
@@ -433,7 +433,7 @@ function NotesApp() {
                 }}
                 aria-label={`Delete tag ${tag.name}`}
               >
-                <i className="ri-delete-bin-line"></i>
+                <i className="ri-delete-bin-line minimalist-icon">✕</i>
               </button>
             </div>
           </div>
@@ -483,7 +483,7 @@ function NotesApp() {
                       }}
                       aria-label={note.isPinned ? "Unpin note" : "Pin note"}
                     >
-                      <i className="ri-pushpin-fill"></i>
+                      <i className="ri-pushpin-fill minimalist-icon">📌</i>
                     </button>
                     <button 
                       className="action-btn"
@@ -493,7 +493,7 @@ function NotesApp() {
                       }}
                       aria-label="Delete note"
                     >
-                      <i className="ri-delete-bin-line"></i>
+                      <i className="ri-delete-bin-line minimalist-icon">✕</i>
                     </button>
                   </div>
                 </div>
@@ -530,7 +530,7 @@ function NotesApp() {
                     }}
                     aria-label={note.isPinned ? "Unpin note" : "Pin note"}
                   >
-                    <i className="ri-pushpin-fill"></i>
+                    <i className="ri-pushpin-fill minimalist-icon">📌</i>
                   </button>
                   <button 
                     className="action-btn"
@@ -540,7 +540,7 @@ function NotesApp() {
                     }}
                     aria-label="Delete note"
                   >
-                    <i className="ri-delete-bin-line"></i>
+                    <i className="ri-delete-bin-line minimalist-icon">✕</i>
                   </button>
                 </div>
               </div>
