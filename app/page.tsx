@@ -10,6 +10,7 @@ import Sidebar from '../components/Notes/Sidebar';
 import NotesList from '../components/Notes/NotesList';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import { supabase } from '../lib/supabaseClient';
 
 interface Note {
   id: string;
@@ -64,109 +65,26 @@ function NotesApp() {
     { id: 'todo', name: 'To-Do', count: 0 }
   ]);
 
+  // Fetch notes from Supabase on load
   useEffect(() => {
-    // Load data from localStorage with user-specific keys
-    const userKey = user?.id || 'default';
-    const savedNotes = localStorage.getItem(`notes_${userKey}`);
-    const savedFolders = localStorage.getItem(`folders_${userKey}`);
-    const savedTags = localStorage.getItem(`tags_${userKey}`);
-    
-    if (savedNotes) {
-      setNotes(JSON.parse(savedNotes));
-    } else {
-      // Add some sample notes
-      const sampleNotes = [
-        {
-          id: '1',
-          title: 'Welcome to NotesApp',
-          content: 'This is your first note! You can edit, organize, and manage all your notes here.',
-          folder: 'personal',
-          tags: ['important'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isPinned: true,
-          isPrivate: false
-        },
-        {
-          id: '2',
-          title: 'Meeting Notes',
-          content: 'Remember to discuss project timeline and budget allocation.',
-          folder: 'work',
-          tags: ['todo'],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          isPinned: false,
-          isPrivate: false
-        }
-      ];
-      setNotes(sampleNotes);
-      localStorage.setItem(`notes_${userKey}`, JSON.stringify(sampleNotes));
-    }
-
-    if (savedFolders) {
-      setFolders(JSON.parse(savedFolders));
-    }
-
-    if (savedTags) {
-      setTags(JSON.parse(savedTags));
-    }
-
+    if (!user) return;
+    const fetchNotes = async () => {
+      const { data, error } = await supabase
+        .from('notes')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updatedAt', { ascending: false });
+      if (!error && data) setNotes(data);
+    };
+    fetchNotes();
     // Always start with dark theme
     setIsDark(true);
     document.documentElement.setAttribute('data-theme', 'dark');
   }, [user]);
 
-  // Save data to localStorage whenever it changes
-  useEffect(() => {
-    if (notes.length > 0 && user) {
-      localStorage.setItem(`notes_${user.id}`, JSON.stringify(notes));
-    }
-  }, [notes, user]);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(`folders_${user.id}`, JSON.stringify(folders));
-    }
-  }, [folders, user]);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem(`tags_${user.id}`, JSON.stringify(tags));
-    }
-  }, [tags, user]);
-
-  // Update folder and tag counts
-  useEffect(() => {
-    const updatedFolders = folders.map((folder: Folder) => ({
-      ...folder,
-      count: notes.filter((note: Note) => note.folder === folder.id).length
-    }));
-    setFolders(updatedFolders);
-
-    const updatedTags = tags.map((tag: Tag) => ({
-      ...tag,
-      count: notes.filter((note: Note) => note.tags.includes(tag.id)).length
-    }));
-    setTags(updatedTags);
-  }, [notes]);
-
-  const handleToggleTheme = () => {
-    const newIsDark = !isDark;
-    setIsDark(newIsDark);
-    if (newIsDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('notesapp_theme', 'dark');
-    } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('notesapp_theme', 'light');
-    }
-  };
-
-  const handleSignOut = async () => {
-    await signOut();
-  };
-
-  const handleNewNote = () => {
+  // Create a new note in Supabase
+  const handleNewNote = async () => {
+    if (!user) return;
     const newNote: Note = {
       id: Date.now().toString(),
       title: '',
@@ -176,13 +94,65 @@ function NotesApp() {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       isPinned: false,
-      isPrivate: false
-    };
-    
-    setNotes((prev: Note[]) => [newNote, ...prev]);
-    setSelectedNote(newNote.id);
-    setCurrentNote(newNote);
-    setIsEditing(true);
+      isPrivate: false,
+      user_id: user.id,
+    } as Note & { user_id: string };
+    const { data, error } = await supabase.from('notes').insert([newNote]).select();
+    if (!error && data && data[0]) {
+      setNotes(prev => [data[0], ...prev]);
+      setSelectedNote(data[0].id);
+      setCurrentNote(data[0]);
+      setIsEditing(true);
+    }
+  };
+
+  // Update a note in Supabase
+  const handleSaveNote = async () => {
+    if (!currentNote || !user) return;
+    const updatedNote = { ...currentNote, updatedAt: new Date().toISOString() };
+    const { data, error } = await supabase
+      .from('notes')
+      .update(updatedNote)
+      .eq('id', updatedNote.id)
+      .eq('user_id', user.id)
+      .select();
+    if (!error && data && data[0]) {
+      setNotes(prev => prev.map(note => note.id === updatedNote.id ? data[0] : note));
+      setIsEditing(false);
+    }
+  };
+
+  // Delete a note in Supabase
+  const handleDeleteNote = async (noteId: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('notes')
+      .delete()
+      .eq('id', noteId)
+      .eq('user_id', user.id);
+    if (!error) {
+      setNotes(prev => prev.filter(note => note.id !== noteId));
+      if (selectedNote === noteId) {
+        setSelectedNote('');
+        setCurrentNote(null);
+      }
+    }
+  };
+
+  // Pin/unpin a note in Supabase
+  const handleTogglePin = async (noteId: string) => {
+    if (!user) return;
+    const note = notes.find(n => n.id === noteId);
+    if (!note) return;
+    const { data, error } = await supabase
+      .from('notes')
+      .update({ isPinned: !note.isPinned, updatedAt: new Date().toISOString() })
+      .eq('id', noteId)
+      .eq('user_id', user.id)
+      .select();
+    if (!error && data && data[0]) {
+      setNotes(prev => prev.map(n => n.id === noteId ? data[0] : n));
+    }
   };
 
   const handleNoteSelect = (noteId: string) => {
@@ -192,31 +162,6 @@ function NotesApp() {
       setCurrentNote(note);
       setIsEditing(false);
     }
-  };
-
-  const handleTogglePin = (noteId: string) => {
-    setNotes((prev: Note[]) => prev.map((note: Note) => 
-      note.id === noteId ? { ...note, isPinned: !note.isPinned } : note
-    ));
-  };
-
-  const handleDeleteNote = (noteId: string) => {
-    setNotes((prev: Note[]) => prev.filter((note: Note) => note.id !== noteId));
-    if (selectedNote === noteId) {
-      setSelectedNote('');
-      setCurrentNote(null);
-    }
-  };
-
-  const handleSaveNote = () => {
-    if (!currentNote) return;
-
-    setNotes((prev: Note[]) => prev.map((note: Note) => 
-      note.id === currentNote.id 
-        ? { ...currentNote, updatedAt: new Date().toISOString() }
-        : note
-    ));
-    setIsEditing(false);
   };
 
   const handleCancelEdit = () => {
