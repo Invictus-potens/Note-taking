@@ -146,7 +146,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
               {errors.password && <div className="text-red-500 text-xs mt-1">{errors.password}</div>}
             </div>
           )}
-          <Button type="submit" variant="primary" className="w-full" disabled={isLoading}>
+          <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <i className="ri-loader-4-line animate-spin mr-2"></i>
