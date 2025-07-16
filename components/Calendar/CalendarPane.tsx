@@ -180,7 +180,7 @@ const CalendarPane: React.FC<{ expanded: boolean; onToggle: () => void }> = ({ e
   // UI
   return (
     <div
-      className={`calendar-pane flex flex-col h-full border-l transition-all duration-300 ${expanded ? 'sm:w-[clamp(280px,32vw,500px)] w-full' : 'w-0 min-w-0'} overflow-hidden`}
+      className={`calendar-pane flex flex-col h-full border-l transition-all duration-300 ${expanded ? 'w-full sm:w-[clamp(280px,32vw,500px)]' : 'w-0 min-w-0'} overflow-hidden`}
       style={{
         background: 'var(--bg-card)',
         borderColor: 'var(--border-color)',
