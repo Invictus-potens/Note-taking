@@ -4,18 +4,33 @@
 
 /* CSS Variables for consistent theming */
 :root {
-  --bg-primary: #1c1f2b;
-  --bg-secondary: #212534;
-  --bg-sidebar: #2a2e3d;
-  --bg-card: #2f3345;
+  --bg-primary: #1e2130;
+  --bg-secondary: #262a3f;
+  --bg-sidebar: #1e2130;
+  --bg-card: #2c3043;
+  --bg-search: #2e3345;
   --bg-selected: #3b4252;
+  --bg-hover: #2a2f45;
   --bg-blue: #3b82f6;
   --bg-blue-hover: #60a5fa;
-  --text-primary: #ffffff;
-  --text-secondary: #cbd5e1;
-  --text-muted: #94a3b8;
+  --text-primary: #e2e8f0;
+  --text-secondary: #94a3b8;
   --border-color: #374151;
   --sidebar-width: 240px;
+}
+
+/* Light theme variables */
+[data-theme="light"] {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-sidebar: #f1f5f9;
+  --bg-card: #ffffff;
+  --bg-search: #f1f5f9;
+  --bg-selected: #e2e8f0;
+  --bg-hover: #f8fafc;
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
 }
 
 /* Base styles */
@@ -30,6 +45,7 @@ html, body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
   color: var(--text-primary);
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
 /* Layout Structure */
@@ -38,13 +54,14 @@ html, body {
   grid-template-columns: var(--sidebar-width) 1fr 1fr;
   height: 100vh;
   overflow: hidden;
+  min-width: 768px;
 }
 
 /* Top Bar */
 .top-bar {
   grid-column: 1 / -1;
   height: 60px;
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
   display: flex;
   align-items: center;
@@ -62,33 +79,36 @@ html, body {
 .theme-toggle {
   width: 40px;
   height: 40px;
-  border-radius: 8px;
+  border-radius: 50%;
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  color: var(--text-muted);
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-size: 18px;
 }
 
 .theme-toggle:hover {
-  background: var(--bg-sidebar);
+  background: var(--bg-hover);
   color: var(--text-primary);
+  transform: scale(1.05);
 }
 
 /* Sidebar Styles */
 .sidebar {
-  background: var(--bg-secondary);
+  background: var(--bg-sidebar);
   border-right: 1px solid var(--border-color);
   padding: 20px;
   overflow-y: auto;
+  height: 100%;
 }
 
 .new-note-btn {
   width: 100%;
-  padding: 12px 16px;
+  padding: 10px 16px;
   background: var(--bg-blue);
   color: white;
   border: none;
@@ -101,6 +121,7 @@ html, body {
   justify-content: center;
   gap: 8px;
   margin-bottom: 32px;
+  font-size: 14px;
 }
 
 .new-note-btn:hover {
@@ -108,10 +129,10 @@ html, body {
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   margin-bottom: 12px;
   letter-spacing: 0.5px;
 }
@@ -128,7 +149,7 @@ html, body {
 }
 
 .sidebar-item:hover {
-  background: var(--bg-sidebar);
+  background: var(--bg-hover);
 }
 
 .sidebar-item.selected {
@@ -144,20 +165,15 @@ html, body {
 }
 
 .sidebar-icon {
-  color: var(--text-muted);
   font-size: 16px;
   width: 20px;
   text-align: center;
 }
 
-.sidebar-item:hover .sidebar-icon {
-  color: var(--text-primary);
-}
-
 .badge {
   background: var(--bg-card);
-  color: var(--text-muted);
-  font-size: 11px;
+  color: var(--text-secondary);
+  font-size: 10px;
   padding: 2px 6px;
   border-radius: 10px;
   min-width: 20px;
@@ -180,15 +196,15 @@ html, body {
 .search-input {
   width: 100%;
   padding: 8px 12px;
-  background: var(--bg-card);
+  background: var(--bg-search);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
+  border-radius: 6px;
   color: var(--text-primary);
   font-size: 14px;
 }
 
 .search-input::placeholder {
-  color: var(--text-muted);
+  color: var(--text-secondary);
 }
 
 .search-input:focus {
@@ -208,10 +224,10 @@ html, body {
 }
 
 .notes-section-title {
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   text-transform: uppercase;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   margin-bottom: 16px;
   letter-spacing: 0.5px;
 }
@@ -219,16 +235,17 @@ html, body {
 .note-card {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
-  border-radius: 8px;
-  padding: 16px;
+  border-radius: 10px;
+  padding: 12px;
   margin-bottom: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .note-card:hover {
-  background: var(--bg-sidebar);
+  background: var(--bg-hover);
   border-color: var(--bg-blue);
+  transform: scale(1.01);
 }
 
 .note-card.selected {
@@ -252,7 +269,7 @@ html, body {
 
 .note-date {
   font-size: 11px;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   white-space: nowrap;
   margin-left: 12px;
 }
@@ -272,11 +289,12 @@ html, body {
   display: flex;
   gap: 6px;
   flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
 .tag-pill {
-  background: var(--bg-sidebar);
-  color: var(--text-muted);
+  background: var(--bg-hover);
+  color: var(--text-secondary);
   font-size: 11px;
   padding: 2px 8px;
   border-radius: 9999px;
@@ -286,7 +304,7 @@ html, body {
 .note-actions {
   display: flex;
   gap: 8px;
-  margin-top: 8px;
+  justify-content: flex-end;
 }
 
 .action-btn {
@@ -295,16 +313,17 @@ html, body {
   border-radius: 4px;
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  color: var(--text-secondary);
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+  font-size: 14px;
 }
 
 .action-btn:hover {
-  background: var(--bg-sidebar);
+  background: var(--bg-hover);
   color: var(--text-primary);
 }
 
@@ -324,8 +343,8 @@ html, body {
 }
 
 .empty-icon {
-  font-size: 48px;
-  color: var(--text-muted);
+  font-size: 40px;
+  color: var(--text-secondary);
   margin-bottom: 16px;
 }
 
@@ -342,6 +361,98 @@ html, body {
   line-height: 1.5;
 }
 
+/* Note Editor */
+.note-editor {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  padding: 24px;
+}
+
+.editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.editor-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.editor-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.editor-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.editor-btn.primary {
+  background: var(--bg-blue);
+  color: white;
+  border-color: var(--bg-blue);
+}
+
+.editor-btn:hover {
+  background: var(--bg-hover);
+}
+
+.editor-btn.primary:hover {
+  background: var(--bg-blue-hover);
+}
+
+.editor-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.editor-input {
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 24px;
+  font-weight: 600;
+  padding: 0;
+  outline: none;
+}
+
+.editor-input::placeholder {
+  color: var(--text-secondary);
+}
+
+.editor-textarea {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: 16px;
+  line-height: 1.6;
+  padding: 0;
+  outline: none;
+  resize: none;
+  font-family: inherit;
+}
+
+.editor-textarea::placeholder {
+  color: var(--text-secondary);
+}
+
 /* Responsive Design */
 @media (max-width: 1024px) {
   .app-container {
@@ -356,6 +467,7 @@ html, body {
 @media (max-width: 768px) {
   .app-container {
     grid-template-columns: 1fr;
+    min-width: auto;
   }
   
   .sidebar {
@@ -380,13 +492,13 @@ html, body {
 .ri-search-line::before { content: "🔍"; }
 .ri-close-line::before { content: "✕"; }
 .ri-edit-line::before { content: "✎"; }
-.ri-pushpin-fill::before { content: "📌"; }
+.ri-pushpin-fill::before { content: "🧷"; }
 .ri-lock-fill::before { content: "🔒"; }
 .ri-loader-4-line::before { content: "⏳"; }
 .ri-add-line::before { content: "➕"; }
 .ri-folder-line::before { content: "📁"; }
 .ri-price-tag-3-line::before { content: "🏷️"; }
-.ri-moon-line::before { content: "🌙"; }
+.ri-moon-line::before { content: "🌕"; }
 .ri-sun-line::before { content: "☀️"; }
 .ri-user-line::before { content: "👤"; }
 .ri-delete-bin-line::before { content: "🗑️"; }

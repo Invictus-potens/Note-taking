@@ -78,7 +78,7 @@ export default function Home() {
 
     // Always start with dark theme
     setIsDark(true);
-    document.documentElement.classList.add('dark');
+    document.documentElement.setAttribute('data-theme', 'dark');
   }, []);
 
   // Save notes to localStorage whenever notes change
@@ -92,10 +92,10 @@ export default function Home() {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
     if (newIsDark) {
-      document.documentElement.classList.add('dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
       localStorage.setItem('notesapp_theme', 'dark');
     } else {
-      document.documentElement.classList.remove('dark');
+      document.documentElement.setAttribute('data-theme', 'light');
       localStorage.setItem('notesapp_theme', 'light');
     }
   };
@@ -151,6 +151,15 @@ export default function Home() {
         : note
     ));
     setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    // Restore original note content
+    const originalNote = notes.find(n => n.id === currentNote?.id);
+    if (originalNote) {
+      setCurrentNote(originalNote);
+    }
   };
 
   const filteredNotes = notes.filter(note => {
@@ -311,28 +320,28 @@ export default function Home() {
                     ))}
                   </div>
                 )}
-                                 <div className="note-actions">
-                   <button 
-                     className="action-btn"
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       handleTogglePin(note.id);
-                     }}
-                     aria-label={note.isPinned ? "Unpin note" : "Pin note"}
-                   >
-                     <i className="ri-pushpin-fill"></i>
-                   </button>
-                   <button 
-                     className="action-btn"
-                     onClick={(e) => {
-                       e.stopPropagation();
-                       handleDeleteNote(note.id);
-                     }}
-                     aria-label="Delete note"
-                   >
-                     <i className="ri-delete-bin-line"></i>
-                   </button>
-                 </div>
+                <div className="note-actions">
+                  <button 
+                    className="action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleTogglePin(note.id);
+                    }}
+                    aria-label={note.isPinned ? "Unpin note" : "Pin note"}
+                  >
+                    <i className="ri-pushpin-fill"></i>
+                  </button>
+                  <button 
+                    className="action-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteNote(note.id);
+                    }}
+                    aria-label="Delete note"
+                  >
+                    <i className="ri-delete-bin-line"></i>
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -343,18 +352,57 @@ export default function Home() {
       <div className="right-pane">
         {currentNote ? (
           <div className="note-editor">
-            {/* Note editor content will go here */}
-            <div className="empty-state">
-              <div className="empty-icon">📝</div>
-              <div className="empty-title">Note Editor</div>
-              <div className="empty-subtitle">Note editing functionality will be implemented here</div>
+            <div className="editor-header">
+              <div className="editor-title">Note Editor</div>
+              <div className="editor-actions">
+                {isEditing ? (
+                  <>
+                    <button className="editor-btn" onClick={handleCancelEdit}>
+                      Cancel
+                    </button>
+                    <button className="editor-btn primary" onClick={handleSaveNote}>
+                      Save
+                    </button>
+                  </>
+                ) : (
+                  <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
+                    Edit
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="editor-content">
+              {isEditing ? (
+                <>
+                  <input
+                    type="text"
+                    className="editor-input"
+                    value={currentNote.title}
+                    onChange={(e) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                    placeholder="Note title..."
+                  />
+                  <textarea
+                    className="editor-textarea"
+                    value={currentNote.content}
+                    onChange={(e) => setCurrentNote({ ...currentNote, content: e.target.value })}
+                    placeholder="Start writing your note..."
+                  />
+                </>
+              ) : (
+                <>
+                  <h1 className="editor-input">{currentNote.title || 'Untitled'}</h1>
+                  <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap' }}>
+                    {currentNote.content || 'No content'}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         ) : (
           <div className="empty-state">
-            <div className="empty-icon">📄</div>
-            <div className="empty-title">Select a note to view</div>
-            <div className="empty-subtitle">Choose a note from the sidebar or create a new one</div>
+            <div className="empty-icon">📝</div>
+            <div className="empty-title">Note Editor</div>
+            <div className="empty-subtitle">Note editing functionality will be implemented here</div>
           </div>
         )}
       </div>
