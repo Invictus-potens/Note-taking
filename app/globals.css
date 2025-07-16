@@ -1,4 +1,29 @@
-@import url('https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.5.0/remixicon.min.css');
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Ensure proper CSS loading and reset */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Custom styles for icons - using CSS instead of external CDN */
+.ri-search-line::before { content: "🔍"; }
+.ri-close-line::before { content: "✕"; }
+.ri-edit-line::before { content: "✎"; }
+.ri-pushpin-fill::before { content: "📌"; }
+.ri-lock-fill::before { content: "🔒"; }
+.ri-loader-4-line::before { content: "⏳"; }
+.ri-add-line::before { content: "➕"; }
+.ri-folder-line::before { content: "📁"; }
+.ri-price-tag-3-line::before { content: "🏷️"; }
+.ri-moon-line::before { content: "🌙"; }
+.ri-sun-line::before { content: "☀️"; }
+.ri-user-line::before { content: "👤"; }
+.ri-delete-bin-line::before { content: "🗑️"; }
