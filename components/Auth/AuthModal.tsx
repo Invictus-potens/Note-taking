@@ -1,6 +1,7 @@
 
 'use client';
 
+import * as React from 'react';
 import { useState } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import Button from '../ui/Button';
@@ -109,32 +110,41 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
           {!isLogin && !isPasswordReset && (
-            <Input
-              label="Full Name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({...formData, name: e.target.value})}
-              error={errors.name}
-              placeholder="Enter your full name"
-            />
+            <div>
+              <label htmlFor="name" className="block text-sm font-medium mb-1">Full Name</label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({...formData, name: e.target.value})}
+                placeholder="Enter your full name"
+              />
+              {errors.name && <div className="text-red-500 text-xs mt-1">{errors.name}</div>}
+            </div>
           )}
-          <Input
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData({...formData, email: e.target.value})}
-            error={errors.email}
-            placeholder="Enter your email"
-          />
-          {!isPasswordReset && (
+          <div>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
             <Input
-              label="Password"
-              type="password"
-              value={formData.password}
-              onChange={(e) => setFormData({...formData, password: e.target.value})}
-              error={errors.password}
-              placeholder="Enter your password"
+              id="email"
+              type="email"
+              value={formData.email}
+              onChange={(e) => setFormData({...formData, email: e.target.value})}
+              placeholder="Enter your email"
             />
+            {errors.email && <div className="text-red-500 text-xs mt-1">{errors.email}</div>}
+          </div>
+          {!isPasswordReset && (
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium mb-1">Password</label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({...formData, password: e.target.value})}
+                placeholder="Enter your password"
+              />
+              {errors.password && <div className="text-red-500 text-xs mt-1">{errors.password}</div>}
+            </div>
           )}
           <Button type="submit" variant="primary" className="w-full" disabled={isLoading}>
             {isLoading ? (
