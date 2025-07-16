@@ -55,11 +55,27 @@ html, body {
   height: 100vh;
   overflow: hidden;
   min-width: 768px;
+  grid-template-areas: "sidebar main main";
 }
 
-/* Top Bar */
+.sidebar {
+  grid-area: sidebar;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  padding: 0 16px 16px 16px;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.main-content-area {
+  grid-area: main;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  min-width: 0;
+}
+
 .top-bar {
-  grid-column: 1 / -1;
   height: 60px;
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border-color);
@@ -163,14 +179,6 @@ html, body {
 }
 
 /* Sidebar Styles */
-.sidebar {
-  background: var(--bg-sidebar);
-  border-right: 1px solid var(--border-color);
-  padding: 0 16px 16px 16px;
-  overflow-y: auto;
-  height: 100%;
-}
-
 .sidebar-header {
   display: flex;
   flex-direction: column;
@@ -324,6 +332,7 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  flex: 1;
 }
 
 .search-container {
@@ -473,6 +482,7 @@ html, body {
   align-items: center;
   justify-content: center;
   padding: 40px;
+  flex: 1;
 }
 
 .empty-state {
