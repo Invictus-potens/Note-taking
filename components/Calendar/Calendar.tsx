@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
+import Link from 'next/link';
 
 const CalendarComponent = () => {
   const [date, setDate] = useState<Date | [Date | null, Date | null] | null>(new Date());
