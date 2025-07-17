@@ -56,20 +56,12 @@ function NotesApp() {
   const [modalError, setModalError] = useState('');
 
   const [notes, setNotes] = useState<Note[]>([]);
-  const [folders, setFolders] = useState<Folder[]>([
-    { id: 'personal', name: 'Personal', count: 0 },
-    { id: 'work', name: 'Work', count: 0 },
-    { id: 'projects', name: 'Projects', count: 0 }
-  ]);
-  const [tags, setTags] = useState<Tag[]>([
-    { id: 'important', name: 'Important', count: 0 },
-    { id: 'ideas', name: 'Ideas', count: 0 },
-    { id: 'todo', name: 'To-Do', count: 0 }
-  ]);
+  // Remove hardcoded folders/tags from state
+  const [folders, setFolders] = useState<Folder[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
 
 
-
-  // Fetch notes from Supabase on load
+  // Fetch notes, folders, and tags from Supabase on load
   useEffect(() => {
     if (!user) return;
     const fetchNotes = async () => {
@@ -80,8 +72,25 @@ function NotesApp() {
         .order('updated_at', { ascending: false });
       if (!error && data) setNotes(data);
     };
+    const fetchFolders = async () => {
+      const { data, error } = await supabase
+        .from('folders')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      if (!error && data) setFolders(data);
+    };
+    const fetchTags = async () => {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true });
+      if (!error && data) setTags(data);
+    };
     fetchNotes();
-    // Always start with dark theme
+    fetchFolders();
+    fetchTags();
     setIsDark(true);
     document.documentElement.setAttribute('data-theme', 'dark');
   }, [user]);
@@ -177,56 +186,56 @@ function NotesApp() {
   };
 
   // Folder and Tag creation functions
-  const handleCreateFolder = () => {
+  // Update handleCreateFolder to persist to Supabase
+  const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
       setModalError('Folder name cannot be empty');
       return;
     }
-
-    const folderId = newFolderName.toLowerCase().replace(/\s+/g, '-');
-    const existingFolder = folders.find((f: Folder) => f.id === folderId);
-    
-    if (existingFolder) {
+    if (!user) return;
+    const exists = folders.some(f => f.name.toLowerCase() === newFolderName.trim().toLowerCase());
+    if (exists) {
       setModalError('A folder with this name already exists');
       return;
     }
-
-    const newFolder: Folder = {
-      id: folderId,
-      name: newFolderName.trim(),
-      count: 0
-    };
-
-    setFolders((prev: Folder[]) => [...prev, newFolder]);
-    setNewFolderName('');
-    setModalError('');
-    setShowFolderModal(false);
+    const { data, error } = await supabase
+      .from('folders')
+      .insert([{ user_id: user.id, name: newFolderName.trim() }])
+      .select();
+    if (!error && data && data[0]) {
+      setFolders(prev => [...prev, data[0]]);
+      setNewFolderName('');
+      setModalError('');
+      setShowFolderModal(false);
+    } else {
+      setModalError('Failed to create folder');
+    }
   };
 
-  const handleCreateTag = () => {
+  // Update handleCreateTag to persist to Supabase
+  const handleCreateTag = async () => {
     if (!newTagName.trim()) {
       setModalError('Tag name cannot be empty');
       return;
     }
-
-    const tagId = newTagName.toLowerCase().replace(/\s+/g, '-');
-    const existingTag = tags.find((t: Tag) => t.id === tagId);
-    
-    if (existingTag) {
+    if (!user) return;
+    const exists = tags.some(t => t.name.toLowerCase() === newTagName.trim().toLowerCase());
+    if (exists) {
       setModalError('A tag with this name already exists');
       return;
     }
-
-    const newTag: Tag = {
-      id: tagId,
-      name: newTagName.trim(),
-      count: 0
-    };
-
-    setTags((prev: Tag[]) => [...prev, newTag]);
-    setNewTagName('');
-    setModalError('');
-    setShowTagModal(false);
+    const { data, error } = await supabase
+      .from('tags')
+      .insert([{ user_id: user.id, name: newTagName.trim() }])
+      .select();
+    if (!error && data && data[0]) {
+      setTags(prev => [...prev, data[0]]);
+      setNewTagName('');
+      setModalError('');
+      setShowTagModal(false);
+    } else {
+      setModalError('Failed to create tag');
+    }
   };
 
   const handleDeleteFolder = (folderId: string) => {
@@ -297,6 +306,16 @@ function NotesApp() {
     await signOut();
   };
 
+  // Dynamically calculate folder/tag counts from notes
+  const foldersWithCounts = folders.map(folder => ({
+    ...folder,
+    count: notes.filter(note => note.folder === folder.id || note.folder === folder.name).length
+  }));
+  const tagsWithCounts = tags.map(tag => ({
+    ...tag,
+    count: notes.filter(note => note.tags.includes(tag.name)).length
+  }));
+
   return (
     <div className="app-container">
       {/* Sidebar */}
@@ -327,7 +346,7 @@ function NotesApp() {
           <div className="badge">{notes.length}</div>
         </div>
         
-        {folders.map((folder: Folder) => (
+        {foldersWithCounts.map((folder: Folder) => (
           <div 
             key={folder.id} 
             className={`sidebar-item ${selectedFolder === folder.id ? 'selected' : ''}`}
@@ -364,7 +383,7 @@ function NotesApp() {
           </button>
         </div>
         
-        {tags.map((tag: Tag) => (
+        {tagsWithCounts.map((tag: Tag) => (
           <div 
             key={tag.id} 
             className={`sidebar-item ${selectedTags.includes(tag.id) ? 'selected' : ''}`}
@@ -544,7 +563,7 @@ function NotesApp() {
                     )}
                   </div>
                 </div>
-                <div className="editor-content">
+                <div className="editor-content" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                   {isEditing ? (
                     <>
                       <input
@@ -559,6 +578,7 @@ function NotesApp() {
                         value={currentNote.content}
                         onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCurrentNote({ ...currentNote, content: e.target.value })}
                         placeholder="Start writing your note..."
+                        style={{ minHeight: '200px', maxHeight: '40vh', overflowY: 'auto' }}
                       />
                       <div className="editor-tags">
                         <div className="editor-tags-label">Tags:</div>
@@ -594,7 +614,7 @@ function NotesApp() {
                   ) : (
                     <>
                       <h1 className="editor-input">{currentNote.title || 'Untitled'}</h1>
-                      <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap' }}>
+                      <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}>
                         {currentNote.content || 'No content'}
                       </div>
                       {currentNote.tags.length > 0 && (
