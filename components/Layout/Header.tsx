@@ -1,6 +1,8 @@
 
 'use client';
 
+import Link from 'next/link';
+
 interface HeaderProps {
   onToggleTheme?: () => void;
   isDark?: boolean;
@@ -17,9 +19,19 @@ export default function Header({ onToggleTheme, isDark }: HeaderProps) {
         </div>
 
         <div className="flex items-center space-x-4">
+          <Link href="/outlook-calendar" passHref legacyBehavior>
+            <a
+              className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+              title="Go to Calendar"
+              aria-label="Go to Calendar"
+            >
+              <i className="ri-calendar-line text-lg text-gray-600 dark:text-gray-300"></i>
+            </a>
+          </Link>
           <button
             onClick={onToggleTheme}
             className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+            aria-label="Toggle theme"
           >
             <i className={`${isDark ? 'ri-sun-line' : 'ri-moon-line'} text-lg text-gray-600 dark:text-gray-300`}></i>
           </button>
