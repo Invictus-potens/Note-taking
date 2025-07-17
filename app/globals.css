@@ -775,22 +775,6 @@ html, body {
   }
 }
 
-/* Custom icon styles */
-.ri-search-line::before { content: "🔍"; }
-.ri-close-line::before { content: "✕"; }
-.ri-edit-line::before { content: "✎"; }
-.ri-pushpin-fill::before { content: "🧷"; }
-.ri-lock-fill::before { content: "🔒"; }
-.ri-loader-4-line::before { content: "⏳"; }
-.ri-add-line::before { content: "➕"; }
-.ri-folder-line::before { content: "📁"; }
-.ri-price-tag-3-line::before { content: "🏷️"; }
-.ri-moon-line::before { content: "🌕"; }
-.ri-sun-line::before { content: "☀️"; }
-.ri-user-line::before { content: "👤"; }
-.ri-delete-bin-line::before { content: "🗑️"; }
-.ri-file-text-line::before { content: "📄"; }
-.ri-logout-box-line::before { content: "🚪"; }
 
 /* Login Page Styles */
 .login-container {

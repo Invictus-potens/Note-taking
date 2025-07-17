@@ -43,7 +43,7 @@ function NotesApp() {
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
-  const [selectedTag, setSelectedTag] = useState('');
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedNote, setSelectedNote] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
@@ -242,6 +242,12 @@ function NotesApp() {
     }
   };
 
+  const handleTagSelect = (tagId: string) => {
+    setSelectedTags(prev =>
+      prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
+    );
+  };
+
   const handleDeleteTag = (tagId: string) => {
     // Remove tag from all notes
     setNotes((prev: Note[]) => prev.map((note: Note) => ({
@@ -250,15 +256,12 @@ function NotesApp() {
     })));
     
     setTags((prev: Tag[]) => prev.filter((tag: Tag) => tag.id !== tagId));
-    
-    if (selectedTag === tagId) {
-      setSelectedTag('');
-    }
+    setSelectedTags(prev => prev.filter(t => t !== tagId));
   };
 
   const filteredNotes = notes.filter((note: Note) => {
     if (selectedFolder !== 'all' && note.folder !== selectedFolder) return false;
-    if (selectedTag && !note.tags.includes(selectedTag)) return false;
+    if (selectedTags.length > 0 && !selectedTags.every(tag => note.tags.includes(tag))) return false;
     if (searchTerm && !note.title.toLowerCase().includes(searchTerm.toLowerCase()) && !note.content.toLowerCase().includes(searchTerm.toLowerCase())) return false;
     return true;
   });
@@ -364,8 +367,8 @@ function NotesApp() {
         {tags.map((tag: Tag) => (
           <div 
             key={tag.id} 
-            className={`sidebar-item ${selectedTag === tag.id ? 'selected' : ''}`}
-            onClick={() => setSelectedTag(selectedTag === tag.id ? '' : tag.id)}
+            className={`sidebar-item ${selectedTags.includes(tag.id) ? 'selected' : ''}`}
+            onClick={() => handleTagSelect(tag.id)}
           >
             <div className="sidebar-item-left">
               <i className="ri-price-tag-3-line minimalist-icon">#</i>
