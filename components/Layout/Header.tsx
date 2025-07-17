@@ -1,7 +1,9 @@
 
 'use client';
 
-import Link from 'next/link';
+import { useState } from 'react';
+import { Sun, Moon, Calendar } from 'lucide-react';
+import CalendarModal from '../Calendar/CalendarModal';
 
 interface HeaderProps {
   onToggleTheme?: () => void;
@@ -9,6 +11,8 @@ interface HeaderProps {
 }
 
 export default function Header({ onToggleTheme, isDark }: HeaderProps) {
+  const [showCalendar, setShowCalendar] = useState(false);
+
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
       <div className="flex items-center justify-between">
@@ -19,24 +23,28 @@ export default function Header({ onToggleTheme, isDark }: HeaderProps) {
         </div>
 
         <div className="flex items-center space-x-4">
-          <Link href="/outlook-calendar" passHref legacyBehavior>
-            <a
-              className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-              title="Go to Calendar"
-              aria-label="Go to Calendar"
-            >
-              <i className="ri-calendar-line text-lg text-gray-600 dark:text-gray-300"></i>
-            </a>
-          </Link>
+          <button
+            onClick={() => setShowCalendar(true)}
+            className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
+            title="Go to Calendar"
+            aria-label="Go to Calendar"
+          >
+            <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+          </button>
           <button
             onClick={onToggleTheme}
             className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
             aria-label="Toggle theme"
           >
-            <i className={`${isDark ? 'ri-sun-line' : 'ri-moon-line'} text-lg text-gray-600 dark:text-gray-300`}></i>
+            {isDark ? (
+              <Sun className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            ) : (
+              <Moon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            )}
           </button>
         </div>
       </div>
+      {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} />}
     </header>
   );
 }

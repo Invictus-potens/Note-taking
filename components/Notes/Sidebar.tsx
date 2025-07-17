@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../ui/Button';
+import { Plus } from 'lucide-react';
 
 interface Folder {
   id: string;
@@ -17,7 +18,7 @@ interface SidebarProps {
   folders: Folder[];
   tags: Tag[];
   selectedFolder: string;
-  selectedTag: string;
+  selectedTags: string[];
   onFolderSelect: (id: string) => void;
   onTagSelect: (id: string) => void;
   onNewNote: () => void;
@@ -33,7 +34,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   folders,
   tags,
   selectedFolder,
-  selectedTag,
+  selectedTags,
   onFolderSelect,
   onTagSelect,
   onNewNote,
@@ -51,13 +52,16 @@ const Sidebar: React.FC<SidebarProps> = ({
     <aside className="w-64 bg-gray-900 text-white flex flex-col h-full border-r border-gray-800">
       <div className="p-4">
         <Button onClick={onNewNote} className="w-full mb-4">
-          + New Note
+          <Plus className="w-4 h-4 mr-2" />
+          New Note
         </Button>
       </div>
       <div className="px-4">
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-400">FOLDERS</span>
-          <button className="text-gray-400 hover:text-white text-lg" onClick={() => setShowNewFolder(v => !v)}>+</button>
+          <button className="text-gray-400 hover:text-white" onClick={() => setShowNewFolder(v => !v)}>
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
         {showNewFolder && (
           <div className="mb-2 flex items-center gap-2">
@@ -91,7 +95,9 @@ const Sidebar: React.FC<SidebarProps> = ({
         </ul>
         <div className="mb-2 flex items-center justify-between">
           <span className="text-xs font-semibold text-gray-400">TAGS</span>
-          <button className="text-gray-400 hover:text-white text-lg" onClick={() => setShowNewTag(v => !v)}>+</button>
+          <button className="text-gray-400 hover:text-white" onClick={() => setShowNewTag(v => !v)}>
+            <Plus className="w-4 h-4" />
+          </button>
         </div>
         {showNewTag && (
           <div className="mb-2 flex items-center gap-2">
@@ -114,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           {tags.map(tag => (
             <li key={tag.id}>
               <button
-                className={`flex items-center w-full px-2 py-1.5 rounded-lg transition-colors text-sm ${selectedTag === tag.id ? 'bg-blue-700 text-white' : 'hover:bg-gray-800 text-gray-300'}`}
+                className={`flex items-center w-full px-2 py-1.5 rounded-lg transition-colors text-sm ${selectedTags.includes(tag.id) ? 'bg-blue-700 text-white' : 'hover:bg-gray-800 text-gray-300'}`}
                 onClick={() => onTagSelect(tag.id)}
               >
                 <span className="flex-1 text-left"># {tag.name}</span>
