@@ -208,7 +208,8 @@ function NotesApp() {
       setModalError('');
       setShowFolderModal(false);
     } else {
-      setModalError('Failed to create folder');
+      console.error('Folder creation error:', error);
+      setModalError(error?.message || 'Failed to create folder');
     }
   };
 
@@ -234,7 +235,8 @@ function NotesApp() {
       setModalError('');
       setShowTagModal(false);
     } else {
-      setModalError('Failed to create tag');
+      console.error('Tag creation error:', error);
+      setModalError(error?.message || 'Failed to create tag');
     }
   };
 
