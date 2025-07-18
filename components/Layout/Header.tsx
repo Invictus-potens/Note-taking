@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Sun, Moon, Calendar } from 'lucide-react';
-import CalendarModal from '../Calendar/CalendarModal';
+import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
   onToggleTheme?: () => void;
@@ -11,7 +11,7 @@ interface HeaderProps {
 }
 
 export default function Header({ onToggleTheme, isDark }: HeaderProps) {
-  const [showCalendar, setShowCalendar] = useState(false);
+  const router = useRouter();
 
   return (
     <header className="bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 py-3">
@@ -24,7 +24,7 @@ export default function Header({ onToggleTheme, isDark }: HeaderProps) {
 
         <div className="flex items-center space-x-4">
           <button
-            onClick={() => setShowCalendar(true)}
+            onClick={() => router.push('/calendar')}
             className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
             title="Go to Calendar"
             aria-label="Go to Calendar"
@@ -44,7 +44,6 @@ export default function Header({ onToggleTheme, isDark }: HeaderProps) {
           </button>
         </div>
       </div>
-      {showCalendar && <CalendarModal onClose={() => setShowCalendar(false)} />}
     </header>
   );
 }
