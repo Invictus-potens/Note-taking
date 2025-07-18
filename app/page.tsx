@@ -11,6 +11,7 @@ import NotesList from '../components/Notes/NotesList';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import { supabase } from '../lib/supabaseClient';
+import { useRouter } from 'next/navigation';
 
 
 interface Note {
@@ -40,6 +41,7 @@ interface Tag {
 
 function NotesApp() {
   const { user, signOut } = useAuth();
+  const router = useRouter();
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
@@ -308,6 +310,10 @@ function NotesApp() {
     await signOut();
   };
 
+  const handleGoToCalendar = () => {
+    router.push('/calendar');
+  };
+
   // Dynamically calculate folder/tag counts from notes
   const foldersWithCounts = folders.map(folder => ({
     ...folder,
@@ -422,6 +428,9 @@ function NotesApp() {
             </div>
             <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
               <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
+            </button>
+            <button className="calendar-btn" onClick={handleGoToCalendar} aria-label="Go to calendar" style={{marginLeft: '8px'}}>
+              <i className="ri-calendar-line"></i>
             </button>
             <button className="signout-btn" onClick={handleSignOut} aria-label="Sign out">
               <i className="ri-logout-box-line"></i>
