@@ -1,6 +1,6 @@
 "use client";
 
-import CalendarPage from "../../components/Calendar/calendar";
+import CalendarPage from "../../components/calendar/calendar";
 
 export default function CalendarRoute() {
   return (
