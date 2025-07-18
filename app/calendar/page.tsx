@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import CalendarPage from "../../components/calendars/calendar";
 
