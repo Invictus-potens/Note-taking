@@ -310,9 +310,7 @@ function NotesApp() {
     await signOut();
   };
 
-  const handleGoToCalendar = () => {
-    router.push('/calendar');
-  };
+
 
   // Dynamically calculate folder/tag counts from notes
   const foldersWithCounts = folders.map(folder => ({
@@ -429,9 +427,7 @@ function NotesApp() {
             <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
               <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
             </button>
-            <button className="calendar-btn" onClick={handleGoToCalendar} aria-label="Go to calendar" style={{marginLeft: '8px'}}>
-              <i className="ri-calendar-line"></i>
-            </button>
+            
             <button className="signout-btn" onClick={handleSignOut} aria-label="Sign out">
               <i className="ri-logout-box-line"></i>
             </button>

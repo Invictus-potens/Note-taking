@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Sun, Moon, Calendar } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 interface HeaderProps {
@@ -23,14 +23,7 @@ export default function Header({ onToggleTheme, isDark }: HeaderProps) {
         </div>
 
         <div className="flex items-center space-x-4">
-          <button
-            onClick={() => router.push('/calendar')}
-            className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
-            title="Go to Calendar"
-            aria-label="Go to Calendar"
-          >
-            <Calendar className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-          </button>
+
           <button
             onClick={onToggleTheme}
             className="w-8 h-8 flex items-center justify-center p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 cursor-pointer"
