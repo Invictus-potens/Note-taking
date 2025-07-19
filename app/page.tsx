@@ -328,13 +328,13 @@ function NotesApp() {
       <div className="sidebar">
         <div className="sidebar-header">
           <button className="new-note-btn" onClick={handleNewNote}>
-            <i className="ri-add-line minimalist-icon">+</i>
-            New Note
+            <i className="ri-add-line minimalist-icon"></i>
+            Nova Nota
           </button>
         </div>
 
         <div className="section-header">
-          <div className="section-title">Folders</div>
+          <div className="section-title">Pastas</div>
           <button 
             className="add-btn"
             onClick={() => setShowFolderModal(true)}
@@ -347,7 +347,7 @@ function NotesApp() {
         <div className="sidebar-item" onClick={() => setSelectedFolder('all')}>
           <div className="sidebar-item-left">
             <i className="ri-file-text-line minimalist-icon"></i>
-            <span>All Notes</span>
+            <span>Todas as Notas</span>
           </div>
           <div className="badge">{notes.length}</div>
         </div>
@@ -379,7 +379,7 @@ function NotesApp() {
         ))}
 
         <div className="section-header">
-          <div className="section-title">Tags</div>
+          <div className="section-title">Etiquetas</div>
           <button 
             className="add-btn"
             onClick={() => setShowTagModal(true)}
@@ -441,7 +441,7 @@ function NotesApp() {
               <input
                 type="text"
                 className="search-input"
-                placeholder="Search notes..."
+                placeholder="Pesquisar notas..."
                 value={searchTerm}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
               />
@@ -450,7 +450,7 @@ function NotesApp() {
             <div className="notes-container">
               {pinnedNotes.length > 0 && (
                 <div className="notes-section">
-                  <div className="notes-section-title">Pinned Notes</div>
+                  <div className="notes-section-title">Notas Fixadas</div>
                   {pinnedNotes.map((note: Note) => (
                     <div 
                       key={note.id}
@@ -458,7 +458,7 @@ function NotesApp() {
                       onClick={() => handleNoteSelect(note.id)}
                     >
                       <div className="note-header">
-                        <div className="note-title">{note.title || 'Untitled'}</div>
+                        <div className="note-title">{note.title || 'Sem título'}</div>
                         <div className="note-date">{formatDate(note.updated_at)}</div>
                       </div>
                       <div className="note-preview">{note.content}</div>
@@ -497,7 +497,7 @@ function NotesApp() {
               )}
 
               <div className="notes-section">
-                <div className="notes-section-title">All Notes</div>
+                <div className="notes-section-title">Todas as Notas</div>
                 {unpinnedNotes.map((note: Note) => (
                   <div 
                     key={note.id}
@@ -505,7 +505,7 @@ function NotesApp() {
                     onClick={() => handleNoteSelect(note.id)}
                   >
                     <div className="note-header">
-                      <div className="note-title">{note.title || 'Untitled'}</div>
+                      <div className="note-title">{note.title || 'Sem título'}</div>
                       <div className="note-date">{formatDate(note.updated_at)}</div>
                     </div>
                     <div className="note-preview">{note.content}</div>
@@ -620,9 +620,9 @@ function NotesApp() {
                     </>
                   ) : (
                     <>
-                      <h1 className="editor-input">{currentNote.title || 'Untitled'}</h1>
+                      <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
                       <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}>
-                        {currentNote.content || 'No content'}
+                        {currentNote.content || 'Sem conteúdo'}
                       </div>
                       {currentNote.tags.length > 0 && (
                         <div className="note-tags" style={{ marginTop: '16px' }}>
@@ -654,7 +654,7 @@ function NotesApp() {
         <div className="modal-overlay" onClick={() => setShowFolderModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3></h3>
+                              <h3>Criar Nova Pasta</h3>
               <button 
                 className="modal-close"
                 onClick={() => setShowFolderModal(false)}
