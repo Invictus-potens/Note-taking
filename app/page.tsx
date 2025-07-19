@@ -478,7 +478,7 @@ function NotesApp() {
                           }}
                           aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
                         >
-                          <i className="ri-pushpin-fill minimalist-icon">📌</i>
+                          <i className="ri-pushpin-fill minimalist-icon"></i>
                         </button>
                         <button 
                           className="action-btn"
@@ -488,7 +488,7 @@ function NotesApp() {
                           }}
                           aria-label="Delete note"
                         >
-                          <i className="ri-delete-bin-line minimalist-icon">✕</i>
+                          <i className="ri-delete-bin-line minimalist-icon"></i>
                         </button>
                       </div>
                     </div>
@@ -528,7 +528,7 @@ function NotesApp() {
                         }}
                         aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
                       >
-                        <i className="ri-pushpin-fill minimalist-icon">📌</i>
+                        <i className="ri-pushpin-fill minimalist-icon"></i>
                       </button>
                       <button 
                         className="action-btn"
@@ -538,7 +538,7 @@ function NotesApp() {
                         }}
                         aria-label="Delete note"
                       >
-                        <i className="ri-delete-bin-line minimalist-icon">✕</i>
+                        <i className="ri-delete-bin-line minimalist-icon"></i>
                       </button>
                     </div>
                   </div>
