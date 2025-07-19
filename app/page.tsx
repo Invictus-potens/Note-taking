@@ -242,16 +242,46 @@ function NotesApp() {
     }
   };
 
-  const handleDeleteFolder = (folderId: string) => {
-    // Move notes from deleted folder to 'personal'
-    setNotes((prev: Note[]) => prev.map((note: Note) => 
-      note.folder === folderId ? { ...note, folder: 'personal' } : note
-    ));
+  const handleDeleteFolder = async (folderId: string) => {
+    if (!user) return;
     
-    setFolders((prev: Folder[]) => prev.filter((folder: Folder) => folder.id !== folderId));
-    
-    if (selectedFolder === folderId) {
-      setSelectedFolder('all');
+    try {
+      // First, move all notes from this folder to 'personal' in the database
+      const { error: updateError } = await supabase
+        .from('notes')
+        .update({ folder: 'personal' })
+        .eq('folder', folderId)
+        .eq('user_id', user.id);
+      
+      if (updateError) {
+        console.error('Erro ao mover notas:', updateError);
+        return;
+      }
+      
+      // Then delete the folder from the database
+      const { error: deleteError } = await supabase
+        .from('folders')
+        .delete()
+        .eq('id', folderId)
+        .eq('user_id', user.id);
+      
+      if (deleteError) {
+        console.error('Erro ao deletar pasta:', deleteError);
+        return;
+      }
+      
+      // Update local state
+      setNotes((prev: Note[]) => prev.map((note: Note) => 
+        note.folder === folderId ? { ...note, folder: 'personal' } : note
+      ));
+      
+      setFolders((prev: Folder[]) => prev.filter((folder: Folder) => folder.id !== folderId));
+      
+      if (selectedFolder === folderId) {
+        setSelectedFolder('all');
+      }
+    } catch (error) {
+      console.error('Erro ao deletar pasta:', error);
     }
   };
 
@@ -261,15 +291,63 @@ function NotesApp() {
     );
   };
 
-  const handleDeleteTag = (tagId: string) => {
-    // Remove tag from all notes
-    setNotes((prev: Note[]) => prev.map((note: Note) => ({
-      ...note,
-      tags: note.tags.filter((tag: string) => tag !== tagId)
-    })));
+  const handleDeleteTag = async (tagId: string) => {
+    if (!user) return;
     
-    setTags((prev: Tag[]) => prev.filter((tag: Tag) => tag.id !== tagId));
-    setSelectedTags(prev => prev.filter(t => t !== tagId));
+    try {
+      // Get the tag name to remove from notes
+      const tagToDelete = tags.find(tag => tag.id === tagId);
+      if (!tagToDelete) return;
+      
+      // Remove this tag from all notes in the database
+      const { data: notesToUpdate, error: fetchError } = await supabase
+        .from('notes')
+        .select('id, tags')
+        .eq('user_id', user.id)
+        .contains('tags', [tagToDelete.name]);
+      
+      if (fetchError) {
+        console.error('Erro ao buscar notas:', fetchError);
+        return;
+      }
+      
+      // Update each note to remove the tag
+      for (const note of notesToUpdate || []) {
+        const updatedTags = note.tags.filter((tag: string) => tag !== tagToDelete.name);
+        const { error: updateError } = await supabase
+          .from('notes')
+          .update({ tags: updatedTags })
+          .eq('id', note.id)
+          .eq('user_id', user.id);
+        
+        if (updateError) {
+          console.error('Erro ao atualizar nota:', updateError);
+        }
+      }
+      
+      // Delete the tag from the database
+      const { error: deleteError } = await supabase
+        .from('tags')
+        .delete()
+        .eq('id', tagId)
+        .eq('user_id', user.id);
+      
+      if (deleteError) {
+        console.error('Erro ao deletar etiqueta:', deleteError);
+        return;
+      }
+      
+      // Update local state
+      setNotes((prev: Note[]) => prev.map((note: Note) => ({
+        ...note,
+        tags: note.tags.filter((tag: string) => tag !== tagToDelete.name)
+      })));
+      
+      setTags((prev: Tag[]) => prev.filter((tag: Tag) => tag.id !== tagId));
+      setSelectedTags(prev => prev.filter(t => t !== tagId));
+    } catch (error) {
+      console.error('Erro ao deletar etiqueta:', error);
+    }
   };
 
   const filteredNotes = notes.filter((note: Note) => {
