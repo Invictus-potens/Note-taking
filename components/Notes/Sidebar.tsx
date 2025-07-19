@@ -53,12 +53,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4">
         <Button onClick={onNewNote} className="w-full mb-4">
           <Plus className="w-4 h-4 mr-2" />
-          New Note
+          Nova nota
         </Button>
       </div>
       <div className="px-4">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400">FOLDERS</span>
+          <span className="text-xs font-semibold text-gray-400">Pastas</span>
           <button className="text-gray-400 hover:text-white" onClick={() => setShowNewFolder(v => !v)}>
             <Plus className="w-4 h-4" />
           </button>
@@ -94,7 +94,7 @@ const Sidebar: React.FC<SidebarProps> = ({
           ))}
         </ul>
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400">TAGS</span>
+          <span className="text-xs font-semibold text-gray-400">Etiquetas</span>
           <button className="text-gray-400 hover:text-white" onClick={() => setShowNewTag(v => !v)}>
             <Plus className="w-4 h-4" />
           </button>

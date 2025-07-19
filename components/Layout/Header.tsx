@@ -18,7 +18,7 @@ export default function Header({ onToggleTheme, isDark }: HeaderProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <h1 className="text-xl font-bold text-gray-900 dark:text-white font-pacifico">
-            NotesApp
+            Scribe
           </h1>
         </div>
 

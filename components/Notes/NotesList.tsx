@@ -134,7 +134,7 @@ export default function NotesList({
           {pinnedNotes.length > 0 && (
             <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
               <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                All Notes
+                Todas as Notas
               </h4>
             </div>
           )}

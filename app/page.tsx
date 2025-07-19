@@ -552,20 +552,20 @@ function NotesApp() {
             {currentNote ? (
               <div className="note-editor">
                 <div className="editor-header">
-                  <div className="editor-title">Note Editor</div>
+                  <div className="editor-title">Editor de Notas</div>
                   <div className="editor-actions">
                     {isEditing ? (
                       <>
                         <button className="editor-btn" onClick={handleCancelEdit}>
-                          Cancel
+                          Cancelar
                         </button>
                         <button className="editor-btn primary" onClick={handleSaveNote}>
-                          Save
+                          Salvar
                         </button>
                       </>
                     ) : (
                       <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
-                        Edit
+                        Editar
                       </button>
                     )}
                   </div>
@@ -578,20 +578,20 @@ function NotesApp() {
                         className="editor-input"
                         value={currentNote.title}
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
-                        placeholder="Note title..."
+                        placeholder="Título da nota..."
                       />
                       <textarea
                         className="editor-textarea"
                         value={currentNote.content}
                         onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCurrentNote({ ...currentNote, content: e.target.value })}
-                        placeholder="Start writing your note..."
+                        placeholder="Comece a escrever sua nota..."
                         style={{ minHeight: '200px', maxHeight: '40vh', overflowY: 'auto' }}
                       />
                       <div className="editor-tags">
                         <div className="editor-tags-label">Etiquetas:</div>
                         <div className="editor-tags-list">
                           {tags.length === 0 && (
-                            <span className="editor-tags-empty">No tags created yet.</span>
+                            <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
                           )}
                           {tags.map((tag: Tag) => (
                             <button
@@ -654,7 +654,7 @@ function NotesApp() {
         <div className="modal-overlay" onClick={() => setShowFolderModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Create New Folder</h3>
+              <h3></h3>
               <button 
                 className="modal-close"
                 onClick={() => setShowFolderModal(false)}
@@ -667,7 +667,7 @@ function NotesApp() {
               <input
                 type="text"
                 className="modal-input"
-                placeholder="Enter folder name..."
+                placeholder="Digite o nome da pasta..."
                 value={newFolderName}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setNewFolderName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
@@ -677,10 +677,10 @@ function NotesApp() {
             </div>
             <div className="modal-actions">
               <button className="modal-btn" onClick={() => setShowFolderModal(false)}>
-                Cancel
+                Cancelar
               </button>
               <button className="modal-btn primary" onClick={handleCreateFolder}>
-                Create
+                Criar
               </button>
             </div>
           </div>
@@ -692,7 +692,7 @@ function NotesApp() {
         <div className="modal-overlay" onClick={() => setShowTagModal(false)}>
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <h3>Create New Tag</h3>
+              <h3>Criar Nova Etiqueta</h3>
               <button 
                 className="modal-close"
                 onClick={() => setShowTagModal(false)}
@@ -705,7 +705,7 @@ function NotesApp() {
               <input
                 type="text"
                 className="modal-input"
-                placeholder="Enter tag name..."
+                placeholder="Digite o nome da etiqueta..."
                 value={newTagName}
                 onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
@@ -715,10 +715,10 @@ function NotesApp() {
             </div>
             <div className="modal-actions">
               <button className="modal-btn" onClick={() => setShowTagModal(false)}>
-                Cancel
+                Cancelar
               </button>
               <button className="modal-btn primary" onClick={handleCreateTag}>
-                Create
+                Criar
               </button>
             </div>
           </div>
