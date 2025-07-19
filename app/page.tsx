@@ -191,13 +191,13 @@ function NotesApp() {
   // Update handleCreateFolder to persist to Supabase
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) {
-      setModalError('Folder name cannot be empty');
+      setModalError('Nome da pasta não pode ser vazio');
       return;
     }
     if (!user) return;
     const exists = folders.some(f => f.name.toLowerCase() === newFolderName.trim().toLowerCase());
     if (exists) {
-      setModalError('A folder with this name already exists');
+      setModalError('Uma pasta com este nome já existe');
       return;
     }
     const { data, error } = await supabase
@@ -210,21 +210,21 @@ function NotesApp() {
       setModalError('');
       setShowFolderModal(false);
     } else {
-      console.error('Folder creation error:', error);
-      setModalError(error?.message || 'Failed to create folder');
+      console.error('Erro ao criar pasta:', error);
+      setModalError(error?.message || 'Erro ao criar pasta');
     }
   };
 
   // Update handleCreateTag to persist to Supabase
   const handleCreateTag = async () => {
     if (!newTagName.trim()) {
-      setModalError('Tag name cannot be empty');
+      setModalError('Nome da etiqueta não pode ser vazio');
       return;
     }
     if (!user) return;
     const exists = tags.some(t => t.name.toLowerCase() === newTagName.trim().toLowerCase());
     if (exists) {
-      setModalError('A tag with this name already exists');
+      setModalError('Uma etiqueta com este nome já existe');
       return;
     }
     const { data, error } = await supabase
@@ -237,8 +237,8 @@ function NotesApp() {
       setModalError('');
       setShowTagModal(false);
     } else {
-      console.error('Tag creation error:', error);
-      setModalError(error?.message || 'Failed to create tag');
+      console.error('Erro ao criar etiqueta:', error);
+      setModalError(error?.message || 'Erro ao criar etiqueta');
     }
   };
 
@@ -288,9 +288,9 @@ function NotesApp() {
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     
-    if (diffDays === 1) return 'Today';
-    if (diffDays === 2) return 'Yesterday';
-    if (diffDays <= 7) return `${diffDays - 1} days ago`;
+    if (diffDays === 1) return 'Hoje';
+    if (diffDays === 2) return 'Ontem';
+    if (diffDays <= 7) return `${diffDays - 1} dias atrás`;
     return date.toLocaleDateString();
   };
 
@@ -335,6 +335,13 @@ function NotesApp() {
 
         <div className="section-header">
           <div className="section-title">Folders</div>
+          <button 
+            className="add-btn"
+            onClick={() => setShowFolderModal(true)}
+            aria-label="Add new folder"
+          >
+            <i className="ri-add-line minimalist-icon"></i>
+          </button>
         </div>
         
         <div className="sidebar-item" onClick={() => setSelectedFolder('all')}>
@@ -373,6 +380,13 @@ function NotesApp() {
 
         <div className="section-header">
           <div className="section-title">Tags</div>
+          <button 
+            className="add-btn"
+            onClick={() => setShowTagModal(true)}
+            aria-label="Add new tag"
+          >
+            <i className="ri-add-line minimalist-icon"></i>
+          </button>
         </div>
         
         {tagsWithCounts.map((tag: Tag) => (
@@ -574,7 +588,7 @@ function NotesApp() {
                         style={{ minHeight: '200px', maxHeight: '40vh', overflowY: 'auto' }}
                       />
                       <div className="editor-tags">
-                        <div className="editor-tags-label">Tags:</div>
+                        <div className="editor-tags-label">Etiquetas:</div>
                         <div className="editor-tags-list">
                           {tags.length === 0 && (
                             <span className="editor-tags-empty">No tags created yet.</span>
@@ -598,7 +612,7 @@ function NotesApp() {
                                 }
                               }}
                             >
-                              #{tag.name}
+                              {tag.name}
                             </button>
                           ))}
                         </div>
@@ -627,8 +641,8 @@ function NotesApp() {
             ) : (
               <div className="empty-state">
                 <div className="empty-icon">📝</div>
-                <div className="empty-title">Note Editor</div>
-                <div className="empty-subtitle">Note editing functionality will be implemented here</div>
+                <div className="empty-title">Editor de Notas</div>
+                <div className="empty-subtitle"></div>
               </div>
             )}
           </div>

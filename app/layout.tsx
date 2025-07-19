@@ -21,7 +21,7 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "NotesApp",
+  title: "Scribe",
   description: "A modern note-taking application",
 };
 
