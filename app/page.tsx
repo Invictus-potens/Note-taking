@@ -335,18 +335,11 @@ function NotesApp() {
 
         <div className="section-header">
           <div className="section-title">Folders</div>
-          <button 
-            className="add-btn"
-            onClick={() => setShowFolderModal(true)}
-            aria-label="Add new folder"
-          >
-            <i className="ri-add-line minimalist-icon">+</i>
-          </button>
         </div>
         
         <div className="sidebar-item" onClick={() => setSelectedFolder('all')}>
           <div className="sidebar-item-left">
-            <i className="ri-file-text-line minimalist-icon">🗒️</i>
+            <i className="ri-file-text-line minimalist-icon"></i>
             <span>All Notes</span>
           </div>
           <div className="badge">{notes.length}</div>
@@ -359,7 +352,7 @@ function NotesApp() {
             onClick={() => setSelectedFolder(folder.id)}
           >
             <div className="sidebar-item-left">
-              <i className="ri-folder-line minimalist-icon">▣</i>
+              <i className="ri-folder-line minimalist-icon"></i>
               <span>{folder.name}</span>
             </div>
             <div className="sidebar-item-right">
@@ -372,7 +365,7 @@ function NotesApp() {
                 }}
                 aria-label={`Delete folder ${folder.name}`}
               >
-                <i className="ri-delete-bin-line minimalist-icon">✕</i>
+                <i className="ri-delete-bin-line minimalist-icon"></i>
               </button>
             </div>
           </div>
@@ -380,13 +373,6 @@ function NotesApp() {
 
         <div className="section-header">
           <div className="section-title">Tags</div>
-          <button 
-            className="add-btn"
-            onClick={() => setShowTagModal(true)}
-            aria-label="Add new tag"
-          >
-            <i className="ri-add-line minimalist-icon">+</i>
-          </button>
         </div>
         
         {tagsWithCounts.map((tag: Tag) => (
@@ -396,7 +382,7 @@ function NotesApp() {
             onClick={() => handleTagSelect(tag.id)}
           >
             <div className="sidebar-item-left">
-              <i className="ri-price-tag-3-line minimalist-icon">#</i>
+              <i className="ri-price-tag-3-line minimalist-icon"></i>
               <span>#{tag.name}</span>
             </div>
             <div className="sidebar-item-right">
@@ -409,7 +395,7 @@ function NotesApp() {
                 }}
                 aria-label={`Delete tag ${tag.name}`}
               >
-                <i className="ri-delete-bin-line minimalist-icon">✕</i>
+                <i className="ri-delete-bin-line minimalist-icon"></i>
               </button>
             </div>
           </div>
