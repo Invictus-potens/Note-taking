@@ -484,9 +484,10 @@ function NotesApp() {
       // The new note will be created and set as currentNote
       // We'll add the content after the note is created
       setTimeout(() => {
-        if (currentNote) {
+        const newNote = notes.find(note => note.id === selectedNote);
+        if (newNote) {
           setCurrentNote({
-            ...currentNote,
+            ...newNote,
             content: content,
             title: 'AI Response'
           });
