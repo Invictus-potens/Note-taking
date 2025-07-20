@@ -585,7 +585,7 @@ function NotesApp() {
       <div className="main-content-area">
         {/* Top Bar */}
         <div className="top-bar">
-          <div className="app-title">NotesApp</div>
+          <div className="app-title">Scribe</div>
           <div className="top-bar-actions">
             <div className="user-info">
               <span className="user-email">{user?.email}</span>

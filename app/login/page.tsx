@@ -95,7 +95,7 @@ export default function LoginPage() {
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
-          <h1 className="login-title">NotesApp</h1>
+          <h1 className="login-title">Scribe</h1>
           <p className="login-subtitle">
             {isPasswordReset 
               ? 'Reset your password' 
