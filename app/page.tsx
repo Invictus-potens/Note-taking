@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, ChangeEvent } from 'react';
+import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import * as React from 'react';
 import { useAuth } from '../lib/authContext';
 import ProtectedRoute from '../components/Auth/ProtectedRoute';
@@ -49,6 +49,8 @@ function NotesApp() {
   const [selectedNote, setSelectedNote] = useState<string>('');
   const [isEditing, setIsEditing] = useState(false);
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  const notesContainerRef = useRef<HTMLDivElement>(null);
 
   // Modal states
   const [showFolderModal, setShowFolderModal] = useState(false);
@@ -169,6 +171,8 @@ function NotesApp() {
       setSelectedNote(data[0].id);
       setCurrentNote(data[0]);
       setIsEditing(true);
+      // Scroll to the new note after a short delay to ensure it's rendered
+      setTimeout(() => scrollToNote(data[0].id), 100);
     }
   };
 
@@ -443,6 +447,35 @@ function NotesApp() {
     await signOut();
   };
 
+  // Scroll functions
+  const handleScroll = () => {
+    if (notesContainerRef.current) {
+      const { scrollTop } = notesContainerRef.current;
+      setShowScrollTop(scrollTop > 200);
+    }
+  };
+
+  const scrollToTop = () => {
+    if (notesContainerRef.current) {
+      notesContainerRef.current.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  const scrollToNote = (noteId: string) => {
+    if (notesContainerRef.current) {
+      const noteElement = notesContainerRef.current.querySelector(`[data-note-id="${noteId}"]`);
+      if (noteElement) {
+        noteElement.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center'
+        });
+      }
+    }
+  };
+
 
 
   // Dynamically calculate folder/tag counts from notes
@@ -580,13 +613,18 @@ function NotesApp() {
               />
             </div>
 
-            <div className="notes-container">
+            <div 
+              className="notes-container"
+              ref={notesContainerRef}
+              onScroll={handleScroll}
+            >
               {pinnedNotes.length > 0 && (
                 <div className="notes-section">
                   <div className="notes-section-title">Notas Fixadas</div>
                   {pinnedNotes.map((note: Note) => (
                     <div 
                       key={note.id}
+                      data-note-id={note.id}
                       className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
                       onClick={() => handleNoteSelect(note.id)}
                     >
@@ -634,6 +672,7 @@ function NotesApp() {
                 {unpinnedNotes.map((note: Note) => (
                   <div 
                     key={note.id}
+                    data-note-id={note.id}
                     className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
                     onClick={() => handleNoteSelect(note.id)}
                   >
@@ -674,6 +713,17 @@ function NotesApp() {
                   </div>
                 ))}
               </div>
+              
+              {/* Scroll to Top Button */}
+              {showScrollTop && (
+                <button
+                  className="scroll-to-top-btn"
+                  onClick={scrollToTop}
+                  aria-label="Scroll to top"
+                >
+                  <i className="ri-arrow-up-line"></i>
+                </button>
+              )}
             </div>
           </div>
 
