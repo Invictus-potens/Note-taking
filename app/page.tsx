@@ -66,6 +66,53 @@ function NotesApp() {
   // Fetch notes, folders, and tags from Supabase on load
   useEffect(() => {
     if (!user) return;
+    
+    const migrateTagData = async () => {
+      // Check if any notes have tag IDs instead of tag names and migrate them
+      const { data: notesData, error: notesError } = await supabase
+        .from('notes')
+        .select('id, tags')
+        .eq('user_id', user.id);
+      
+      if (notesError) {
+        console.error('Error fetching notes for migration:', notesError);
+        return;
+      }
+      
+      // Get all tags to create a mapping from ID to name
+      const { data: tagsData, error: tagsError } = await supabase
+        .from('tags')
+        .select('id, name')
+        .eq('user_id', user.id);
+      
+      if (tagsError) {
+        console.error('Error fetching tags for migration:', tagsError);
+        return;
+      }
+      
+      const tagIdToName = new Map(tagsData?.map(tag => [tag.id, tag.name]) || []);
+      
+      // Check each note and migrate if needed
+      for (const note of notesData || []) {
+        if (!note.tags || note.tags.length === 0) continue;
+        
+        const needsMigration = note.tags.some(tag => tagIdToName.has(tag));
+        if (needsMigration) {
+          const migratedTags = note.tags.map(tag => tagIdToName.get(tag) || tag);
+          
+          const { error: updateError } = await supabase
+            .from('notes')
+            .update({ tags: migratedTags })
+            .eq('id', note.id)
+            .eq('user_id', user.id);
+          
+          if (updateError) {
+            console.error('Error migrating note tags:', updateError);
+          }
+        }
+      }
+    };
+    
     const fetchNotes = async () => {
       const { data, error } = await supabase
         .from('notes')
@@ -90,9 +137,14 @@ function NotesApp() {
         .order('created_at', { ascending: true });
       if (!error && data) setTags(data);
     };
-    fetchNotes();
-    fetchFolders();
-    fetchTags();
+    
+    // Run migration first, then fetch data
+    migrateTagData().then(() => {
+      fetchNotes();
+      fetchFolders();
+      fetchTags();
+    });
+    
     setIsDark(true);
     document.documentElement.setAttribute('data-theme', 'dark');
   }, [user]);
@@ -286,8 +338,11 @@ function NotesApp() {
   };
 
   const handleTagSelect = (tagId: string) => {
+    const tag = tags.find(t => t.id === tagId);
+    if (!tag) return;
+    
     setSelectedTags(prev =>
-      prev.includes(tagId) ? prev.filter(t => t !== tagId) : [...prev, tagId]
+      prev.includes(tag.name) ? prev.filter(t => t !== tag.name) : [...prev, tag.name]
     );
   };
 
@@ -344,7 +399,7 @@ function NotesApp() {
       })));
       
       setTags((prev: Tag[]) => prev.filter((tag: Tag) => tag.id !== tagId));
-      setSelectedTags(prev => prev.filter(t => t !== tagId));
+      setSelectedTags(prev => prev.filter(t => t !== tagToDelete.name));
     } catch (error) {
       console.error('Erro ao deletar etiqueta:', error);
     }
@@ -470,7 +525,7 @@ function NotesApp() {
         {tagsWithCounts.map((tag: Tag) => (
           <div 
             key={tag.id} 
-            className={`sidebar-item ${selectedTags.includes(tag.id) ? 'selected' : ''}`}
+            className={`sidebar-item ${selectedTags.includes(tag.name) ? 'selected' : ''}`}
             onClick={() => handleTagSelect(tag.id)}
           >
             <div className="sidebar-item-left">
@@ -589,12 +644,9 @@ function NotesApp() {
                     <div className="note-preview">{note.content}</div>
                     {note.tags.length > 0 && (
                       <div className="note-tags">
-                        {note.tags.map((tag: string) => {
-                          const tagObj = tags.find(t => t.id === tag);
-                          return tagObj ? (
-                            <span key={tag} className="tag-pill">#{tagObj.name}</span>
-                          ) : null;
-                        })}
+                        {note.tags.map((tag: string) => (
+                          <span key={tag} className="tag-pill">#{tag}</span>
+                        ))}
                       </div>
                     )}
                     <div className="note-actions">
@@ -675,17 +727,17 @@ function NotesApp() {
                             <button
                               key={tag.id}
                               type="button"
-                              className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.id) ? ' selected' : ''}`}
+                              className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
                               onClick={() => {
-                                if (currentNote.tags.includes(tag.id)) {
+                                if (currentNote.tags.includes(tag.name)) {
                                   setCurrentNote({
                                     ...currentNote,
-                                    tags: currentNote.tags.filter(t => t !== tag.id)
+                                    tags: currentNote.tags.filter(t => t !== tag.name)
                                   });
                                 } else {
                                   setCurrentNote({
                                     ...currentNote,
-                                    tags: [...currentNote.tags, tag.id]
+                                    tags: [...currentNote.tags, tag.name]
                                   });
                                 }
                               }}
@@ -704,12 +756,9 @@ function NotesApp() {
                       </div>
                       {currentNote.tags.length > 0 && (
                         <div className="note-tags" style={{ marginTop: '16px' }}>
-                          {currentNote.tags.map((tagId: string) => {
-                            const tag = tags.find(t => t.id === tagId);
-                            return tag ? (
-                              <span key={tag.id} className="tag-pill">#{tag.name}</span>
-                            ) : null;
-                          })}
+                          {currentNote.tags.map((tagName: string) => (
+                            <span key={tagName} className="tag-pill">#{tagName}</span>
+                          ))}
                         </div>
                       )}
                     </>
