@@ -10,6 +10,7 @@ import Sidebar from '../components/Notes/Sidebar';
 import NotesList from '../components/Notes/NotesList';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
+import AIAssistant from '../components/AI/AIAssistant';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 
@@ -476,6 +477,31 @@ function NotesApp() {
     }
   };
 
+  const handleAddAIToNote = (content: string) => {
+    if (!currentNote) {
+      // Create a new note with the AI response
+      handleNewNote();
+      // The new note will be created and set as currentNote
+      // We'll add the content after the note is created
+      setTimeout(() => {
+        if (currentNote) {
+          setCurrentNote({
+            ...currentNote,
+            content: content,
+            title: 'AI Response'
+          });
+        }
+      }, 200);
+    } else {
+      // Add to existing note
+      setCurrentNote({
+        ...currentNote,
+        content: currentNote.content + '\n\n' + content
+      });
+      setIsEditing(true);
+    }
+  };
+
 
 
   // Dynamically calculate folder/tag counts from notes
@@ -901,6 +927,9 @@ function NotesApp() {
           </div>
         </div>
       )}
+
+      {/* AI Assistant */}
+      <AIAssistant onAddToNote={handleAddAIToNote} />
     </div>
   );
 }
