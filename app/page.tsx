@@ -96,9 +96,9 @@ function NotesApp() {
       for (const note of notesData || []) {
         if (!note.tags || note.tags.length === 0) continue;
         
-        const needsMigration = note.tags.some(tag => tagIdToName.has(tag));
+        const needsMigration = note.tags.some((tag: string) => tagIdToName.has(tag));
         if (needsMigration) {
-          const migratedTags = note.tags.map(tag => tagIdToName.get(tag) || tag);
+          const migratedTags = note.tags.map((tag: string) => tagIdToName.get(tag) || tag);
           
           const { error: updateError } = await supabase
             .from('notes')
