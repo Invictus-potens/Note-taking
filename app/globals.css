@@ -1096,22 +1096,62 @@ html, body {
 .notes-container {
   scroll-behavior: smooth;
   scrollbar-width: thin;
-  scrollbar-color: var(--border-color) transparent;
+  scrollbar-color: var(--bg-blue) var(--bg-hover);
+  overflow-y: auto;
+  max-height: calc(100vh - 200px);
 }
 
 .notes-container::-webkit-scrollbar {
-  width: 6px;
+  width: 8px;
 }
 
 .notes-container::-webkit-scrollbar-track {
-  background: transparent;
+  background: var(--bg-hover);
+  border-radius: 4px;
+  margin: 4px 0;
 }
 
 .notes-container::-webkit-scrollbar-thumb {
-  background: var(--border-color);
-  border-radius: 3px;
+  background: var(--bg-blue);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
 }
 
 .notes-container::-webkit-scrollbar-thumb:hover {
-  background: var(--text-secondary);
+  background: var(--bg-blue-hover);
+}
+
+.notes-container::-webkit-scrollbar-corner {
+  background: var(--bg-hover);
+}
+
+/* Sidebar scrollbar styling */
+.sidebar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--bg-blue) var(--bg-hover);
+  overflow-y: auto;
+}
+
+.sidebar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: 4px;
+  margin: 4px 0;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+  background: var(--bg-blue);
+  border-radius: 4px;
+  border: 1px solid var(--border-color);
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+  background: var(--bg-blue-hover);
+}
+
+.sidebar::-webkit-scrollbar-corner {
+  background: var(--bg-hover);
 }
