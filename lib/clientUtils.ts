@@ -71,7 +71,28 @@ export const setDocumentAttribute = (attribute: string, value: string): void => 
  * @param handler - The event handler
  * @param options - Event listener options
  */
-export const addEventListener = (
+export const addEventListener = <K extends keyof HTMLElementEventMap>(
+  element: EventTarget,
+  event: K,
+  handler: (event: HTMLElementEventMap[K]) => void,
+  options?: boolean | AddEventListenerOptions
+): void => {
+  if (!isClient) return;
+  try {
+    element.addEventListener(event, handler as EventListener, options);
+  } catch (error) {
+    console.error('Error adding event listener:', error);
+  }
+};
+
+/**
+ * Safely add event listener (generic version for custom event types)
+ * @param element - The element to add listener to
+ * @param event - The event type
+ * @param handler - The event handler
+ * @param options - Event listener options
+ */
+export const addEventListenerGeneric = (
   element: EventTarget,
   event: string,
   handler: EventListenerOrEventListenerObject,
@@ -92,7 +113,28 @@ export const addEventListener = (
  * @param handler - The event handler
  * @param options - Event listener options
  */
-export const removeEventListener = (
+export const removeEventListener = <K extends keyof HTMLElementEventMap>(
+  element: EventTarget,
+  event: K,
+  handler: (event: HTMLElementEventMap[K]) => void,
+  options?: boolean | EventListenerOptions
+): void => {
+  if (!isClient) return;
+  try {
+    element.removeEventListener(event, handler as EventListener, options);
+  } catch (error) {
+    console.error('Error removing event listener:', error);
+  }
+};
+
+/**
+ * Safely remove event listener (generic version for custom event types)
+ * @param element - The element to remove listener from
+ * @param event - The event type
+ * @param handler - The event handler
+ * @param options - Event listener options
+ */
+export const removeEventListenerGeneric = (
   element: EventTarget,
   event: string,
   handler: EventListenerOrEventListenerObject,
