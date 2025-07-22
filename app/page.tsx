@@ -3,8 +3,11 @@
 
 import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import * as React from 'react';
+import ReactQuill from 'react-quill';
+import { DragDropContext, DropResult } from 'react-beautiful-dnd';
 import { useAuth } from '../lib/authContext';
 import ProtectedRoute from '../components/Auth/ProtectedRoute';
+import 'react-quill/dist/quill.snow.css';
 import Header from '../components/Layout/Header';
 import Sidebar from '../components/Notes/Sidebar';
 import NotesList from '../components/Notes/NotesList';
@@ -503,6 +506,54 @@ function NotesApp() {
     }
   };
 
+  const onDragEnd = async (result: DropResult) => {
+    const { source, destination, draggableId } = result;
+
+    // Do nothing if dropped outside a droppable area
+    if (!destination) {
+      return;
+    }
+
+    // Do nothing if dropped in the same place
+    if (
+      destination.droppableId === source.droppableId &&
+      destination.index === source.index
+    ) {
+      return;
+    }
+
+    const noteId = draggableId;
+    const folderId = destination.droppableId;
+
+    // If a note is dropped into a folder
+    if (destination.droppableId.startsWith('folder-')) {
+      const folderId = destination.droppableId.replace('folder-', '');
+      
+      // Update note in the database
+      const { data, error } = await supabase
+        .from('notes')
+        .update({ folder: folderId })
+        .eq('id', noteId)
+        .eq('user_id', user?.id)
+        .select();
+
+      if (error) {
+        console.error('Error updating note folder:', error);
+        // Handle error (e.g., show a notification)
+        return;
+      }
+
+      if (data) {
+        // Update local state
+        setNotes(prev =>
+          prev.map(note =>
+            note.id === noteId ? { ...note, folder: folderId } : note
+          )
+        );
+      }
+    }
+  };
+
 
 
   // Dynamically calculate folder/tag counts from notes
@@ -516,6 +567,7 @@ function NotesApp() {
   }));
 
   return (
+    <DragDropContext onDragEnd={onDragEnd}>
     <div className="app-container">
       {/* Sidebar */}
       <div className="sidebar">
@@ -787,12 +839,20 @@ function NotesApp() {
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
                         placeholder="Título da nota..."
                       />
-                      <textarea
-                        className="editor-textarea"
+                      <ReactQuill
                         value={currentNote.content}
-                        onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setCurrentNote({ ...currentNote, content: e.target.value })}
+                        onChange={(content) => setCurrentNote({ ...currentNote, content })}
                         placeholder="Comece a escrever sua nota..."
-                        style={{ minHeight: '200px', maxHeight: '40vh', overflowY: 'auto' }}
+                        style={{ height: '40vh', display: 'flex', flexDirection: 'column' }}
+                        modules={{
+                          toolbar: [
+                            [{ 'header': [1, 2, false] }],
+                            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+                            [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
+                            ['link', 'image'],
+                            ['clean']
+                          ],
+                        }}
                       />
                       <div className="editor-tags">
                         <div className="editor-tags-label">Etiquetas:</div>
@@ -828,9 +888,11 @@ function NotesApp() {
                   ) : (
                     <>
                       <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
-                      <div className="editor-textarea" style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}>
-                        {currentNote.content || 'Sem conteúdo'}
-                      </div>
+                      <div
+                        className="editor-textarea"
+                        style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}
+                        dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
+                      />
                       {currentNote.tags.length > 0 && (
                         <div className="note-tags" style={{ marginTop: '16px' }}>
                           {currentNote.tags.map((tagName: string) => (
@@ -932,6 +994,7 @@ function NotesApp() {
       {/* AI Assistant */}
       <AIAssistant onAddToNote={handleAddAIToNote} />
     </div>
+    </DragDropContext>
   );
 }
 

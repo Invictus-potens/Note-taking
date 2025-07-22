@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Droppable, Draggable } from 'react-beautiful-dnd';
 import Button from '../ui/Button';
 import { Plus } from 'lucide-react';
 
@@ -81,16 +82,25 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
         <ul className="mb-6 space-y-1">
-          {folders.map(folder => (
-            <li key={folder.id}>
-              <button
-                className={`flex items-center w-full px-2 py-1.5 rounded-lg transition-colors text-sm ${selectedFolder === folder.id ? 'bg-blue-700 text-white' : 'hover:bg-gray-800 text-gray-300'}`}
-                onClick={() => onFolderSelect(folder.id)}
-              >
-                <span className="flex-1 text-left">{folder.name}</span>
-                <span className="ml-2 text-xs bg-gray-800 px-2 py-0.5 rounded-full">{folder.count}</span>
-              </button>
-            </li>
+          {folders.map((folder, index) => (
+            <Droppable key={folder.id} droppableId={`folder-${folder.id}`}>
+              {(provided, snapshot) => (
+                <li
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`${snapshot.isDraggingOver ? 'bg-blue-800' : ''}`}
+                >
+                  <button
+                    className={`flex items-center w-full px-2 py-1.5 rounded-lg transition-colors text-sm ${selectedFolder === folder.id ? 'bg-blue-700 text-white' : 'hover:bg-gray-800 text-gray-300'}`}
+                    onClick={() => onFolderSelect(folder.id)}
+                  >
+                    <span className="flex-1 text-left">{folder.name}</span>
+                    <span className="ml-2 text-xs bg-gray-800 px-2 py-0.5 rounded-full">{folder.count}</span>
+                  </button>
+                  {provided.placeholder}
+                </li>
+              )}
+            </Droppable>
           ))}
         </ul>
         <div className="mb-2 flex items-center justify-between">

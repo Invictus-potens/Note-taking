@@ -1,5 +1,7 @@
 'use client';
 
+import { Draggable, Droppable } from "react-beautiful-dnd";
+
 interface Note {
   id: string;
   title: string;
@@ -49,14 +51,18 @@ export default function NotesList({
     return date.toLocaleDateString();
   };
 
-  const renderNote = (note: Note) => (
-    <div
-      key={note.id}
-      onClick={() => onNoteSelect(note.id)}
-      className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
-        selectedNote === note.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
-      }`}
-    >
+  const renderNote = (note: Note, index: number) => (
+    <Draggable key={note.id} draggableId={note.id} index={index}>
+      {(provided) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          onClick={() => onNoteSelect(note.id)}
+          className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+            selectedNote === note.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
+          }`}
+        >
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center space-x-2">
           {note.isPinned && (
@@ -112,37 +118,45 @@ export default function NotesList({
         </span>
       </div>
     </div>
+    )}
+  </Draggable>
   );
 
   return (
-    <div className="flex-1 overflow-y-auto">
-      {pinnedNotes.length > 0 && (
-        <div>
-          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-            <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-              Pinned Notes
-            </h4>
-          </div>
-          <div className="group">
-            {pinnedNotes.map(renderNote)}
-          </div>
-        </div>
-      )}
-
-      {regularNotes.length > 0 && (
-        <div>
+    <Droppable droppableId="notes-list">
+      {(provided) => (
+        <div
+          ref={provided.innerRef}
+          {...provided.droppableProps}
+          className="flex-1 overflow-y-auto"
+        >
           {pinnedNotes.length > 0 && (
-            <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
-              <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                Todas as Notas
-              </h4>
+            <div>
+              <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                  Pinned Notes
+                </h4>
+              </div>
+              <div className="group">
+                {pinnedNotes.map((note, index) => renderNote(note, index))}
+              </div>
             </div>
           )}
-          <div className="group">
-            {regularNotes.map(renderNote)}
-          </div>
-        </div>
-      )}
+
+          {regularNotes.length > 0 && (
+            <div>
+              {pinnedNotes.length > 0 && (
+                <div className="px-4 py-2 bg-gray-50 dark:bg-gray-800/50 border-b border-gray-200 dark:border-gray-700">
+                  <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                    Todas as Notas
+                  </h4>
+                </div>
+              )}
+              <div className="group">
+                {regularNotes.map((note, index) => renderNote(note, pinnedNotes.length + index))}
+              </div>
+            </div>
+          )}
 
       {filteredNotes.length === 0 && (
         <div className="flex flex-col items-center justify-center h-64 text-center p-8">
@@ -158,6 +172,9 @@ export default function NotesList({
           </p>
         </div>
       )}
-    </div>
+          {provided.placeholder}
+        </div>
+      )}
+    </Droppable>
   );
 }
