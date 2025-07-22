@@ -524,7 +524,9 @@ function NotesApp() {
         // Update the notes order in state
         setNotes(prev => {
           const noteMap = new Map(prev.map(note => [note.id, note]));
-          const reorderedNotes = allFilteredNotes.map(note => noteMap.get(note.id)).filter(Boolean);
+          const reorderedNotes = allFilteredNotes
+            .map(note => noteMap.get(note.id))
+            .filter((note): note is Note => note !== undefined);
           
           // Add any notes that weren't in the filtered list back to the end
           const remainingNotes = prev.filter(note => !noteMap.has(note.id));
