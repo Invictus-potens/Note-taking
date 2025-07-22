@@ -29,6 +29,11 @@ const Droppable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ def
   ssr: false
 });
 
+// Dynamic import for Draggable
+const Draggable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Draggable })), {
+  ssr: false
+});
+
 
 
 
@@ -756,21 +761,34 @@ function NotesApp() {
               />
             </div>
 
-            <div 
-              className="notes-container"
-              ref={notesContainerRef}
-              onScroll={handleScroll}
-            >
+            <Droppable droppableId="notes-list">
+              {(provided) => (
+                <div 
+                  className="notes-container"
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  onScroll={handleScroll}
+                >
               {pinnedNotes.length > 0 && (
                 <div className="notes-section">
                   <div className="notes-section-title">Notas Fixadas</div>
-                  {pinnedNotes.map((note: Note) => (
-                    <div 
-                      key={note.id}
-                      data-note-id={note.id}
-                      className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
-                      onClick={() => handleNoteSelect(note.id)}
-                    >
+                  {pinnedNotes.map((note: Note, index: number) => (
+                    <Draggable key={note.id} draggableId={note.id} index={index}>
+                      {(provided, snapshot) => (
+                        <div 
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          data-note-id={note.id}
+                          className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                          onClick={() => handleNoteSelect(note.id)}
+                        >
+                          {/* Drag Handle */}
+                          <div
+                            {...provided.dragHandleProps}
+                            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
+                          >
+                            <i className="ri-drag-move-line text-sm"></i>
+                          </div>
                       <div className="note-header">
                         <div className="note-title">{note.title || 'Sem título'}</div>
                         <div className="note-date">{formatDate(note.updated_at)}</div>
@@ -805,20 +823,32 @@ function NotesApp() {
                           <i className="ri-delete-bin-line minimalist-icon"></i>
                         </button>
                       </div>
-                    </div>
+                        </div>
+                      )}
+                    </Draggable>
                   ))}
                 </div>
               )}
 
               <div className="notes-section">
                 <div className="notes-section-title">Todas as Notas</div>
-                {unpinnedNotes.map((note: Note) => (
-                  <div 
-                    key={note.id}
-                    data-note-id={note.id}
-                    className={`note-card ${selectedNote === note.id ? 'selected' : ''}`}
-                    onClick={() => handleNoteSelect(note.id)}
-                  >
+                {unpinnedNotes.map((note: Note, index: number) => (
+                  <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
+                    {(provided, snapshot) => (
+                      <div 
+                        ref={provided.innerRef}
+                        {...provided.draggableProps}
+                        data-note-id={note.id}
+                        className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                        onClick={() => handleNoteSelect(note.id)}
+                      >
+                        {/* Drag Handle */}
+                        <div
+                          {...provided.dragHandleProps}
+                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
+                        >
+                          <i className="ri-drag-move-line text-sm"></i>
+                        </div>
                     <div className="note-header">
                       <div className="note-title">{note.title || 'Sem título'}</div>
                       <div className="note-date">{formatDate(note.updated_at)}</div>
@@ -853,8 +883,11 @@ function NotesApp() {
                         <i className="ri-delete-bin-line minimalist-icon"></i>
                       </button>
                     </div>
-                  </div>
+                        </div>
+                      )}
+                    </Draggable>
                 ))}
+                  {provided.placeholder}
               </div>
               
               {/* Scroll to Top Button */}
@@ -867,7 +900,7 @@ function NotesApp() {
                   <i className="ri-arrow-up-line"></i>
                 </button>
               )}
-            </div>
+            </Droppable>
           </div>
 
           {/* Right Pane */}
