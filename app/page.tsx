@@ -369,18 +369,30 @@ function NotesApp() {
     const tag = tags.find(t => t.id === tagId);
     if (!tag) return;
     
-    // Remove tag from all notes
-    const { error: updateError } = await supabase
+    // Get all notes that contain this tag
+    const { data: notesToUpdate, error: fetchError } = await supabase
       .from('notes')
-      .update({ 
-        tags: supabase.sql`array_remove(tags, ${tag.name})`
-      })
+      .select('id, tags')
       .eq('user_id', user.id)
       .contains('tags', [tag.name]);
     
-    if (updateError) {
-      console.error('Error updating notes:', updateError);
+    if (fetchError) {
+      console.error('Error fetching notes:', fetchError);
       return;
+    }
+    
+    // Update each note to remove the tag
+    for (const note of notesToUpdate || []) {
+      const updatedTags = note.tags.filter((t: string) => t !== tag.name);
+      const { error: updateError } = await supabase
+        .from('notes')
+        .update({ tags: updatedTags })
+        .eq('id', note.id)
+        .eq('user_id', user.id);
+      
+      if (updateError) {
+        console.error('Error updating note:', updateError);
+      }
     }
     
     // Delete the tag
@@ -572,6 +584,16 @@ function NotesApp() {
 
   const pinnedNotes = filteredNotes.filter((note: Note) => note.is_pinned);
   const unpinnedNotes = filteredNotes.filter((note: Note) => !note.is_pinned);
+
+  // Dynamically calculate folder/tag counts from notes
+  const foldersWithCounts = folders.map(folder => ({
+    ...folder,
+    count: notes.filter(note => note.folder === folder.id || note.folder === folder.name).length
+  }));
+  const tagsWithCounts = tags.map(tag => ({
+    ...tag,
+    count: notes.filter(note => note.tags.includes(tag.name)).length
+  }));
 
   return (
     <ClientOnly fallback={<div>Loading...</div>}>
