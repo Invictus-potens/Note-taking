@@ -514,7 +514,28 @@ function NotesApp() {
     const noteId = draggableId;
 
     try {
-      // Handle different drop destinations
+      // Handle reordering within the notes list
+      if (destination.droppableId === 'notes-list') {
+        // Reorder notes within the same list
+        const allFilteredNotes = [...pinnedNotes, ...unpinnedNotes];
+        const [removed] = allFilteredNotes.splice(source.index, 1);
+        allFilteredNotes.splice(destination.index, 0, removed);
+
+        // Update the notes order in state
+        setNotes(prev => {
+          const noteMap = new Map(prev.map(note => [note.id, note]));
+          const reorderedNotes = allFilteredNotes.map(note => noteMap.get(note.id)).filter(Boolean);
+          
+          // Add any notes that weren't in the filtered list back to the end
+          const remainingNotes = prev.filter(note => !noteMap.has(note.id));
+          return [...reorderedNotes, ...remainingNotes];
+        });
+
+        setToast({ message: 'Note order updated', type: 'success' });
+        return;
+      }
+
+      // Handle moving notes to folders
       if (destination.droppableId === 'all-notes') {
         // Move note to "All Notes" (personal folder)
         const { data, error } = await supabase
@@ -728,15 +749,19 @@ function NotesApp() {
             <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
               {/* Middle Column */}
               <div className="middle-column">
-                <div className="search-container">
-                  <input
-                    type="text"
-                    className="search-input"
-                    placeholder="Pesquisar notas..."
-                    value={searchTerm}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-                  />
-                </div>
+                            <div className="search-container">
+              <input
+                type="text"
+                className="search-input"
+                placeholder="Pesquisar notas..."
+                value={searchTerm}
+                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+              />
+              <div className="drag-hint">
+                <i className="ri-drag-move-line"></i>
+                <span>Drag to reorder notes</span>
+              </div>
+            </div>
 
                 <Droppable droppableId="notes-list">
                   {(provided) => (
@@ -770,7 +795,10 @@ function NotesApp() {
                                     <div className="note-title">{note.title || 'Sem título'}</div>
                                     <div className="note-date">{formatDate(note.updated_at)}</div>
                                   </div>
-                                  <div className="note-preview">{note.content}</div>
+                                  <div 
+                                    className="note-preview"
+                                    dangerouslySetInnerHTML={{ __html: note.content }}
+                                  />
                                   {note.tags.length > 0 && (
                                     <div className="note-tags">
                                       {note.tags.map((tag: string) => (
@@ -830,7 +858,10 @@ function NotesApp() {
                                   <div className="note-title">{note.title || 'Sem título'}</div>
                                   <div className="note-date">{formatDate(note.updated_at)}</div>
                                 </div>
-                                <div className="note-preview">{note.content}</div>
+                                <div 
+                      className="note-preview"
+                      dangerouslySetInnerHTML={{ __html: note.content }}
+                    />
                                 {note.tags.length > 0 && (
                                   <div className="note-tags">
                                     {note.tags.map((tag: string) => (
