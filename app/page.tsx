@@ -72,6 +72,12 @@ function NotesApp() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const notesContainerRef = useRef<HTMLDivElement>(null);
 
+  // Dual note viewing state
+  const [isSplitView, setIsSplitView] = useState(false);
+  const [selectedNote2, setSelectedNote2] = useState<string>('');
+  const [currentNote2, setCurrentNote2] = useState<Note | null>(null);
+  const [isEditing2, setIsEditing2] = useState(false);
+
   // Modal states
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
@@ -252,20 +258,86 @@ function NotesApp() {
   };
 
   const handleNoteSelect = (noteId: string) => {
-    const note = notes.find((n: Note) => n.id === noteId);
-    if (note) {
+    if (isSplitView) {
+      // In split view mode
+      if (noteId === selectedNote) {
+        // Clicking on the first selected note - do nothing
+        return;
+      } else if (noteId === selectedNote2) {
+        // Clicking on the second selected note - do nothing
+        return;
+      } else {
+        // Clicking on a new note - replace the second note
+        setSelectedNote2(noteId);
+        const note = notes.find(n => n.id === noteId);
+        setCurrentNote2(note || null);
+        setIsEditing2(false);
+      }
+    } else {
+      // Normal single note selection
       setSelectedNote(noteId);
-      setCurrentNote(note);
+      const note = notes.find(n => n.id === noteId);
+      setCurrentNote(note || null);
       setIsEditing(false);
     }
   };
 
+  const handleNoteSelect2 = (noteId: string) => {
+    setSelectedNote2(noteId);
+    const note = notes.find(n => n.id === noteId);
+    setCurrentNote2(note || null);
+    setIsEditing2(false);
+  };
+
   const handleCancelEdit = () => {
+    if (currentNote) {
+      const originalNote = notes.find(n => n.id === currentNote.id);
+      setCurrentNote(originalNote || null);
+    }
     setIsEditing(false);
-    // Restore original note content
-    const originalNote = notes.find((n: Note) => n.id === currentNote?.id);
-    if (originalNote) {
-      setCurrentNote(originalNote);
+  };
+
+  const handleCancelEdit2 = () => {
+    if (currentNote2) {
+      const originalNote = notes.find(n => n.id === currentNote2.id);
+      setCurrentNote2(originalNote || null);
+    }
+    setIsEditing2(false);
+  };
+
+  const handleSaveNote2 = async () => {
+    if (!currentNote2 || !user) return;
+
+    try {
+      const { data, error } = await supabase
+        .from('notes')
+        .update({
+          title: currentNote2.title,
+          content: currentNote2.content,
+          tags: currentNote2.tags,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', currentNote2.id)
+        .eq('user_id', user.id)
+        .select();
+
+      if (error) {
+        console.error('Error updating note:', error);
+        setToast({ message: 'Erro ao salvar nota', type: 'error' });
+        return;
+      }
+
+      if (data) {
+        setNotes(prev => prev.map(note => 
+          note.id === currentNote2.id ? { ...note, ...data[0] } : note
+        ));
+        setCurrentNote2(data[0]);
+        setIsEditing2(false);
+        setToast({ message: 'Nota salva com sucesso', type: 'success' });
+      }
+    } catch (error) {
+      console.error('Error saving note:', error);
+      setToast({ message: 'Erro ao salvar nota', type: 'error' });
     }
   };
 
@@ -434,6 +506,36 @@ function NotesApp() {
       setDocumentAttribute('data-theme', 'light');
       setLocalStorage('notesapp_theme', 'light');
     }
+  };
+
+  const handleToggleSplitView = () => {
+    if (isSplitView) {
+      // Exit split view - keep only the first note
+      setIsSplitView(false);
+      setSelectedNote2('');
+      setCurrentNote2(null);
+      setIsEditing2(false);
+    } else {
+      // Enter split view
+      setIsSplitView(true);
+    }
+  };
+
+  const handleSwapNotes = () => {
+    if (!isSplitView || !currentNote || !currentNote2) return;
+    
+    // Swap the notes
+    const tempNote = currentNote;
+    const tempNoteId = selectedNote;
+    const tempEditing = isEditing;
+    
+    setCurrentNote(currentNote2);
+    setSelectedNote(selectedNote2);
+    setIsEditing(isEditing2);
+    
+    setCurrentNote2(tempNote);
+    setSelectedNote2(tempNoteId);
+    setIsEditing2(tempEditing);
   };
 
   const handleSignOut = async () => {
@@ -783,7 +885,11 @@ function NotesApp() {
                                   ref={provided.innerRef}
                                   {...provided.draggableProps}
                                   data-note-id={note.id}
-                                  className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                                  className={`note-card relative group ${
+                                    selectedNote === note.id ? 'selected' : ''
+                                  } ${
+                                    isSplitView && selectedNote2 === note.id ? 'selected-secondary' : ''
+                                  } ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
                                   onClick={() => handleNoteSelect(note.id)}
                                 >
                                   {/* Drag Handle */}
@@ -842,13 +948,17 @@ function NotesApp() {
                         {unpinnedNotes.map((note: Note, index: number) => (
                           <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
                             {(provided, snapshot) => (
-                              <div 
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                data-note-id={note.id}
-                                className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
-                                onClick={() => handleNoteSelect(note.id)}
-                              >
+                                                              <div 
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  data-note-id={note.id}
+                                  className={`note-card relative group ${
+                                    selectedNote === note.id ? 'selected' : ''
+                                  } ${
+                                    isSplitView && selectedNote2 === note.id ? 'selected-secondary' : ''
+                                  } ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                                  onClick={() => handleNoteSelect(note.id)}
+                                >
                                 {/* Drag Handle */}
                                 <div
                                   {...provided.dragHandleProps}
@@ -916,12 +1026,229 @@ function NotesApp() {
               </div>
 
               {/* Right Pane */}
-              <div className="right-pane">
-                {currentNote ? (
+              <div className={`right-pane ${isSplitView ? 'split-view' : ''}`}>
+                {isSplitView ? (
+                  // Split View Layout
+                  <div className="split-view-container">
+                    {/* Split View Toggle */}
+                                         <div className="split-view-header">
+                       <div className="split-view-title">Visualização Dividida</div>
+                       <div className="split-view-actions">
+                         {currentNote && currentNote2 && (
+                           <button className="editor-btn" onClick={handleSwapNotes}>
+                             <i className="ri-swap-line minimalist-icon"></i>
+                             Trocar
+                           </button>
+                         )}
+                         <button className="editor-btn" onClick={handleToggleSplitView}>
+                           <i className="ri-layout-grid-line minimalist-icon"></i>
+                           Sair da Divisão
+                         </button>
+                       </div>
+                     </div>
+                    
+                    <div className="split-view-content">
+                      {/* First Note */}
+                      <div className="split-note-pane">
+                        <div className="split-note-header">
+                          <div className="split-note-title">Nota 1</div>
+                          <div className="split-note-actions">
+                            {isEditing ? (
+                              <>
+                                <button className="editor-btn" onClick={handleCancelEdit}>
+                                  Cancelar
+                                </button>
+                                <button className="editor-btn primary" onClick={handleSaveNote}>
+                                  Salvar
+                                </button>
+                              </>
+                            ) : (
+                              <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
+                                Editar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {currentNote ? (
+                          <div className="split-note-content">
+                            {isEditing ? (
+                              <>
+                                <input
+                                  type="text"
+                                  className="editor-input"
+                                  value={currentNote.title}
+                                  onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                                  placeholder="Título da nota..."
+                                />
+                                <QuillEditor
+                                  value={currentNote.content}
+                                  onChange={(content) => setCurrentNote({ ...currentNote, content })}
+                                  placeholder="Comece a escrever sua nota..."
+                                  style={{ height: '30vh', display: 'flex', flexDirection: 'column' }}
+                                />
+                                <div className="editor-tags">
+                                  <div className="editor-tags-label">Etiquetas:</div>
+                                  <div className="editor-tags-list">
+                                    {tags.length === 0 && (
+                                      <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
+                                    )}
+                                    {tags.map((tag: Tag) => (
+                                      <button
+                                        key={tag.id}
+                                        type="button"
+                                        className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
+                                        onClick={() => {
+                                          if (currentNote.tags.includes(tag.name)) {
+                                            setCurrentNote({
+                                              ...currentNote,
+                                              tags: currentNote.tags.filter(t => t !== tag.name)
+                                            });
+                                          } else {
+                                            setCurrentNote({
+                                              ...currentNote,
+                                              tags: [...currentNote.tags, tag.name]
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        {tag.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
+                                <div
+                                  className="editor-textarea"
+                                  style={{ whiteSpace: 'pre-wrap', maxHeight: '30vh', overflowY: 'auto' }}
+                                  dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
+                                />
+                                {currentNote.tags.length > 0 && (
+                                  <div className="note-tags" style={{ marginTop: '16px' }}>
+                                    {currentNote.tags.map((tagName: string) => (
+                                      <span key={tagName} className="tag-pill">#{tagName}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="split-note-empty">
+                            <div className="empty-icon">📝</div>
+                            <div className="empty-title">Selecione uma nota</div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Second Note */}
+                      <div className="split-note-pane">
+                        <div className="split-note-header">
+                          <div className="split-note-title">Nota 2</div>
+                          <div className="split-note-actions">
+                            {isEditing2 ? (
+                              <>
+                                <button className="editor-btn" onClick={handleCancelEdit2}>
+                                  Cancelar
+                                </button>
+                                <button className="editor-btn primary" onClick={handleSaveNote2}>
+                                  Salvar
+                                </button>
+                              </>
+                            ) : (
+                              <button className="editor-btn primary" onClick={() => setIsEditing2(true)}>
+                                Editar
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        {currentNote2 ? (
+                          <div className="split-note-content">
+                            {isEditing2 ? (
+                              <>
+                                <input
+                                  type="text"
+                                  className="editor-input"
+                                  value={currentNote2.title}
+                                  onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote2({ ...currentNote2, title: e.target.value })}
+                                  placeholder="Título da nota..."
+                                />
+                                <QuillEditor
+                                  value={currentNote2.content}
+                                  onChange={(content) => setCurrentNote2({ ...currentNote2, content })}
+                                  placeholder="Comece a escrever sua nota..."
+                                  style={{ height: '30vh', display: 'flex', flexDirection: 'column' }}
+                                />
+                                <div className="editor-tags">
+                                  <div className="editor-tags-label">Etiquetas:</div>
+                                  <div className="editor-tags-list">
+                                    {tags.length === 0 && (
+                                      <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
+                                    )}
+                                    {tags.map((tag: Tag) => (
+                                      <button
+                                        key={tag.id}
+                                        type="button"
+                                        className={`tag-pill editor-tag-btn${currentNote2.tags.includes(tag.name) ? ' selected' : ''}`}
+                                        onClick={() => {
+                                          if (currentNote2.tags.includes(tag.name)) {
+                                            setCurrentNote2({
+                                              ...currentNote2,
+                                              tags: currentNote2.tags.filter(t => t !== tag.name)
+                                            });
+                                          } else {
+                                            setCurrentNote2({
+                                              ...currentNote2,
+                                              tags: [...currentNote2.tags, tag.name]
+                                            });
+                                          }
+                                        }}
+                                      >
+                                        {tag.name}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <h1 className="editor-input">{currentNote2.title || 'Sem título'}</h1>
+                                <div
+                                  className="editor-textarea"
+                                  style={{ whiteSpace: 'pre-wrap', maxHeight: '30vh', overflowY: 'auto' }}
+                                  dangerouslySetInnerHTML={{ __html: currentNote2.content || 'Sem conteúdo' }}
+                                />
+                                {currentNote2.tags.length > 0 && (
+                                  <div className="note-tags" style={{ marginTop: '16px' }}>
+                                    {currentNote2.tags.map((tagName: string) => (
+                                      <span key={tagName} className="tag-pill">#{tagName}</span>
+                                    ))}
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="split-note-empty">
+                            <div className="empty-icon">📝</div>
+                            <div className="empty-title">Selecione uma nota</div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Single Note Layout
                   <div className="note-editor">
                     <div className="editor-header">
                       <div className="editor-title">Editor de Notas</div>
                       <div className="editor-actions">
+                        <button className="editor-btn" onClick={handleToggleSplitView}>
+                          <i className="ri-layout-column-line minimalist-icon"></i>
+                          Divisão
+                        </button>
                         {isEditing ? (
                           <>
                             <button className="editor-btn" onClick={handleCancelEdit}>
