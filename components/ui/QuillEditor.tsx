@@ -1,7 +1,6 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
 
 // Dynamic import for ReactQuill
 const ReactQuill = dynamic(() => import('react-quill'), {
@@ -17,13 +16,6 @@ interface QuillEditorProps {
 }
 
 const QuillEditor: React.FC<QuillEditorProps> = ({ value, onChange, placeholder, style }) => {
-  // Import CSS only on client side
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      import('react-quill/dist/quill.snow.css');
-    }
-  }, []);
-
   return (
     <ReactQuill
       value={value}

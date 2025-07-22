@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ReactQuill CSS - Imported globally to avoid SSR issues */
+@import 'react-quill/dist/quill.snow.css';
+
 /* CSS Variables for consistent theming */
 :root {
   --bg-primary: #1e2130;
