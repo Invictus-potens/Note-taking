@@ -34,9 +34,6 @@ const Draggable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ def
   ssr: false
 });
 
-
-
-
 interface Note {
   id: string;
   title: string;
@@ -93,7 +90,6 @@ function NotesApp() {
     type: 'success' | 'error' | 'info';
   } | null>(null);
 
-
   // Fetch notes, folders, and tags from Supabase on load
   useEffect(() => {
     if (!user) return;
@@ -123,27 +119,26 @@ function NotesApp() {
       
       const tagIdToName = new Map(tagsData?.map(tag => [tag.id, tag.name]) || []);
       
-      // Check each note and migrate if needed
+      // Update notes that have tag IDs instead of tag names
       for (const note of notesData || []) {
-        if (!note.tags || note.tags.length === 0) continue;
-        
-        const needsMigration = note.tags.some((tag: string) => tagIdToName.has(tag));
-        if (needsMigration) {
-          const migratedTags = note.tags.map((tag: string) => tagIdToName.get(tag) || tag);
+        if (note.tags && Array.isArray(note.tags)) {
+          const updatedTags = note.tags.map(tag => {
+            if (tagIdToName.has(tag)) {
+              return tagIdToName.get(tag);
+            }
+            return tag;
+          }).filter(Boolean);
           
-          const { error: updateError } = await supabase
-            .from('notes')
-            .update({ tags: migratedTags })
-            .eq('id', note.id)
-            .eq('user_id', user.id);
-          
-          if (updateError) {
-            console.error('Error migrating note tags:', updateError);
+          if (JSON.stringify(updatedTags) !== JSON.stringify(note.tags)) {
+            await supabase
+              .from('notes')
+              .update({ tags: updatedTags })
+              .eq('id', note.id);
           }
         }
       }
     };
-    
+
     const fetchNotes = async () => {
       const { data, error } = await supabase
         .from('notes')
@@ -152,6 +147,7 @@ function NotesApp() {
         .order('updated_at', { ascending: false });
       if (!error && data) setNotes(data);
     };
+
     const fetchFolders = async () => {
       const { data, error } = await supabase
         .from('folders')
@@ -160,6 +156,7 @@ function NotesApp() {
         .order('created_at', { ascending: true });
       if (!error && data) setFolders(data);
     };
+
     const fetchTags = async () => {
       const { data, error } = await supabase
         .from('tags')
@@ -295,12 +292,10 @@ function NotesApp() {
       setModalError('');
       setShowFolderModal(false);
     } else {
-      console.error('Erro ao criar pasta:', error);
-      setModalError(error?.message || 'Erro ao criar pasta');
+      setModalError('Erro ao criar pasta');
     }
   };
 
-  // Update handleCreateTag to persist to Supabase
   const handleCreateTag = async () => {
     if (!newTagName.trim()) {
       setModalError('Nome da etiqueta não pode ser vazio');
@@ -322,138 +317,95 @@ function NotesApp() {
       setModalError('');
       setShowTagModal(false);
     } else {
-      console.error('Erro ao criar etiqueta:', error);
-      setModalError(error?.message || 'Erro ao criar etiqueta');
+      setModalError('Erro ao criar etiqueta');
     }
   };
 
   const handleDeleteFolder = async (folderId: string) => {
     if (!user) return;
     
-    try {
-      // First, move all notes from this folder to 'personal' in the database
-      const { error: updateError } = await supabase
-        .from('notes')
-        .update({ folder: 'personal' })
-        .eq('folder', folderId)
-        .eq('user_id', user.id);
-      
-      if (updateError) {
-        console.error('Erro ao mover notas:', updateError);
-        return;
-      }
-      
-      // Then delete the folder from the database
-      const { error: deleteError } = await supabase
-        .from('folders')
-        .delete()
-        .eq('id', folderId)
-        .eq('user_id', user.id);
-      
-      if (deleteError) {
-        console.error('Erro ao deletar pasta:', deleteError);
-        return;
-      }
-      
-      // Update local state
-      setNotes((prev: Note[]) => prev.map((note: Note) => 
+    // First, move all notes from this folder to 'personal'
+    const { error: updateError } = await supabase
+      .from('notes')
+      .update({ folder: 'personal' })
+      .eq('folder', folderId)
+      .eq('user_id', user.id);
+    
+    if (updateError) {
+      console.error('Error updating notes:', updateError);
+      return;
+    }
+    
+    // Then delete the folder
+    const { error: deleteError } = await supabase
+      .from('folders')
+      .delete()
+      .eq('id', folderId)
+      .eq('user_id', user.id);
+    
+    if (!deleteError) {
+      setFolders(prev => prev.filter(f => f.id !== folderId));
+      // Update notes in state
+      setNotes(prev => prev.map(note => 
         note.folder === folderId ? { ...note, folder: 'personal' } : note
       ));
-      
-      setFolders((prev: Folder[]) => prev.filter((folder: Folder) => folder.id !== folderId));
-      
-      if (selectedFolder === folderId) {
-        setSelectedFolder('all');
-      }
-    } catch (error) {
-      console.error('Erro ao deletar pasta:', error);
     }
   };
 
   const handleTagSelect = (tagId: string) => {
     const tag = tags.find(t => t.id === tagId);
-    if (!tag) return;
-    
-    setSelectedTags(prev =>
-      prev.includes(tag.name) ? prev.filter(t => t !== tag.name) : [...prev, tag.name]
-    );
+    if (tag) {
+      setSelectedTags(prev => 
+        prev.includes(tag.name) 
+          ? prev.filter(t => t !== tag.name)
+          : [...prev, tag.name]
+      );
+    }
   };
 
   const handleDeleteTag = async (tagId: string) => {
     if (!user) return;
     
-    try {
-      // Get the tag name to remove from notes
-      const tagToDelete = tags.find(tag => tag.id === tagId);
-      if (!tagToDelete) return;
-      
-      // Remove this tag from all notes in the database
-      const { data: notesToUpdate, error: fetchError } = await supabase
-        .from('notes')
-        .select('id, tags')
-        .eq('user_id', user.id)
-        .contains('tags', [tagToDelete.name]);
-      
-      if (fetchError) {
-        console.error('Erro ao buscar notas:', fetchError);
-        return;
-      }
-      
-      // Update each note to remove the tag
-      for (const note of notesToUpdate || []) {
-        const updatedTags = note.tags.filter((tag: string) => tag !== tagToDelete.name);
-        const { error: updateError } = await supabase
-          .from('notes')
-          .update({ tags: updatedTags })
-          .eq('id', note.id)
-          .eq('user_id', user.id);
-        
-        if (updateError) {
-          console.error('Erro ao atualizar nota:', updateError);
-        }
-      }
-      
-      // Delete the tag from the database
-      const { error: deleteError } = await supabase
-        .from('tags')
-        .delete()
-        .eq('id', tagId)
-        .eq('user_id', user.id);
-      
-      if (deleteError) {
-        console.error('Erro ao deletar etiqueta:', deleteError);
-        return;
-      }
-      
-      // Update local state
-      setNotes((prev: Note[]) => prev.map((note: Note) => ({
+    const tag = tags.find(t => t.id === tagId);
+    if (!tag) return;
+    
+    // Remove tag from all notes
+    const { error: updateError } = await supabase
+      .from('notes')
+      .update({ 
+        tags: supabase.sql`array_remove(tags, ${tag.name})`
+      })
+      .eq('user_id', user.id)
+      .contains('tags', [tag.name]);
+    
+    if (updateError) {
+      console.error('Error updating notes:', updateError);
+      return;
+    }
+    
+    // Delete the tag
+    const { error: deleteError } = await supabase
+      .from('tags')
+      .delete()
+      .eq('id', tagId)
+      .eq('user_id', user.id);
+    
+    if (!deleteError) {
+      setTags(prev => prev.filter(t => t.id !== tagId));
+      // Update notes in state
+      setNotes(prev => prev.map(note => ({
         ...note,
-        tags: note.tags.filter((tag: string) => tag !== tagToDelete.name)
+        tags: note.tags.filter(t => t !== tag.name)
       })));
-      
-      setTags((prev: Tag[]) => prev.filter((tag: Tag) => tag.id !== tagId));
-      setSelectedTags(prev => prev.filter(t => t !== tagToDelete.name));
-    } catch (error) {
-      console.error('Erro ao deletar etiqueta:', error);
     }
   };
-
-  const filteredNotes = notes.filter((note: Note) => {
-    if (selectedFolder !== 'all' && note.folder !== selectedFolder) return false;
-    if (selectedTags.length > 0 && !selectedTags.every(tag => note.tags.includes(tag))) return false;
-    if (searchTerm && !note.title.toLowerCase().includes(searchTerm.toLowerCase()) && !note.content.toLowerCase().includes(searchTerm.toLowerCase())) return false;
-    return true;
-  });
-
-  const pinnedNotes = filteredNotes.filter((note: Note) => note.is_pinned);
-  const unpinnedNotes = filteredNotes.filter((note: Note) => !note.is_pinned);
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     const now = new Date();
     const diffTime = Math.abs(now.getTime() - date.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays === 1) return 'Hoje';
     if (diffDays === 2) return 'Ontem';
     if (diffDays <= 7) return `${diffDays - 1} dias atrás`;
@@ -606,482 +558,485 @@ function NotesApp() {
     }
   };
 
+  // Filter notes based on selected folder and tags
+  const filteredNotes = notes.filter((note: Note) => {
+    const folderMatch = selectedFolder === 'all' || note.folder === selectedFolder;
+    const tagMatch = selectedTags.length === 0 || 
+      selectedTags.some(tag => note.tags.includes(tag));
+    const searchMatch = !searchTerm || 
+      note.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      note.content.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return folderMatch && tagMatch && searchMatch;
+  });
 
-
-  // Dynamically calculate folder/tag counts from notes
-  const foldersWithCounts = folders.map(folder => ({
-    ...folder,
-    count: notes.filter(note => note.folder === folder.id || note.folder === folder.name).length
-  }));
-  const tagsWithCounts = tags.map(tag => ({
-    ...tag,
-    count: notes.filter(note => note.tags.includes(tag.name)).length
-  }));
+  const pinnedNotes = filteredNotes.filter((note: Note) => note.is_pinned);
+  const unpinnedNotes = filteredNotes.filter((note: Note) => !note.is_pinned);
 
   return (
     <ClientOnly fallback={<div>Loading...</div>}>
       <DragDropWrapper onDragEnd={onDragEnd}>
-      <div className="app-container">
-      {/* Sidebar */}
-      <div className="sidebar">
-        <div className="sidebar-header">
-          <button className="new-note-btn" onClick={handleNewNote}>
-            <i className="ri-add-line minimalist-icon"></i>
-            Nova Nota
-          </button>
-        </div>
-
-        <div className="section-header">
-          <div className="section-title">Pastas</div>
-          <button 
-            className="add-btn"
-            onClick={() => setShowFolderModal(true)}
-            aria-label="Add new folder"
-          >
-            <i className="ri-add-line minimalist-icon"></i>
-          </button>
-        </div>
-        
-        <Droppable droppableId="all-notes">
-          {(provided, snapshot) => (
-            <div
-              ref={provided.innerRef}
-              {...provided.droppableProps}
-              className={`sidebar-item ${snapshot.isDraggingOver ? 'bg-blue-800 border-blue-500' : ''}`}
-              onClick={() => setSelectedFolder('all')}
-            >
-              <div className="sidebar-item-left">
-                <i className="ri-file-text-line minimalist-icon"></i>
-                <span>Todas as Notas</span>
-              </div>
-              <div className="badge">{notes.length}</div>
-              {provided.placeholder}
-            </div>
-          )}
-        </Droppable>
-        
-        {foldersWithCounts.map((folder: Folder) => (
-          <Droppable key={folder.id} droppableId={`folder-${folder.id}`}>
-            {(provided, snapshot) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className={`sidebar-item ${selectedFolder === folder.id ? 'selected' : ''} ${snapshot.isDraggingOver ? 'bg-blue-800 border-blue-500' : ''}`}
-                onClick={() => setSelectedFolder(folder.id)}
-              >
-                <div className="sidebar-item-left">
-                  <i className="ri-folder-line minimalist-icon"></i>
-                  <span>{folder.name}</span>
-                </div>
-                <div className="sidebar-item-right">
-                  <div className="badge">{folder.count}</div>
-                  <button 
-                    className="delete-btn"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteFolder(folder.id);
-                    }}
-                    aria-label={`Delete folder ${folder.name}`}
-                  >
-                    <i className="ri-delete-bin-line minimalist-icon"></i>
-                  </button>
-                </div>
-                {provided.placeholder}
-              </div>
-            )}
-          </Droppable>
-        ))}
-
-        <div className="section-header">
-          <div className="section-title">Etiquetas</div>
-          <button 
-            className="add-btn"
-            onClick={() => setShowTagModal(true)}
-            aria-label="Add new tag"
-          >
-            <i className="ri-add-line minimalist-icon"></i>
-          </button>
-        </div>
-        
-        {tagsWithCounts.map((tag: Tag) => (
-          <div 
-            key={tag.id} 
-            className={`sidebar-item ${selectedTags.includes(tag.name) ? 'selected' : ''}`}
-            onClick={() => handleTagSelect(tag.id)}
-          >
-            <div className="sidebar-item-left">
-              <i className="ri-price-tag-3-line minimalist-icon"></i>
-              <span>#{tag.name}</span>
-            </div>
-            <div className="sidebar-item-right">
-              <div className="badge">{tag.count}</div>
-              <button 
-                className="delete-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteTag(tag.id);
-                }}
-                aria-label={`Delete tag ${tag.name}`}
-              >
-                <i className="ri-delete-bin-line minimalist-icon"></i>
+        <div className="app-container">
+          {/* Sidebar */}
+          <div className="sidebar">
+            <div className="sidebar-header">
+              <button className="new-note-btn" onClick={handleNewNote}>
+                <i className="ri-add-line minimalist-icon"></i>
+                Nova Nota
               </button>
             </div>
-          </div>
-        ))}
-      </div>
 
-      <div className="main-content-area">
-        {/* Top Bar */}
-        <div className="top-bar">
-          <div className="app-title">Scribe</div>
-          <div className="top-bar-actions">
-            <div className="user-info">
-              <span className="user-email">{user?.email}</span>
+            <div className="section-header">
+              <div className="section-title">Pastas</div>
+              <button 
+                className="add-btn"
+                onClick={() => setShowFolderModal(true)}
+                aria-label="Add new folder"
+              >
+                <i className="ri-add-line minimalist-icon"></i>
+              </button>
             </div>
-            <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
-              <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
-            </button>
             
-            <button className="signout-btn" onClick={handleSignOut} aria-label="Sign out">
-              <i className="ri-logout-box-line"></i>
-            </button>
-          </div>
-        </div>
-
-        <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-          {/* Middle Column */}
-          <div className="middle-column">
-            <div className="search-container">
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Pesquisar notas..."
-                value={searchTerm}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
-              />
-            </div>
-
-            <Droppable droppableId="notes-list">
-              {(provided) => (
-                <div 
-                  className="notes-container"
+            <Droppable droppableId="all-notes">
+              {(provided, snapshot) => (
+                <div
                   ref={provided.innerRef}
                   {...provided.droppableProps}
-                  onScroll={handleScroll}
+                  className={`sidebar-item ${snapshot.isDraggingOver ? 'bg-blue-800 border-blue-500' : ''}`}
+                  onClick={() => setSelectedFolder('all')}
                 >
-              {pinnedNotes.length > 0 && (
-                <div className="notes-section">
-                  <div className="notes-section-title">Notas Fixadas</div>
-                  {pinnedNotes.map((note: Note, index: number) => (
-                    <Draggable key={note.id} draggableId={note.id} index={index}>
-                      {(provided, snapshot) => (
-                        <div 
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          data-note-id={note.id}
-                          className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
-                          onClick={() => handleNoteSelect(note.id)}
-                        >
-                          {/* Drag Handle */}
-                          <div
-                            {...provided.dragHandleProps}
-                            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
-                          >
-                            <i className="ri-drag-move-line text-sm"></i>
-                          </div>
-                      <div className="note-header">
-                        <div className="note-title">{note.title || 'Sem título'}</div>
-                        <div className="note-date">{formatDate(note.updated_at)}</div>
-                      </div>
-                      <div className="note-preview">{note.content}</div>
-                      {note.tags.length > 0 && (
-                        <div className="note-tags">
-                          {note.tags.map((tag: string) => (
-                            <span key={tag} className="tag-pill">#{tag}</span>
-                          ))}
-                        </div>
-                      )}
-                      <div className="note-actions">
-                        <button 
-                          className="action-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTogglePin(note.id);
-                          }}
-                          aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
-                        >
-                          <i className="ri-pushpin-fill minimalist-icon"></i>
-                        </button>
-                        <button 
-                          className="action-btn"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteNote(note.id);
-                          }}
-                          aria-label="Delete note"
-                        >
-                          <i className="ri-delete-bin-line minimalist-icon"></i>
-                        </button>
-                      </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
+                  <div className="sidebar-item-left">
+                    <i className="ri-file-text-line minimalist-icon"></i>
+                    <span>Todas as Notas</span>
+                  </div>
+                  <div className="badge">{notes.length}</div>
+                  {provided.placeholder}
                 </div>
               )}
-
-              <div className="notes-section">
-                <div className="notes-section-title">Todas as Notas</div>
-                {unpinnedNotes.map((note: Note, index: number) => (
-                  <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
-                    {(provided, snapshot) => (
-                      <div 
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        data-note-id={note.id}
-                        className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
-                        onClick={() => handleNoteSelect(note.id)}
-                      >
-                        {/* Drag Handle */}
-                        <div
-                          {...provided.dragHandleProps}
-                          className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
-                        >
-                          <i className="ri-drag-move-line text-sm"></i>
-                        </div>
-                    <div className="note-header">
-                      <div className="note-title">{note.title || 'Sem título'}</div>
-                      <div className="note-date">{formatDate(note.updated_at)}</div>
+            </Droppable>
+            
+            {foldersWithCounts.map((folder: Folder) => (
+              <Droppable key={folder.id} droppableId={`folder-${folder.id}`}>
+                {(provided, snapshot) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className={`sidebar-item ${selectedFolder === folder.id ? 'selected' : ''} ${snapshot.isDraggingOver ? 'bg-blue-800 border-blue-500' : ''}`}
+                    onClick={() => setSelectedFolder(folder.id)}
+                  >
+                    <div className="sidebar-item-left">
+                      <i className="ri-folder-line minimalist-icon"></i>
+                      <span>{folder.name}</span>
                     </div>
-                    <div className="note-preview">{note.content}</div>
-                    {note.tags.length > 0 && (
-                      <div className="note-tags">
-                        {note.tags.map((tag: string) => (
-                          <span key={tag} className="tag-pill">#{tag}</span>
-                        ))}
-                      </div>
-                    )}
-                    <div className="note-actions">
+                    <div className="sidebar-item-right">
+                      <div className="badge">{folder.count}</div>
                       <button 
-                        className="action-btn"
+                        className="delete-btn"
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleTogglePin(note.id);
+                          handleDeleteFolder(folder.id);
                         }}
-                        aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
-                      >
-                        <i className="ri-pushpin-fill minimalist-icon"></i>
-                      </button>
-                      <button 
-                        className="action-btn"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteNote(note.id);
-                        }}
-                        aria-label="Delete note"
+                        aria-label={`Delete folder ${folder.name}`}
                       >
                         <i className="ri-delete-bin-line minimalist-icon"></i>
                       </button>
                     </div>
-                        </div>
-                      )}
-                    </Draggable>
-                ))}
-                  {provided.placeholder}
-              </div>
-              
-              {/* Scroll to Top Button */}
-              {showScrollTop && (
-                <button
-                  className="scroll-to-top-btn"
-                  onClick={scrollToTop}
-                  aria-label="Scroll to top"
-                >
-                  <i className="ri-arrow-up-line"></i>
-                </button>
-              )}
-            </Droppable>
-          </div>
-
-          {/* Right Pane */}
-          <div className="right-pane">
-            {currentNote ? (
-              <div className="note-editor">
-                <div className="editor-header">
-                  <div className="editor-title">Editor de Notas</div>
-                  <div className="editor-actions">
-                    {isEditing ? (
-                      <>
-                        <button className="editor-btn" onClick={handleCancelEdit}>
-                          Cancelar
-                        </button>
-                        <button className="editor-btn primary" onClick={handleSaveNote}>
-                          Salvar
-                        </button>
-                      </>
-                    ) : (
-                      <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
-                        Editar
-                      </button>
-                    )}
+                    {provided.placeholder}
                   </div>
+                )}
+              </Droppable>
+            ))}
+
+            <div className="section-header">
+              <div className="section-title">Etiquetas</div>
+              <button 
+                className="add-btn"
+                onClick={() => setShowTagModal(true)}
+                aria-label="Add new tag"
+              >
+                <i className="ri-add-line minimalist-icon"></i>
+              </button>
+            </div>
+            
+            {tagsWithCounts.map((tag: Tag) => (
+              <div 
+                key={tag.id} 
+                className={`sidebar-item ${selectedTags.includes(tag.name) ? 'selected' : ''}`}
+                onClick={() => handleTagSelect(tag.id)}
+              >
+                <div className="sidebar-item-left">
+                  <i className="ri-price-tag-3-line minimalist-icon"></i>
+                  <span>#{tag.name}</span>
                 </div>
-                <div className="editor-content" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                  {isEditing ? (
-                    <>
-                      <input
-                        type="text"
-                        className="editor-input"
-                        value={currentNote.title}
-                        onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
-                        placeholder="Título da nota..."
-                      />
-                      <QuillEditor
-                        value={currentNote.content}
-                        onChange={(content) => setCurrentNote({ ...currentNote, content })}
-                        placeholder="Comece a escrever sua nota..."
-                        style={{ height: '40vh', display: 'flex', flexDirection: 'column' }}
-                      />
-                      <div className="editor-tags">
-                        <div className="editor-tags-label">Etiquetas:</div>
-                        <div className="editor-tags-list">
-                          {tags.length === 0 && (
-                            <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
-                          )}
-                          {tags.map((tag: Tag) => (
-                            <button
-                              key={tag.id}
-                              type="button"
-                              className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
-                              onClick={() => {
-                                if (currentNote.tags.includes(tag.name)) {
-                                  setCurrentNote({
-                                    ...currentNote,
-                                    tags: currentNote.tags.filter(t => t !== tag.name)
-                                  });
-                                } else {
-                                  setCurrentNote({
-                                    ...currentNote,
-                                    tags: [...currentNote.tags, tag.name]
-                                  });
-                                }
-                              }}
-                            >
-                              {tag.name}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
-                      <div
-                        className="editor-textarea"
-                        style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}
-                        dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
-                      />
-                      {currentNote.tags.length > 0 && (
-                        <div className="note-tags" style={{ marginTop: '16px' }}>
-                          {currentNote.tags.map((tagName: string) => (
-                            <span key={tagName} className="tag-pill">#{tagName}</span>
+                <div className="sidebar-item-right">
+                  <div className="badge">{tag.count}</div>
+                  <button 
+                    className="delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteTag(tag.id);
+                    }}
+                    aria-label={`Delete tag ${tag.name}`}
+                  >
+                    <i className="ri-delete-bin-line minimalist-icon"></i>
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="main-content-area">
+            {/* Top Bar */}
+            <div className="top-bar">
+              <div className="app-title">Scribe</div>
+              <div className="top-bar-actions">
+                <div className="user-info">
+                  <span className="user-email">{user?.email}</span>
+                </div>
+                <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
+                  <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
+                </button>
+                
+                <button className="signout-btn" onClick={handleSignOut} aria-label="Sign out">
+                  <i className="ri-logout-box-line"></i>
+                </button>
+              </div>
+            </div>
+
+            <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
+              {/* Middle Column */}
+              <div className="middle-column">
+                <div className="search-container">
+                  <input
+                    type="text"
+                    className="search-input"
+                    placeholder="Pesquisar notas..."
+                    value={searchTerm}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+
+                <Droppable droppableId="notes-list">
+                  {(provided) => (
+                    <div 
+                      className="notes-container"
+                      ref={provided.innerRef}
+                      {...provided.droppableProps}
+                      onScroll={handleScroll}
+                    >
+                      {pinnedNotes.length > 0 && (
+                        <div className="notes-section">
+                          <div className="notes-section-title">Notas Fixadas</div>
+                          {pinnedNotes.map((note: Note, index: number) => (
+                            <Draggable key={note.id} draggableId={note.id} index={index}>
+                              {(provided, snapshot) => (
+                                <div 
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  data-note-id={note.id}
+                                  className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                                  onClick={() => handleNoteSelect(note.id)}
+                                >
+                                  {/* Drag Handle */}
+                                  <div
+                                    {...provided.dragHandleProps}
+                                    className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
+                                  >
+                                    <i className="ri-drag-move-line text-sm"></i>
+                                  </div>
+                                  <div className="note-header">
+                                    <div className="note-title">{note.title || 'Sem título'}</div>
+                                    <div className="note-date">{formatDate(note.updated_at)}</div>
+                                  </div>
+                                  <div className="note-preview">{note.content}</div>
+                                  {note.tags.length > 0 && (
+                                    <div className="note-tags">
+                                      {note.tags.map((tag: string) => (
+                                        <span key={tag} className="tag-pill">#{tag}</span>
+                                      ))}
+                                    </div>
+                                  )}
+                                  <div className="note-actions">
+                                    <button 
+                                      className="action-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleTogglePin(note.id);
+                                      }}
+                                      aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
+                                    >
+                                      <i className="ri-pushpin-fill minimalist-icon"></i>
+                                    </button>
+                                    <button 
+                                      className="action-btn"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteNote(note.id);
+                                      }}
+                                      aria-label="Delete note"
+                                    >
+                                      <i className="ri-delete-bin-line minimalist-icon"></i>
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
                           ))}
                         </div>
                       )}
-                    </>
+
+                      <div className="notes-section">
+                        <div className="notes-section-title">Todas as Notas</div>
+                        {unpinnedNotes.map((note: Note, index: number) => (
+                          <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
+                            {(provided, snapshot) => (
+                              <div 
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                data-note-id={note.id}
+                                className={`note-card relative group ${selectedNote === note.id ? 'selected' : ''} ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                                onClick={() => handleNoteSelect(note.id)}
+                              >
+                                {/* Drag Handle */}
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
+                                >
+                                  <i className="ri-drag-move-line text-sm"></i>
+                                </div>
+                                <div className="note-header">
+                                  <div className="note-title">{note.title || 'Sem título'}</div>
+                                  <div className="note-date">{formatDate(note.updated_at)}</div>
+                                </div>
+                                <div className="note-preview">{note.content}</div>
+                                {note.tags.length > 0 && (
+                                  <div className="note-tags">
+                                    {note.tags.map((tag: string) => (
+                                      <span key={tag} className="tag-pill">#{tag}</span>
+                                    ))}
+                                  </div>
+                                )}
+                                <div className="note-actions">
+                                  <button 
+                                    className="action-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleTogglePin(note.id);
+                                    }}
+                                    aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
+                                  >
+                                    <i className="ri-pushpin-fill minimalist-icon"></i>
+                                  </button>
+                                  <button 
+                                    className="action-btn"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleDeleteNote(note.id);
+                                    }}
+                                    aria-label="Delete note"
+                                  >
+                                    <i className="ri-delete-bin-line minimalist-icon"></i>
+                                  </button>
+                                </div>
+                              </div>
+                            )}
+                          </Draggable>
+                        ))}
+                      </div>
+                      
+                      {/* Scroll to Top Button */}
+                      {showScrollTop && (
+                        <button
+                          className="scroll-to-top-btn"
+                          onClick={scrollToTop}
+                          aria-label="Scroll to top"
+                        >
+                          <i className="ri-arrow-up-line"></i>
+                        </button>
+                      )}
+                      {provided.placeholder}
+                    </div>
                   )}
+                </Droppable>
+              </div>
+
+              {/* Right Pane */}
+              <div className="right-pane">
+                {currentNote ? (
+                  <div className="note-editor">
+                    <div className="editor-header">
+                      <div className="editor-title">Editor de Notas</div>
+                      <div className="editor-actions">
+                        {isEditing ? (
+                          <>
+                            <button className="editor-btn" onClick={handleCancelEdit}>
+                              Cancelar
+                            </button>
+                            <button className="editor-btn primary" onClick={handleSaveNote}>
+                              Salvar
+                            </button>
+                          </>
+                        ) : (
+                          <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
+                            Editar
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="editor-content" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+                      {isEditing ? (
+                        <>
+                          <input
+                            type="text"
+                            className="editor-input"
+                            value={currentNote.title}
+                            onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                            placeholder="Título da nota..."
+                          />
+                          <QuillEditor
+                            value={currentNote.content}
+                            onChange={(content) => setCurrentNote({ ...currentNote, content })}
+                            placeholder="Comece a escrever sua nota..."
+                            style={{ height: '40vh', display: 'flex', flexDirection: 'column' }}
+                          />
+                          <div className="editor-tags">
+                            <div className="editor-tags-label">Etiquetas:</div>
+                            <div className="editor-tags-list">
+                              {tags.length === 0 && (
+                                <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
+                              )}
+                              {tags.map((tag: Tag) => (
+                                <button
+                                  key={tag.id}
+                                  type="button"
+                                  className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
+                                  onClick={() => {
+                                    if (currentNote.tags.includes(tag.name)) {
+                                      setCurrentNote({
+                                        ...currentNote,
+                                        tags: currentNote.tags.filter(t => t !== tag.name)
+                                      });
+                                    } else {
+                                      setCurrentNote({
+                                        ...currentNote,
+                                        tags: [...currentNote.tags, tag.name]
+                                      });
+                                    }
+                                  }}
+                                >
+                                  {tag.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <>
+                          <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
+                          <div
+                            className="editor-textarea"
+                            style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}
+                            dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
+                          />
+                          {currentNote.tags.length > 0 && (
+                            <div className="note-tags" style={{ marginTop: '16px' }}>
+                              {currentNote.tags.map((tagName: string) => (
+                                <span key={tagName} className="tag-pill">#{tagName}</span>
+                              ))}
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="empty-state">
+                    <div className="empty-icon">📝</div>
+                    <div className="empty-title">Editor de Notas</div>
+                    <div className="empty-subtitle"></div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Folder Creation Modal */}
+        {showFolderModal && (
+          <div className="modal-overlay" onClick={() => setShowFolderModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Criar Nova Pasta</h3>
+                <button 
+                  className="modal-close"
+                  onClick={() => setShowFolderModal(false)}
+                  aria-label="Close modal"
+                >
+                  <i className="ri-close-line"></i>
+                </button>
+              </div>
+              <div className="modal-content">
+                <input
+                  type="text"
+                  className="modal-input"
+                  placeholder="Digite o nome da pasta..."
+                  value={newFolderName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNewFolderName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
+                />
+                {modalError && <div className="modal-error">{modalError}</div>}
+                <div className="modal-actions">
+                  <button className="modal-btn" onClick={() => setShowFolderModal(false)}>
+                    Cancelar
+                  </button>
+                  <button className="modal-btn primary" onClick={handleCreateFolder}>
+                    Criar
+                  </button>
                 </div>
               </div>
-            ) : (
-              <div className="empty-state">
-                <div className="empty-icon">📝</div>
-                <div className="empty-title">Editor de Notas</div>
-                <div className="empty-subtitle"></div>
+            </div>
+          </div>
+        )}
+
+        {/* Tag Creation Modal */}
+        {showTagModal && (
+          <div className="modal-overlay" onClick={() => setShowTagModal(false)}>
+            <div className="modal" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h3>Criar Nova Etiqueta</h3>
+                <button 
+                  className="modal-close"
+                  onClick={() => setShowTagModal(false)}
+                  aria-label="Close modal"
+                >
+                  <i className="ri-close-line"></i>
+                </button>
               </div>
-            )}
+              <div className="modal-content">
+                <input
+                  type="text"
+                  className="modal-input"
+                  placeholder="Digite o nome da etiqueta..."
+                  value={newTagName}
+                  onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
+                />
+                {modalError && <div className="modal-error">{modalError}</div>}
+                <div className="modal-actions">
+                  <button className="modal-btn" onClick={() => setShowTagModal(false)}>
+                    Cancelar
+                  </button>
+                  <button className="modal-btn primary" onClick={handleCreateTag}>
+                    Criar
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Folder Creation Modal */}
-      {showFolderModal && (
-        <div className="modal-overlay" onClick={() => setShowFolderModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-                              <h3>Criar Nova Pasta</h3>
-              <button 
-                className="modal-close"
-                onClick={() => setShowFolderModal(false)}
-                aria-label="Close modal"
-              >
-                <i className="ri-close-line"></i>
-              </button>
-            </div>
-            <div className="modal-content">
-              <input
-                type="text"
-                className="modal-input"
-                placeholder="Digite o nome da pasta..."
-                value={newFolderName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewFolderName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleCreateFolder()}
-                autoFocus
-              />
-              {modalError && <div className="modal-error">{modalError}</div>}
-            </div>
-            <div className="modal-actions">
-              <button className="modal-btn" onClick={() => setShowFolderModal(false)}>
-                Cancelar
-              </button>
-              <button className="modal-btn primary" onClick={handleCreateFolder}>
-                Criar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Tag Creation Modal */}
-      {showTagModal && (
-        <div className="modal-overlay" onClick={() => setShowTagModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3>Criar Nova Etiqueta</h3>
-              <button 
-                className="modal-close"
-                onClick={() => setShowTagModal(false)}
-                aria-label="Close modal"
-              >
-                <i className="ri-close-line"></i>
-              </button>
-            </div>
-            <div className="modal-content">
-              <input
-                type="text"
-                className="modal-input"
-                placeholder="Digite o nome da etiqueta..."
-                value={newTagName}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
-                autoFocus
-              />
-              {modalError && <div className="modal-error">{modalError}</div>}
-            </div>
-            <div className="modal-actions">
-              <button className="modal-btn" onClick={() => setShowTagModal(false)}>
-                Cancelar
-              </button>
-              <button className="modal-btn primary" onClick={handleCreateTag}>
-                Criar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* AI Assistant */}
-      <AIAssistant onAddToNote={handleAddAIToNote} />
-          </div>
+        {/* AI Assistant */}
+        <AIAssistant onAddToNote={handleAddAIToNote} />
       </DragDropWrapper>
       
       {/* Toast Notifications */}
