@@ -15,12 +15,19 @@ import AIAssistant from '../components/AI/AIAssistant';
 import QuillEditor from '../components/ui/QuillEditor';
 import DragDropWrapper from '../components/ui/DragDropWrapper';
 import ClientOnly from '../components/ui/ClientOnly';
+import Toast from '../components/ui/Toast';
+import DragDropHint from '../components/ui/DragDropHint';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
 
 // Import types for drag and drop
 import type { DropResult } from 'react-beautiful-dnd';
+
+// Dynamic import for Droppable
+const Droppable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Droppable })), {
+  ssr: false
+});
 
 
 
@@ -74,6 +81,12 @@ function NotesApp() {
   // Remove hardcoded folders/tags from state
   const [folders, setFolders] = useState<Folder[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
+  
+  // Toast notification state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
 
 
   // Fetch notes, folders, and tags from Supabase on load
@@ -530,34 +543,61 @@ function NotesApp() {
     }
 
     const noteId = draggableId;
-    const folderId = destination.droppableId;
 
-    // If a note is dropped into a folder
-    if (destination.droppableId.startsWith('folder-')) {
-      const folderId = destination.droppableId.replace('folder-', '');
-      
-      // Update note in the database
-      const { data, error } = await supabase
-        .from('notes')
-        .update({ folder: folderId })
-        .eq('id', noteId)
-        .eq('user_id', user?.id)
-        .select();
+    try {
+      // Handle different drop destinations
+      if (destination.droppableId === 'all-notes') {
+        // Move note to "All Notes" (personal folder)
+        const { data, error } = await supabase
+          .from('notes')
+          .update({ folder: 'personal' })
+          .eq('id', noteId)
+          .eq('user_id', user?.id)
+          .select();
 
-      if (error) {
-        console.error('Error updating note folder:', error);
-        // Handle error (e.g., show a notification)
-        return;
+        if (error) {
+          console.error('Error moving note to All Notes:', error);
+          setToast({ message: 'Failed to move note', type: 'error' });
+          return;
+        }
+
+        if (data) {
+          setNotes(prev =>
+            prev.map(note =>
+              note.id === noteId ? { ...note, folder: 'personal' } : note
+            )
+          );
+          setToast({ message: 'Note moved to All Notes', type: 'success' });
+        }
+      } else if (destination.droppableId.startsWith('folder-')) {
+        // Move note to specific folder
+        const folderId = destination.droppableId.replace('folder-', '');
+        
+        const { data, error } = await supabase
+          .from('notes')
+          .update({ folder: folderId })
+          .eq('id', noteId)
+          .eq('user_id', user?.id)
+          .select();
+
+        if (error) {
+          console.error('Error moving note to folder:', error);
+          setToast({ message: 'Failed to move note', type: 'error' });
+          return;
+        }
+
+        if (data) {
+          const folderName = folders.find(f => f.id === folderId)?.name || 'Unknown Folder';
+          setNotes(prev =>
+            prev.map(note =>
+              note.id === noteId ? { ...note, folder: folderId } : note
+            )
+          );
+          setToast({ message: `Note moved to ${folderName}`, type: 'success' });
+        }
       }
-
-      if (data) {
-        // Update local state
-        setNotes(prev =>
-          prev.map(note =>
-            note.id === noteId ? { ...note, folder: folderId } : note
-          )
-        );
-      }
+    } catch (error) {
+      console.error('Error during drag and drop operation:', error);
     }
   };
 
@@ -597,38 +637,54 @@ function NotesApp() {
           </button>
         </div>
         
-        <div className="sidebar-item" onClick={() => setSelectedFolder('all')}>
-          <div className="sidebar-item-left">
-            <i className="ri-file-text-line minimalist-icon"></i>
-            <span>Todas as Notas</span>
-          </div>
-          <div className="badge">{notes.length}</div>
-        </div>
+        <Droppable droppableId="all-notes">
+          {(provided, snapshot) => (
+            <div
+              ref={provided.innerRef}
+              {...provided.droppableProps}
+              className={`sidebar-item ${snapshot.isDraggingOver ? 'bg-blue-800 border-blue-500' : ''}`}
+              onClick={() => setSelectedFolder('all')}
+            >
+              <div className="sidebar-item-left">
+                <i className="ri-file-text-line minimalist-icon"></i>
+                <span>Todas as Notas</span>
+              </div>
+              <div className="badge">{notes.length}</div>
+              {provided.placeholder}
+            </div>
+          )}
+        </Droppable>
         
         {foldersWithCounts.map((folder: Folder) => (
-          <div 
-            key={folder.id} 
-            className={`sidebar-item ${selectedFolder === folder.id ? 'selected' : ''}`}
-            onClick={() => setSelectedFolder(folder.id)}
-          >
-            <div className="sidebar-item-left">
-              <i className="ri-folder-line minimalist-icon"></i>
-              <span>{folder.name}</span>
-            </div>
-            <div className="sidebar-item-right">
-              <div className="badge">{folder.count}</div>
-              <button 
-                className="delete-btn"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleDeleteFolder(folder.id);
-                }}
-                aria-label={`Delete folder ${folder.name}`}
+          <Droppable key={folder.id} droppableId={`folder-${folder.id}`}>
+            {(provided, snapshot) => (
+              <div
+                ref={provided.innerRef}
+                {...provided.droppableProps}
+                className={`sidebar-item ${selectedFolder === folder.id ? 'selected' : ''} ${snapshot.isDraggingOver ? 'bg-blue-800 border-blue-500' : ''}`}
+                onClick={() => setSelectedFolder(folder.id)}
               >
-                <i className="ri-delete-bin-line minimalist-icon"></i>
-              </button>
-            </div>
-          </div>
+                <div className="sidebar-item-left">
+                  <i className="ri-folder-line minimalist-icon"></i>
+                  <span>{folder.name}</span>
+                </div>
+                <div className="sidebar-item-right">
+                  <div className="badge">{folder.count}</div>
+                  <button 
+                    className="delete-btn"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteFolder(folder.id);
+                    }}
+                    aria-label={`Delete folder ${folder.name}`}
+                  >
+                    <i className="ri-delete-bin-line minimalist-icon"></i>
+                  </button>
+                </div>
+                {provided.placeholder}
+              </div>
+            )}
+          </Droppable>
         ))}
 
         <div className="section-header">
@@ -994,6 +1050,18 @@ function NotesApp() {
       <AIAssistant onAddToNote={handleAddAIToNote} />
           </div>
       </DragDropWrapper>
+      
+      {/* Toast Notifications */}
+      {toast && (
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
+      
+      {/* Drag & Drop Hint */}
+      <DragDropHint />
     </ClientOnly>
   );
 }

@@ -62,16 +62,22 @@ export default function NotesList({
 
   const renderNote = (note: Note, index: number) => (
     <Draggable key={note.id} draggableId={note.id} index={index}>
-      {(provided) => (
+      {(provided, snapshot) => (
         <div
           ref={provided.innerRef}
           {...provided.draggableProps}
-          {...provided.dragHandleProps}
           onClick={() => onNoteSelect(note.id)}
-          className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors ${
+          className={`p-4 border-b border-gray-200 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-all duration-200 ${
             selectedNote === note.id ? 'bg-blue-50 dark:bg-blue-900/20 border-l-4 border-l-blue-500' : ''
-          }`}
+          } ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
         >
+          {/* Drag Handle */}
+          <div
+            {...provided.dragHandleProps}
+            className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          >
+            <i className="ri-drag-move-line text-sm"></i>
+          </div>
       <div className="flex items-start justify-between mb-2">
         <div className="flex items-center space-x-2">
           {note.isPinned && (

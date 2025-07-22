@@ -5,6 +5,66 @@
 /* ReactQuill CSS - Imported globally to avoid SSR issues */
 @import 'react-quill/dist/quill.snow.css';
 
+/* Drag and Drop Styles */
+.sidebar-item {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.sidebar-item:hover {
+  transform: translateX(2px);
+}
+
+.sidebar-item.bg-blue-800 {
+  background-color: rgba(59, 130, 246, 0.2) !important;
+  border: 2px dashed #3b82f6 !important;
+  border-radius: 8px;
+}
+
+.note-card {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.note-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.note-card.dragging {
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  z-index: 10;
+}
+
+/* Drag handle styles */
+.drag-handle {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.note-card:hover .drag-handle {
+  opacity: 1;
+}
+
+/* Drop zone indicators */
+.drop-zone-active {
+  background-color: rgba(59, 130, 246, 0.1);
+  border: 2px dashed #3b82f6;
+  border-radius: 8px;
+}
+
+/* Animation for successful drop */
+@keyframes dropSuccess {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+  100% { transform: scale(1); }
+}
+
+.drop-success {
+  animation: dropSuccess 0.3s ease;
+}
+
 /* CSS Variables for consistent theming */
 :root {
   --bg-primary: #1e2130;
