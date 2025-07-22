@@ -12,27 +12,17 @@ import NotesList from '../components/Notes/NotesList';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import AIAssistant from '../components/AI/AIAssistant';
+import QuillEditor from '../components/ui/QuillEditor';
+import DragDropWrapper from '../components/ui/DragDropWrapper';
+import ClientOnly from '../components/ui/ClientOnly';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
 
-// Dynamic imports for client-side only components
-const ReactQuill = dynamic(() => import('react-quill'), {
-  ssr: false,
-  loading: () => <div style={{ height: '40vh', border: '1px solid #ccc', padding: '10px' }}>Loading editor...</div>
-});
-
-const DragDropContext = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.DragDropContext })), {
-  ssr: false
-});
-
 // Import types for drag and drop
 import type { DropResult } from 'react-beautiful-dnd';
 
-// Import CSS for ReactQuill
-if (typeof window !== 'undefined') {
-  require('react-quill/dist/quill.snow.css');
-}
+
 
 
 interface Note {
@@ -63,17 +53,6 @@ interface Tag {
 function NotesApp() {
   const { user, signOut } = useAuth();
   const router = useRouter();
-  
-  // Client-side only rendering
-  const [isClient, setIsClient] = useState(false);
-  
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-  
-  if (!isClient) {
-    return <div>Loading...</div>;
-  }
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
@@ -595,8 +574,9 @@ function NotesApp() {
   }));
 
   return (
-    <DragDropContext onDragEnd={onDragEnd}>
-    <div className="app-container">
+    <ClientOnly fallback={<div>Loading...</div>}>
+      <DragDropWrapper onDragEnd={onDragEnd}>
+      <div className="app-container">
       {/* Sidebar */}
       <div className="sidebar">
         <div className="sidebar-header">
@@ -867,20 +847,11 @@ function NotesApp() {
                         onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
                         placeholder="Título da nota..."
                       />
-                      <ReactQuill
+                      <QuillEditor
                         value={currentNote.content}
                         onChange={(content) => setCurrentNote({ ...currentNote, content })}
                         placeholder="Comece a escrever sua nota..."
                         style={{ height: '40vh', display: 'flex', flexDirection: 'column' }}
-                        modules={{
-                          toolbar: [
-                            [{ 'header': [1, 2, false] }],
-                            ['bold', 'italic', 'underline', 'strike', 'blockquote'],
-                            [{'list': 'ordered'}, {'list': 'bullet'}, {'indent': '-1'}, {'indent': '+1'}],
-                            ['link', 'image'],
-                            ['clean']
-                          ],
-                        }}
                       />
                       <div className="editor-tags">
                         <div className="editor-tags-label">Etiquetas:</div>
@@ -1021,8 +992,9 @@ function NotesApp() {
 
       {/* AI Assistant */}
       <AIAssistant onAddToNote={handleAddAIToNote} />
-    </div>
-    </DragDropContext>
+          </div>
+      </DragDropWrapper>
+    </ClientOnly>
   );
 }
 
