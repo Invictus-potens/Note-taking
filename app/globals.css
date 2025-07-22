@@ -47,6 +47,23 @@
   opacity: 1;
 }
 
+/* Enhanced drag handle visibility */
+.group:hover .opacity-0 {
+  opacity: 1 !important;
+}
+
+/* Make drag handle more prominent */
+.group:hover .cursor-grab {
+  background-color: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+  padding: 2px;
+}
+
+/* Dark mode adjustments */
+.dark .group:hover .cursor-grab {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
 /* Drop zone indicators */
 .drop-zone-active {
   background-color: rgba(59, 130, 246, 0.1);
