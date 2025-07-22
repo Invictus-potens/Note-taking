@@ -23,6 +23,7 @@ create table public.tags (
   id uuid not null default gen_random_uuid (),
   name text not null,
   user_id uuid null,
+  color text null default '#3b82f6',
   created_at timestamp with time zone null default now(),
   constraint tags_pkey primary key (id),
   constraint tags_user_id_fkey foreign key (user_id) references users (id) on delete cascade
@@ -47,3 +48,6 @@ create table public.notes (
 create index if not exists idx_notes_user_id on public.notes using btree (user_id) tablespace pg_default;
 
 create extension if not exists "uuid-ossp"; // in case of the error  - extensions.uuid_generate_v4().
+
+-- Migration to add color column to existing tags table (run this if the table already exists)
+-- ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS color text null default '#3b82f6';

@@ -57,6 +57,7 @@ interface Tag {
   id: string;
   name: string;
   count: number;
+  color?: string;
 }
 
 function NotesApp() {
@@ -83,7 +84,22 @@ function NotesApp() {
   const [showTagModal, setShowTagModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newTagName, setNewTagName] = useState('');
+  const [newTagColor, setNewTagColor] = useState('#3b82f6'); // Default blue color
   const [modalError, setModalError] = useState('');
+
+  // Predefined colors for tags
+  const tagColors = [
+    '#ef4444', // red
+    '#f97316', // orange
+    '#eab308', // yellow
+    '#22c55e', // green
+    '#06b6d4', // cyan
+    '#3b82f6', // blue
+    '#8b5cf6', // violet
+    '#ec4899', // pink
+    '#6b7280', // gray
+    '#84cc16', // lime
+  ];
 
   const [notes, setNotes] = useState<Note[]>([]);
   // Remove hardcoded folders/tags from state
@@ -381,11 +397,12 @@ function NotesApp() {
     }
     const { data, error } = await supabase
       .from('tags')
-      .insert([{ user_id: user.id, name: newTagName.trim() }])
+      .insert([{ user_id: user.id, name: newTagName.trim(), color: newTagColor }])
       .select();
     if (!error && data && data[0]) {
       setTags(prev => [...prev, data[0]]);
       setNewTagName('');
+      setNewTagColor('#3b82f6'); // Reset color to default
       setModalError('');
       setShowTagModal(false);
     } else {
@@ -812,7 +829,10 @@ function NotesApp() {
                 onClick={() => handleTagSelect(tag.id)}
               >
                 <div className="sidebar-item-left">
-                  <i className="ri-price-tag-3-line minimalist-icon"></i>
+                  <i 
+                    className="ri-price-tag-3-fill minimalist-icon" 
+                    style={{ color: tag.color || '#3b82f6' }}
+                  ></i>
                   <span>#{tag.name}</span>
                 </div>
                 <div className="sidebar-item-right">
@@ -909,9 +929,22 @@ function NotesApp() {
                                   />
                                   {note.tags.length > 0 && (
                                     <div className="note-tags">
-                                      {note.tags.map((tag: string) => (
-                                        <span key={tag} className="tag-pill">#{tag}</span>
-                                      ))}
+                                      {note.tags.map((tagName: string) => {
+                                        const tag = tags.find(t => t.name === tagName);
+                                        return (
+                                          <span 
+                                            key={tagName} 
+                                            className="tag-pill bookmark-tag"
+                                            style={{ 
+                                              backgroundColor: tag?.color || '#3b82f6',
+                                              borderColor: tag?.color || '#3b82f6'
+                                            }}
+                                          >
+                                            <i className="ri-price-tag-3-fill"></i>
+                                            {tagName}
+                                          </span>
+                                        );
+                                      })}
                                     </div>
                                   )}
                                   <div className="note-actions">
@@ -976,9 +1009,22 @@ function NotesApp() {
                     />
                                 {note.tags.length > 0 && (
                                   <div className="note-tags">
-                                    {note.tags.map((tag: string) => (
-                                      <span key={tag} className="tag-pill">#{tag}</span>
-                                    ))}
+                                    {note.tags.map((tagName: string) => {
+                                      const tag = tags.find(t => t.name === tagName);
+                                      return (
+                                        <span 
+                                          key={tagName} 
+                                          className="tag-pill bookmark-tag"
+                                          style={{ 
+                                            backgroundColor: tag?.color || '#3b82f6',
+                                            borderColor: tag?.color || '#3b82f6'
+                                          }}
+                                        >
+                                          <i className="ri-price-tag-3-fill"></i>
+                                          {tagName}
+                                        </span>
+                                      );
+                                    })}
                                   </div>
                                 )}
                                 <div className="note-actions">
@@ -1092,28 +1138,34 @@ function NotesApp() {
                                     {tags.length === 0 && (
                                       <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
                                     )}
-                                    {tags.map((tag: Tag) => (
-                                      <button
-                                        key={tag.id}
-                                        type="button"
-                                        className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
-                                        onClick={() => {
-                                          if (currentNote.tags.includes(tag.name)) {
-                                            setCurrentNote({
-                                              ...currentNote,
-                                              tags: currentNote.tags.filter(t => t !== tag.name)
-                                            });
-                                          } else {
-                                            setCurrentNote({
-                                              ...currentNote,
-                                              tags: [...currentNote.tags, tag.name]
-                                            });
-                                          }
-                                        }}
-                                      >
-                                        {tag.name}
-                                      </button>
-                                    ))}
+                                                                  {tags.map((tag: Tag) => (
+                                <button
+                                  key={tag.id}
+                                  type="button"
+                                  className={`tag-pill editor-tag-btn bookmark-tag${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
+                                  style={{ 
+                                    backgroundColor: currentNote.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
+                                    borderColor: tag.color || '#3b82f6',
+                                    color: currentNote.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
+                                  }}
+                                  onClick={() => {
+                                    if (currentNote.tags.includes(tag.name)) {
+                                      setCurrentNote({
+                                        ...currentNote,
+                                        tags: currentNote.tags.filter(t => t !== tag.name)
+                                      });
+                                    } else {
+                                      setCurrentNote({
+                                        ...currentNote,
+                                        tags: [...currentNote.tags, tag.name]
+                                      });
+                                    }
+                                  }}
+                                >
+                                  <i className="ri-price-tag-3-fill"></i>
+                                  {tag.name}
+                                </button>
+                              ))}
                                   </div>
                                 </div>
                               </>
@@ -1127,9 +1179,22 @@ function NotesApp() {
                                 />
                                 {currentNote.tags.length > 0 && (
                                   <div className="note-tags" style={{ marginTop: '16px' }}>
-                                    {currentNote.tags.map((tagName: string) => (
-                                      <span key={tagName} className="tag-pill">#{tagName}</span>
-                                    ))}
+                                    {currentNote.tags.map((tagName: string) => {
+                                      const tag = tags.find(t => t.name === tagName);
+                                      return (
+                                        <span 
+                                          key={tagName} 
+                                          className="tag-pill bookmark-tag"
+                                          style={{ 
+                                            backgroundColor: tag?.color || '#3b82f6',
+                                            borderColor: tag?.color || '#3b82f6'
+                                          }}
+                                        >
+                                          <i className="ri-price-tag-3-fill"></i>
+                                          {tagName}
+                                        </span>
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </>
@@ -1191,7 +1256,12 @@ function NotesApp() {
                                       <button
                                         key={tag.id}
                                         type="button"
-                                        className={`tag-pill editor-tag-btn${currentNote2.tags.includes(tag.name) ? ' selected' : ''}`}
+                                        className={`tag-pill editor-tag-btn bookmark-tag${currentNote2.tags.includes(tag.name) ? ' selected' : ''}`}
+                                        style={{ 
+                                          backgroundColor: currentNote2.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
+                                          borderColor: tag.color || '#3b82f6',
+                                          color: currentNote2.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
+                                        }}
                                         onClick={() => {
                                           if (currentNote2.tags.includes(tag.name)) {
                                             setCurrentNote2({
@@ -1206,6 +1276,7 @@ function NotesApp() {
                                           }
                                         }}
                                       >
+                                        <i className="ri-price-tag-3-fill"></i>
                                         {tag.name}
                                       </button>
                                     ))}
@@ -1222,9 +1293,22 @@ function NotesApp() {
                                 />
                                 {currentNote2.tags.length > 0 && (
                                   <div className="note-tags" style={{ marginTop: '16px' }}>
-                                    {currentNote2.tags.map((tagName: string) => (
-                                      <span key={tagName} className="tag-pill">#{tagName}</span>
-                                    ))}
+                                    {currentNote2.tags.map((tagName: string) => {
+                                      const tag = tags.find(t => t.name === tagName);
+                                      return (
+                                        <span 
+                                          key={tagName} 
+                                          className="tag-pill bookmark-tag"
+                                          style={{ 
+                                            backgroundColor: tag?.color || '#3b82f6',
+                                            borderColor: tag?.color || '#3b82f6'
+                                          }}
+                                        >
+                                          <i className="ri-price-tag-3-fill"></i>
+                                          {tagName}
+                                        </span>
+                                      );
+                                    })}
                                   </div>
                                 )}
                               </>
@@ -1292,7 +1376,12 @@ function NotesApp() {
                                   <button
                                     key={tag.id}
                                     type="button"
-                                    className={`tag-pill editor-tag-btn${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
+                                    className={`tag-pill editor-tag-btn bookmark-tag${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
+                                    style={{ 
+                                      backgroundColor: currentNote.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
+                                      borderColor: tag.color || '#3b82f6',
+                                      color: currentNote.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
+                                    }}
                                     onClick={() => {
                                       if (currentNote.tags.includes(tag.name)) {
                                         setCurrentNote({
@@ -1307,6 +1396,7 @@ function NotesApp() {
                                       }
                                     }}
                                   >
+                                    <i className="ri-price-tag-3-fill"></i>
                                     {tag.name}
                                   </button>
                                 ))}
@@ -1323,9 +1413,22 @@ function NotesApp() {
                             />
                             {currentNote.tags.length > 0 && (
                               <div className="note-tags" style={{ marginTop: '16px' }}>
-                                {currentNote.tags.map((tagName: string) => (
-                                  <span key={tagName} className="tag-pill">#{tagName}</span>
-                                ))}
+                                {currentNote.tags.map((tagName: string) => {
+                                  const tag = tags.find(t => t.name === tagName);
+                                  return (
+                                    <span 
+                                      key={tagName} 
+                                      className="tag-pill bookmark-tag"
+                                      style={{ 
+                                        backgroundColor: tag?.color || '#3b82f6',
+                                        borderColor: tag?.color || '#3b82f6'
+                                      }}
+                                    >
+                                      <i className="ri-price-tag-3-fill"></i>
+                                      {tagName}
+                                    </span>
+                                  );
+                                })}
                               </div>
                             )}
                           </>
@@ -1405,6 +1508,28 @@ function NotesApp() {
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
                 />
+                                 <div className="modal-color-picker">
+                   <label htmlFor="newTagColor">Cor:</label>
+                   <input
+                     type="color"
+                     id="newTagColor"
+                     value={newTagColor}
+                     onChange={(e) => setNewTagColor(e.target.value)}
+                     className="modal-color-input"
+                   />
+                   <div className="color-palette">
+                     {tagColors.map((color) => (
+                       <button
+                         key={color}
+                         type="button"
+                         className={`color-option ${newTagColor === color ? 'selected' : ''}`}
+                         style={{ backgroundColor: color }}
+                         onClick={() => setNewTagColor(color)}
+                         aria-label={`Select color ${color}`}
+                       />
+                     ))}
+                   </div>
+                 </div>
                 {modalError && <div className="modal-error">{modalError}</div>}
                 <div className="modal-actions">
                   <button className="modal-btn" onClick={() => setShowTagModal(false)}>

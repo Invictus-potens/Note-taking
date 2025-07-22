@@ -611,12 +611,106 @@ html, body {
 }
 
 .tag-pill {
-  background: var(--bg-hover);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: var(--bg-card);
   color: var(--text-secondary);
-  font-size: 11px;
-  padding: 2px 8px;
-  border-radius: 9999px;
   border: 1px solid var(--border-color);
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.bookmark-tag {
+  position: relative;
+  padding: 6px 10px;
+  border-radius: 16px;
+  font-weight: 600;
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+}
+
+.bookmark-tag:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.bookmark-tag i {
+  font-size: 10px;
+  margin-right: 2px;
+}
+
+/* Modal Color Picker */
+.modal-color-picker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.modal-color-picker label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  min-width: 40px;
+}
+
+.modal-color-input {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  background: none;
+  transition: all 0.2s ease;
+}
+
+.modal-color-input:hover {
+  border-color: var(--bg-blue);
+  transform: scale(1.05);
+}
+
+.modal-color-input::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.modal-color-input::-webkit-color-swatch {
+  border: none;
+  border-radius: 6px;
+}
+
+/* Color Palette */
+.color-palette {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-left: 12px;
+}
+
+.color-option {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.color-option:hover {
+  transform: scale(1.1);
+  border-color: var(--text-primary);
+}
+
+.color-option.selected {
+  border-color: var(--text-primary);
+  box-shadow: 0 0 0 2px var(--bg-primary), 0 0 0 4px var(--text-primary);
 }
 
 .note-actions {
