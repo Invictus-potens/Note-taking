@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
+import { getLocalStorage, setLocalStorage, addEventListener, removeEventListener } from '../../lib/clientUtils';
 
 interface AIInteraction {
   id: string;
@@ -27,7 +28,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onAddToNote }) => {
 
   // Load interactions from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem('ai-interactions');
+    const saved = getLocalStorage('ai-interactions');
     if (saved) {
       try {
         setInteractions(JSON.parse(saved));
@@ -41,7 +42,7 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onAddToNote }) => {
   const saveInteraction = (newInteraction: AIInteraction) => {
     const updated = [newInteraction, ...interactions.slice(0, 4)]; // Keep last 5
     setInteractions(updated);
-    localStorage.setItem('ai-interactions', JSON.stringify(updated));
+    setLocalStorage('ai-interactions', JSON.stringify(updated));
   };
 
   // Handle click outside modal
@@ -53,11 +54,11 @@ const AIAssistant: React.FC<AIAssistantProps> = ({ onAddToNote }) => {
     };
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+      addEventListener(document, 'mousedown', handleClickOutside);
     }
 
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      removeEventListener(document, 'mousedown', handleClickOutside);
     };
   }, [isOpen]);
 

@@ -16,6 +16,7 @@ import Input from '../components/ui/Input';
 import AIAssistant from '../components/AI/AIAssistant';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
+import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
 
 
 interface Note {
@@ -152,7 +153,7 @@ function NotesApp() {
     });
     
     setIsDark(true);
-    document.documentElement.setAttribute('data-theme', 'dark');
+    setDocumentAttribute('data-theme', 'dark');
   }, [user]);
 
   // Create a new note in Supabase
@@ -439,11 +440,11 @@ function NotesApp() {
     const newIsDark = !isDark;
     setIsDark(newIsDark);
     if (newIsDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('notesapp_theme', 'dark');
+      setDocumentAttribute('data-theme', 'dark');
+      setLocalStorage('notesapp_theme', 'dark');
     } else {
-      document.documentElement.setAttribute('data-theme', 'light');
-      localStorage.setItem('notesapp_theme', 'light');
+      setDocumentAttribute('data-theme', 'light');
+      setLocalStorage('notesapp_theme', 'light');
     }
   };
 
