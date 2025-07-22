@@ -1,7 +1,16 @@
 import React, { useState } from 'react';
-import { Droppable, Draggable } from 'react-beautiful-dnd';
+import dynamic from 'next/dynamic';
 import Button from '../ui/Button';
 import { Plus } from 'lucide-react';
+
+// Dynamic imports for client-side only components
+const Droppable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Droppable })), {
+  ssr: false
+});
+
+const Draggable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Draggable })), {
+  ssr: false
+});
 
 interface Folder {
   id: string;

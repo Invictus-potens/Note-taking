@@ -1,6 +1,15 @@
 'use client';
 
-import { Draggable, Droppable } from "react-beautiful-dnd";
+import dynamic from 'next/dynamic';
+
+// Dynamic imports for client-side only components
+const Draggable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Draggable })), {
+  ssr: false
+});
+
+const Droppable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Droppable })), {
+  ssr: false
+});
 
 interface Note {
   id: string;

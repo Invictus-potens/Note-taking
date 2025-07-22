@@ -3,11 +3,9 @@
 
 import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import * as React from 'react';
-import ReactQuill from 'react-quill';
-import { DragDropContext, DropResult } from 'react-beautiful-dnd';
+import dynamic from 'next/dynamic';
 import { useAuth } from '../lib/authContext';
 import ProtectedRoute from '../components/Auth/ProtectedRoute';
-import 'react-quill/dist/quill.snow.css';
 import Header from '../components/Layout/Header';
 import Sidebar from '../components/Notes/Sidebar';
 import NotesList from '../components/Notes/NotesList';
@@ -17,6 +15,24 @@ import AIAssistant from '../components/AI/AIAssistant';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
+
+// Dynamic imports for client-side only components
+const ReactQuill = dynamic(() => import('react-quill'), {
+  ssr: false,
+  loading: () => <div style={{ height: '40vh', border: '1px solid #ccc', padding: '10px' }}>Loading editor...</div>
+});
+
+const DragDropContext = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.DragDropContext })), {
+  ssr: false
+});
+
+// Import types for drag and drop
+import type { DropResult } from 'react-beautiful-dnd';
+
+// Import CSS for ReactQuill
+if (typeof window !== 'undefined') {
+  require('react-quill/dist/quill.snow.css');
+}
 
 
 interface Note {
@@ -47,6 +63,17 @@ interface Tag {
 function NotesApp() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  
+  // Client-side only rendering
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
+  if (!isClient) {
+    return <div>Loading...</div>;
+  }
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
