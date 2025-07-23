@@ -112,9 +112,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     if (!user || columns.length > 0) return;
 
     const defaultColumns = [
-      { title: 'To Do', position: 0 },
-      { title: 'In Progress', position: 1 },
-      { title: 'Done', position: 2 }
+      { title: 'Aguardando início', position: 0 },
+      { title: 'Aguardando retorno do cliente/vendedor', position: 1 },
+      { title: 'Aguardando análise', position: 2 },
+      { title: 'Coleta de dados', position: 3 },
+      { title: 'Em análise', position: 4 }
     ];
 
     try {
@@ -374,196 +376,350 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
   }
 
   return (
-    <div className="h-full flex flex-col">
-      {/* Header */}
-      <div className="flex items-center justify-between p-6 border-b border-gray-700">
-        <h1 className="text-2xl font-bold text-white">Kanban Board</h1>
-        <button
-          onClick={() => setShowAddColumn(true)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-        >
-          <i className="ri-add-line"></i>
-          Add Column
-        </button>
+    <div className="h-full flex">
+      {/* Left Sidebar - Inbox */}
+      <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
+        <div className="p-6 border-b border-gray-700">
+          <h2 className="text-xl font-bold text-white mb-2">Inbox</h2>
+          <p className="text-gray-400 text-sm">Capture tudo, onde quer que esteja</p>
+        </div>
+        
+        <div className="flex-1 p-6 overflow-y-auto">
+          <div className="mb-6">
+            <div className="bg-gray-700 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <i className="ri-mail-line text-white text-sm"></i>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium text-sm">Adicionar via email</h4>
+                  <p className="text-gray-400 text-xs">Envie para inbox@app.trello.com</p>
+                </div>
+              </div>
+              <a href="#" className="text-blue-400 text-xs hover:underline">Saiba mais</a>
+            </div>
+            
+            <div className="bg-gray-700 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                  <i className="ri-slack-fill text-white text-sm"></i>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium text-sm">Conectar Slack</h4>
+                  <p className="text-gray-400 text-xs">Salve mensagens como cartões</p>
+                </div>
+              </div>
+              <a href="#" className="text-blue-400 text-xs hover:underline">Conectar conta</a>
+            </div>
+            
+            <div className="bg-gray-700 rounded-lg p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
+                  <i className="ri-microsoft-fill text-white text-sm"></i>
+                </div>
+                <div>
+                  <h4 className="text-white font-medium text-sm">Conectar Teams</h4>
+                  <p className="text-gray-400 text-xs">Salve mensagens como cartões</p>
+                </div>
+              </div>
+              <a href="#" className="text-blue-400 text-xs hover:underline">Conectar conta</a>
+            </div>
+          </div>
+          
+          {/* Notes in Inbox */}
+          <div className="mb-6">
+            <h3 className="text-white font-medium mb-3">Suas Notas</h3>
+            <div className="space-y-2">
+              {notes.slice(0, 5).map((note) => (
+                <div
+                  key={note.id}
+                  className="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600 transition-colors"
+                  onClick={() => onNoteSelect?.(note.id)}
+                >
+                  <h4 className="text-white font-medium text-sm mb-1 line-clamp-2">
+                    {note.title || 'Sem título'}
+                  </h4>
+                  {note.tags && note.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {note.tags.slice(0, 2).map((tagName) => {
+                        const tag = tags.find(t => t.name === tagName);
+                        return (
+                          <span
+                            key={tagName}
+                            className="px-2 py-1 text-xs rounded-full text-white"
+                            style={{ 
+                              backgroundColor: tag?.color || '#3b82f6',
+                              opacity: 0.8
+                            }}
+                          >
+                            {tagName}
+                          </span>
+                        );
+                      })}
+                      {note.tags.length > 2 && (
+                        <span className="px-2 py-1 text-xs text-gray-400">
+                          +{note.tags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
+              {notes.length > 5 && (
+                <div className="text-center">
+                  <span className="text-gray-400 text-sm">
+                    +{notes.length - 5} mais notas
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+            Adicionar um cartão
+          </button>
+        </div>
       </div>
 
-      {/* Add Column Modal */}
-      {showAddColumn && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-96">
-            <h3 className="text-lg font-semibold text-white mb-4">Add New Column</h3>
-            <input
-              type="text"
-              value={newColumnTitle}
-              onChange={(e) => setNewColumnTitle(e.target.value)}
-              placeholder="Column title..."
-              className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white mb-4 focus:outline-none focus:border-blue-500"
-              onKeyPress={(e) => e.key === 'Enter' && handleCreateColumn()}
-            />
-            <div className="flex gap-3">
-              <button
-                onClick={handleCreateColumn}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Create
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddColumn(false);
-                  setNewColumnTitle('');
-                }}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                Cancel
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col">
+        {/* Board Header */}
+        <div className="bg-gradient-to-r from-purple-900 to-blue-900 p-6 border-b border-gray-700">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <h1 className="text-2xl font-bold text-white">Desenvolvimento</h1>
+              <div className="flex items-center gap-2">
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-grid-line"></i>
+                </button>
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-arrow-down-s-line"></i>
+                </button>
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-rocket-line"></i>
+                </button>
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-flashlight-line"></i>
+                </button>
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-list-check"></i>
+                </button>
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-star-line"></i>
+                </button>
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-user-line"></i>
+                </button>
+                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
+                  <i className="ri-more-line"></i>
+                </button>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <div className="flex -space-x-2">
+                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">ST</div>
+                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">JD</div>
+                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">MK</div>
+                </div>
+              </div>
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+                Compartilhar
               </button>
             </div>
           </div>
         </div>
-      )}
 
-      {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto">
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <DroppableComponent droppableId="columns" direction="horizontal" type="COLUMN">
-            {(provided) => (
-              <div
-                ref={provided.innerRef}
-                {...provided.droppableProps}
-                className="flex gap-6 p-6 min-h-full"
-              >
-                {columns.map((column, columnIndex) => (
-                  <DraggableComponent key={column.id} draggableId={column.id} index={columnIndex}>
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className={`bg-gray-800 rounded-lg p-4 w-80 flex-shrink-0 ${
-                          snapshot.isDragging ? 'shadow-2xl transform rotate-2' : ''
-                        }`}
-                      >
-                        {/* Column Header */}
-                        <div
-                          {...provided.dragHandleProps}
-                          className="flex items-center justify-between mb-4 cursor-grab active:cursor-grabbing"
-                        >
-                          {editingColumn === column.id ? (
-                            <input
-                              type="text"
-                              value={column.title}
-                              onChange={(e) => setColumns(prev => 
-                                prev.map(col => col.id === column.id ? { ...col, title: e.target.value } : col)
-                              )}
-                              onBlur={() => handleUpdateColumnTitle(column.id, column.title)}
-                              onKeyPress={(e) => e.key === 'Enter' && handleUpdateColumnTitle(column.id, column.title)}
-                              className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500"
-                              autoFocus
-                            />
-                          ) : (
-                            <h3 
-                              className="text-lg font-semibold text-white flex-1 cursor-pointer"
-                              onClick={() => setEditingColumn(column.id)}
-                            >
-                              {column.title}
-                            </h3>
-                          )}
-                          <button
-                            onClick={() => handleDeleteColumn(column.id)}
-                            className="text-gray-400 hover:text-red-400 transition-colors p-1"
+        {/* Add Column Modal */}
+        {showAddColumn && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 rounded-lg p-6 w-96">
+              <h3 className="text-lg font-semibold text-white mb-4">Add New Column</h3>
+              <input
+                type="text"
+                value={newColumnTitle}
+                onChange={(e) => setNewColumnTitle(e.target.value)}
+                placeholder="Column title..."
+                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white mb-4 focus:outline-none focus:border-blue-500"
+                onKeyPress={(e) => e.key === 'Enter' && handleCreateColumn()}
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={handleCreateColumn}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Create
+                </button>
+                <button
+                  onClick={() => {
+                    setShowAddColumn(false);
+                    setNewColumnTitle('');
+                  }}
+                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Kanban Board */}
+        <div className="flex-1 overflow-x-auto bg-gradient-to-r from-purple-900 to-blue-900">
+          <div className="p-6">
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <DroppableComponent droppableId="columns" direction="horizontal" type="COLUMN">
+                {(provided) => (
+                  <div
+                    ref={provided.innerRef}
+                    {...provided.droppableProps}
+                    className="flex gap-6 min-h-full"
+                  >
+                    {columns.map((column, columnIndex) => (
+                      <DraggableComponent key={column.id} draggableId={column.id} index={columnIndex}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            className={`bg-gray-800 rounded-lg p-4 w-80 flex-shrink-0 ${
+                              snapshot.isDragging ? 'shadow-2xl transform rotate-2' : ''
+                            }`}
                           >
-                            <i className="ri-delete-bin-line"></i>
-                          </button>
-                        </div>
-
-                        {/* Column Cards */}
-                        <DroppableComponent droppableId={column.id} type="CARD">
-                          {(provided, snapshot) => (
+                            {/* Column Header */}
                             <div
-                              ref={provided.innerRef}
-                              {...provided.droppableProps}
-                              className={`min-h-[200px] ${
-                                snapshot.isDraggingOver ? 'bg-blue-900 bg-opacity-20 rounded' : ''
-                              }`}
+                              {...provided.dragHandleProps}
+                              className="flex items-center justify-between mb-4 cursor-grab active:cursor-grabbing"
                             >
-                              {cards
-                                .filter(card => card.column_id === column.id)
-                                .sort((a, b) => a.position - b.position)
-                                .map((card, cardIndex) => (
-                                  <DraggableComponent key={card.id} draggableId={card.id} index={cardIndex}>
-                                    {(provided, snapshot) => (
-                                      <div
-                                        ref={provided.innerRef}
-                                        {...provided.draggableProps}
-                                        {...provided.dragHandleProps}
-                                        className={`bg-gray-700 rounded-lg p-4 mb-3 cursor-grab active:cursor-grabbing ${
-                                          snapshot.isDragging ? 'shadow-lg transform rotate-1' : ''
-                                        }`}
-                                        onClick={() => onNoteSelect?.(card.note_id)}
-                                      >
-                                        <h4 className="font-medium text-white mb-2 line-clamp-2">
-                                          {card.note?.title || 'Untitled'}
-                                        </h4>
-                                        {card.note?.tags && card.note.tags.length > 0 && (
-                                          <div className="flex flex-wrap gap-1">
-                                            {card.note.tags.slice(0, 3).map((tagName) => {
-                                              const tag = tags.find(t => t.name === tagName);
-                                              return (
-                                                <span
-                                                  key={tagName}
-                                                  className="px-2 py-1 text-xs rounded-full text-white"
-                                                  style={{ 
-                                                    backgroundColor: tag?.color || '#3b82f6',
-                                                    opacity: 0.8
-                                                  }}
-                                                >
-                                                  #{tagName}
-                                                </span>
-                                              );
-                                            })}
-                                            {card.note.tags.length > 3 && (
-                                              <span className="px-2 py-1 text-xs text-gray-400">
-                                                +{card.note.tags.length - 3}
-                                              </span>
+                              {editingColumn === column.id ? (
+                                <input
+                                  type="text"
+                                  value={column.title}
+                                  onChange={(e) => setColumns(prev => 
+                                    prev.map(col => col.id === column.id ? { ...col, title: e.target.value } : col)
+                                  )}
+                                  onBlur={() => handleUpdateColumnTitle(column.id, column.title)}
+                                  onKeyPress={(e) => e.key === 'Enter' && handleUpdateColumnTitle(column.id, column.title)}
+                                  className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500"
+                                  autoFocus
+                                />
+                              ) : (
+                                <h3 
+                                  className="text-lg font-semibold text-white flex-1 cursor-pointer"
+                                  onClick={() => setEditingColumn(column.id)}
+                                >
+                                  {column.title}
+                                </h3>
+                              )}
+                              <div className="flex items-center gap-1">
+                                <button className="text-gray-400 hover:text-white transition-colors p-1">
+                                  <i className="ri-arrow-right-s-line"></i>
+                                </button>
+                                <button className="text-gray-400 hover:text-white transition-colors p-1">
+                                  <i className="ri-more-line"></i>
+                                </button>
+                              </div>
+                            </div>
+
+                            {/* Column Cards */}
+                            <DroppableComponent droppableId={column.id} type="CARD">
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.droppableProps}
+                                  className={`min-h-[200px] ${
+                                    snapshot.isDraggingOver ? 'bg-blue-900 bg-opacity-20 rounded' : ''
+                                  }`}
+                                >
+                                  {cards
+                                    .filter(card => card.column_id === column.id)
+                                    .sort((a, b) => a.position - b.position)
+                                    .map((card, cardIndex) => (
+                                      <DraggableComponent key={card.id} draggableId={card.id} index={cardIndex}>
+                                        {(provided, snapshot) => (
+                                          <div
+                                            ref={provided.innerRef}
+                                            {...provided.draggableProps}
+                                            {...provided.dragHandleProps}
+                                            className={`bg-gray-700 rounded-lg p-4 mb-3 cursor-grab active:cursor-grabbing ${
+                                              snapshot.isDragging ? 'shadow-lg transform rotate-1' : ''
+                                            }`}
+                                            onClick={() => onNoteSelect?.(card.note_id)}
+                                          >
+                                            <h4 className="font-medium text-white mb-2 line-clamp-2">
+                                              {card.note?.title || 'Untitled'}
+                                            </h4>
+                                            {card.note?.tags && card.note.tags.length > 0 && (
+                                              <div className="flex flex-wrap gap-1 mb-2">
+                                                {card.note.tags.slice(0, 3).map((tagName) => {
+                                                  const tag = tags.find(t => t.name === tagName);
+                                                  return (
+                                                    <span
+                                                      key={tagName}
+                                                      className="px-2 py-1 text-xs rounded-full text-white"
+                                                      style={{ 
+                                                        backgroundColor: tag?.color || '#3b82f6',
+                                                        opacity: 0.8
+                                                      }}
+                                                    >
+                                                      {tagName}
+                                                    </span>
+                                                  );
+                                                })}
+                                                {card.note.tags.length > 3 && (
+                                                  <span className="px-2 py-1 text-xs text-gray-400">
+                                                    +{card.note.tags.length - 3}
+                                                  </span>
+                                                )}
+                                              </div>
                                             )}
+                                            <div className="flex items-center justify-between text-gray-400 text-xs">
+                                              <div className="flex items-center gap-1">
+                                                <i className="ri-message-2-line"></i>
+                                                <span>2</span>
+                                              </div>
+                                            </div>
                                           </div>
                                         )}
-                                      </div>
-                                    )}
-                                  </DraggableComponent>
-                                ))}
-                              {provided.placeholder}
-                            </div>
-                          )}
-                        </DroppableComponent>
+                                      </DraggableComponent>
+                                    ))}
+                                  {provided.placeholder}
+                                </div>
+                              )}
+                            </DroppableComponent>
 
-                        {/* Add Note Button */}
-                        <div className="mt-4">
-                          <select
-                            onChange={(e) => {
-                              if (e.target.value) {
-                                handleAddNoteToColumn(column.id, e.target.value);
-                                e.target.value = '';
-                              }
-                            }}
-                            className="w-full p-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:border-blue-500"
-                            defaultValue=""
-                          >
-                            <option value="" disabled>Add a note...</option>
-                            {getAvailableNotes().map(note => (
-                              <option key={note.id} value={note.id}>
-                                {note.title || 'Untitled'}
-                              </option>
-                            ))}
-                          </select>
-                        </div>
-                      </div>
-                    )}
-                  </DraggableComponent>
-                ))}
-                {provided.placeholder}
-              </div>
-            )}
-          </DroppableComponent>
-        </DragDropContext>
+                            {/* Add Note Button */}
+                            <div className="mt-4">
+                              <button
+                                onClick={() => {
+                                  // Show dropdown or modal to add note
+                                }}
+                                className="w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
+                              >
+                                <i className="ri-add-line"></i>
+                                Adicionar um cartão
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </DraggableComponent>
+                    ))}
+                    {provided.placeholder}
+                    
+                    {/* Add Column Button */}
+                    <button
+                      onClick={() => setShowAddColumn(true)}
+                      className="w-80 h-12 bg-gray-800 bg-opacity-50 border-2 border-dashed border-gray-600 rounded-lg hover:bg-gray-700 hover:border-gray-500 transition-colors flex items-center justify-center text-gray-400 hover:text-white"
+                    >
+                      <i className="ri-add-line mr-2"></i>
+                      Adicionar uma lista
+                    </button>
+                  </div>
+                )}
+              </DroppableComponent>
+            </DragDropContext>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -2813,8 +2813,53 @@ html, body {
 .kanban-board {
   height: 100%;
   display: flex;
-  flex-direction: column;
   background: var(--bg-primary);
+}
+
+.kanban-sidebar {
+  width: 320px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.kanban-sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kanban-sidebar-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.kanban-sidebar-card {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.kanban-sidebar-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+}
+
+.kanban-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .kanban-header {
@@ -2822,8 +2867,8 @@ html, body {
   align-items: center;
   justify-content: space-between;
   padding: 24px;
-  border-bottom: 1px solid var(--border-color);
-  background: var(--bg-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
 }
 
 .kanban-title {
@@ -2857,6 +2902,7 @@ html, body {
   flex: 1;
   overflow-x: auto;
   padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
 }
 
 .kanban-columns {
@@ -2864,16 +2910,18 @@ html, body {
   gap: 24px;
   min-height: calc(100vh - 200px);
   align-items: flex-start;
+  padding-bottom: 24px;
 }
 
 .kanban-column {
-  background: var(--bg-secondary);
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
   border-radius: 12px;
   padding: 16px;
   min-width: 320px;
   max-width: 320px;
   flex-shrink: 0;
-  border: 1px solid var(--border-color);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   transition: all 0.2s ease;
 }
 
@@ -2941,14 +2989,14 @@ html, body {
 }
 
 .kanban-card {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-color);
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 8px;
   padding: 12px;
   margin-bottom: 12px;
   cursor: grab;
   transition: all 0.2s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .kanban-card:hover {
@@ -2965,7 +3013,7 @@ html, body {
 .kanban-card-title {
   font-size: 14px;
   font-weight: 500;
-  color: var(--text-primary);
+  color: #333;
   margin-bottom: 8px;
   line-height: 1.4;
   display: -webkit-box;
@@ -2994,8 +3042,8 @@ html, body {
   border-radius: 4px;
   font-size: 10px;
   font-weight: 500;
-  color: var(--text-secondary);
-  background: var(--bg-hover);
+  color: #666;
+  background: #f0f0f0;
 }
 
 .kanban-add-note {
