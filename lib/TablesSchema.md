@@ -29,6 +29,22 @@ create table public.tags (
   constraint tags_user_id_fkey foreign key (user_id) references users (id) on delete cascade
 ) tablespace pg_default;
 
+-- Calendar Events table
+create table public.calendar_events (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  title text not null,
+  description text null,
+  start_date timestamp with time zone not null,
+  end_date timestamp with time zone null,
+  all_day boolean null default false,
+  color text null default '#3b82f6',
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  constraint calendar_events_pkey primary key (id),
+  constraint calendar_events_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
+) tablespace pg_default;
+
 -- Notes table
 create table public.notes (
   id uuid not null default extensions.uuid_generate_v4 (),
@@ -46,8 +62,22 @@ create table public.notes (
 ) tablespace pg_default;
 
 create index if not exists idx_notes_user_id on public.notes using btree (user_id) tablespace pg_default;
+create index if not exists idx_calendar_events_user_id on public.calendar_events using btree (user_id) tablespace pg_default;
+create index if not exists idx_calendar_events_start_date on public.calendar_events using btree (start_date) tablespace pg_default;
 
 create extension if not exists "uuid-ossp"; // in case of the error  - extensions.uuid_generate_v4().
 
 -- Migration to add color column to existing tags table (run this if the table already exists)
 -- ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS color text null default '#3b82f6';
+
+-- Function to automatically delete past events (run this to create the function)
+-- CREATE OR REPLACE FUNCTION cleanup_past_events()
+-- RETURNS void AS $$
+-- BEGIN
+--   DELETE FROM public.calendar_events 
+--   WHERE start_date < CURRENT_DATE - INTERVAL '1 day';
+-- END;
+-- $$ LANGUAGE plpgsql;
+
+-- Create a cron job or scheduled task to run cleanup_past_events() daily
+-- You can use pg_cron extension or external scheduling

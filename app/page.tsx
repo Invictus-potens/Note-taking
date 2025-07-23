@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, ChangeEvent, useRef } from 'react';
+import { useState, useEffect, ChangeEvent, useRef, useCallback } from 'react';
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '../lib/authContext';
@@ -1555,7 +1555,7 @@ function NotesApp() {
         {/* Calendar Modal */}
         <CalendarModal 
           isOpen={showCalendarModal}
-          onClose={() => setShowCalendarModal(false)}
+          onClose={useCallback(() => setShowCalendarModal(false), [])}
           isDark={isDark}
         />
       </DragDropWrapper>

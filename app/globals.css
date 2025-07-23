@@ -1864,6 +1864,16 @@ html, body {
   }
 }
 
+/* Calendar Loading State */
+.calendar-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
 /* Calendar Modal */
 .calendar-modal-overlay {
   position: fixed;
@@ -1889,6 +1899,9 @@ html, body {
   width: 800px;
   overflow: hidden;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateZ(0);
 }
 
 .calendar-modal-header {
@@ -1931,11 +1944,15 @@ html, body {
   padding: 24px;
   max-height: calc(90vh - 80px);
   overflow-y: auto;
+  /* Performance optimizations */
+  will-change: scroll-position;
 }
 
-/* FullCalendar Theme Customization */
+/* FullCalendar Theme Customization - Optimized */
 .fc {
   font-family: inherit;
+  /* Performance optimizations */
+  contain: layout style paint;
 }
 
 .fc-theme-standard td,
@@ -1950,6 +1967,8 @@ html, body {
 
 .fc-daygrid-day {
   background: var(--bg-primary);
+  /* Performance optimizations */
+  contain: layout style;
 }
 
 .fc-daygrid-day:hover {
@@ -1972,6 +1991,8 @@ html, body {
   background: var(--bg-secondary);
   color: var(--text-primary);
   font-weight: 600;
+  /* Performance optimizations */
+  contain: layout style;
 }
 
 .fc-button {
@@ -1983,6 +2004,8 @@ html, body {
   font-size: 14px;
   font-weight: 500;
   transition: all 0.2s ease;
+  /* Performance optimizations */
+  contain: layout style;
 }
 
 .fc-button:hover {
@@ -2018,6 +2041,8 @@ html, body {
   padding: 2px 4px;
   font-size: 12px;
   font-weight: 500;
+  /* Performance optimizations */
+  contain: layout style;
 }
 
 .fc-event:hover {
@@ -2070,5 +2095,199 @@ html, body {
   
   .fc-toolbar-title {
     font-size: 16px;
+  }
+}
+
+/* Event Input Modal */
+.event-input-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.event-input-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 500px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.event-input-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.event-input-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.event-input-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.event-input-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.event-input-form {
+  padding: 24px;
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.event-input,
+.event-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-search);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.event-input:focus,
+.event-textarea:focus {
+  outline: none;
+  border-color: var(--bg-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.event-input::placeholder,
+.event-textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.event-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.event-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--bg-blue);
+}
+
+.date-time-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.event-input-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.event-input-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.event-input-btn:hover {
+  background: var(--bg-hover);
+}
+
+.event-input-btn.primary {
+  background: var(--bg-blue);
+  color: white;
+  border-color: var(--bg-blue);
+}
+
+.event-input-btn.primary:hover {
+  background: var(--bg-blue-hover);
+}
+
+/* Responsive Event Input Modal */
+@media (max-width: 768px) {
+  .event-input-modal {
+    width: 95vw;
+    margin: 10px;
+  }
+  
+  .event-input-form {
+    padding: 16px;
+  }
+  
+  .date-time-group {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .event-input-modal-actions {
+    flex-direction: column;
+  }
+  
+  .event-input-btn {
+    width: 100%;
   }
 }
