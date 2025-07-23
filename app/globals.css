@@ -267,10 +267,9 @@ html, body {
 
 /* Sidebar Styles */
 .sidebar-header {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-bottom: 20px;
+  padding: 20px;
+  border-bottom: 1px solid var(--border-color);
+  margin-top: 12px;
 }
 
 .sidebar-title {
