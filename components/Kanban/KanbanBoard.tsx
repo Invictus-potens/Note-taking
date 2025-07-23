@@ -50,6 +50,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
   const [loading, setLoading] = useState(true);
   const [editingCard, setEditingCard] = useState<any>(null);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [selectedLaneForLink, setSelectedLaneForLink] = useState<string>('');
   const [editForm, setEditForm] = useState({ title: '', content: '', tags: [] as string[] });
 
   // Fetch Kanban data
@@ -97,6 +99,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       setLoading(false);
     }
   }, [user, notes]);
+
+  // Update cards when notes change (without re-fetching from database)
+  const updateCardsWithNotes = useCallback(() => {
+    setCards(prevCards => 
+      prevCards.map(card => ({
+        ...card,
+        note: notes.find(note => note.id === card.note_id)
+      }))
+    );
+  }, [notes]);
 
   // Initialize with default columns if none exist
   const initializeDefaultColumns = useCallback(async () => {
@@ -152,6 +164,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
   useEffect(() => {
     initializeDefaultColumns();
   }, [initializeDefaultColumns]);
+
+  // Update cards when notes change (without re-fetching)
+  useEffect(() => {
+    if (cards.length > 0) {
+      updateCardsWithNotes();
+    }
+  }, [notes, updateCardsWithNotes]);
 
   // Convert data to react-trello format
   const getKanbanData = () => {
@@ -437,6 +456,49 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
     }
   };
 
+  // Handle linking existing note to kanban card
+  const handleLinkNote = async (noteId: string, laneId: string) => {
+    if (!user) return;
+
+    try {
+      // Check if note is already linked to a card
+      const existingCard = cards.find(card => card.note_id === noteId);
+      if (existingCard) {
+        console.log('Note is already linked to a card');
+        return;
+      }
+
+      // Create a new card linked to the existing note
+      const newPosition = cards.filter(c => c.column_id === laneId).length;
+      const { data: cardData, error: cardError } = await supabase
+        .from('kanban_cards')
+        .insert([{
+          user_id: user.id,
+          note_id: noteId,
+          column_id: laneId,
+          position: newPosition
+        }])
+        .select();
+
+      if (cardError) {
+        console.error('Error creating card:', cardError);
+        return;
+      }
+
+      const note = notes.find(n => n.id === noteId);
+      const newCard = {
+        ...cardData[0],
+        note: note
+      };
+
+      setCards(prev => [...prev, newCard]);
+      setShowLinkModal(false);
+      setSelectedLaneForLink('');
+    } catch (error) {
+      console.error('Error linking note:', error);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-900">
@@ -449,15 +511,28 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-900">
+    <div className={`h-full flex flex-col ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
       {/* Board Header */}
-      <div className="bg-gray-800 border-b border-gray-700 p-4">
+      <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-300'} border-b p-4`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-white">Kanban Board</h1>
-            <span className="text-gray-400 text-sm">
+            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Kanban Board</h1>
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
               {columns.length} columns • {cards.length} cards
             </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowLinkModal(true)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDark 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              <i className="ri-link mr-2"></i>
+              Link Note
+            </button>
           </div>
         </div>
       </div>
@@ -465,36 +540,44 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       {/* Edit Card Modal */}
       {showEditModal && editingCard && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto">
-            <h3 className="text-lg font-semibold text-white mb-4">Edit Card</h3>
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto`}>
+            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Edit Card</h3>
             
             <div className="space-y-4">
               <div>
-                <label htmlFor="card-title" className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+                <label htmlFor="card-title" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Title</label>
                 <input
                   id="card-title"
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
                   placeholder="Enter card title"
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 />
               </div>
               
               <div>
-                <label htmlFor="card-content" className="block text-sm font-medium text-gray-300 mb-2">Content</label>
+                <label htmlFor="card-content" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Content</label>
                 <textarea
                   id="card-content"
                   value={editForm.content}
                   onChange={(e) => setEditForm(prev => ({ ...prev, content: e.target.value }))}
                   placeholder="Enter card content"
                   rows={4}
-                  className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                  className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tags</label>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Tags</label>
                 <div className="flex flex-wrap gap-2">
                   {tags.map((tag) => (
                     <button
@@ -503,7 +586,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
                       className={`px-3 py-1 rounded-full text-sm border ${
                         editForm.tags.includes(tag.name)
                           ? 'text-white'
-                          : 'text-gray-300 border-gray-600'
+                          : isDark ? 'text-gray-300 border-gray-600' : 'text-gray-700 border-gray-400'
                       }`}
                       style={{
                         backgroundColor: editForm.tags.includes(tag.name) ? tag.color || '#3b82f6' : 'transparent',
@@ -537,9 +620,114 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
                   setShowEditModal(false);
                   setEditingCard(null);
                 }}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
               >
                 Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Link Note Modal */}
+      {showLinkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto`}>
+            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Link Note to Kanban</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="lane-select" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Select Column</label>
+                <select
+                  id="lane-select"
+                  value={selectedLaneForLink}
+                  onChange={(e) => setSelectedLaneForLink(e.target.value)}
+                  className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                >
+                  <option value="">Select a column...</option>
+                  {columns.map((column) => (
+                    <option key={column.id} value={column.id}>
+                      {column.title}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Select Note</label>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {notes
+                    .filter(note => !cards.some(card => card.note_id === note.id)) // Only show unlinked notes
+                    .map((note) => (
+                      <button
+                        key={note.id}
+                        onClick={() => selectedLaneForLink && handleLinkNote(note.id, selectedLaneForLink)}
+                        disabled={!selectedLaneForLink}
+                        className={`w-full p-3 text-left rounded-lg border transition-colors ${
+                          isDark 
+                            ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' 
+                            : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
+                        } ${
+                          !selectedLaneForLink 
+                            ? 'opacity-50 cursor-not-allowed' 
+                            : isDark ? 'text-white' : 'text-gray-900'
+                        }`}
+                      >
+                        <div className="font-medium">{note.title || 'Untitled'}</div>
+                        <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {note.content.substring(0, 100)}...
+                        </div>
+                        {note.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {note.tags.slice(0, 3).map((tagName) => {
+                              const tag = tags.find(t => t.name === tagName);
+                              return (
+                                <span
+                                  key={tagName}
+                                  className="px-2 py-1 text-xs rounded-full"
+                                  style={{
+                                    backgroundColor: tag?.color || '#3b82f6',
+                                    color: 'white'
+                                  }}
+                                >
+                                  {tagName}
+                                </span>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                </div>
+                {notes.filter(note => !cards.some(card => card.note_id === note.id)).length === 0 && (
+                  <div className={`text-center py-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    All notes are already linked to kanban cards
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowLinkModal(false);
+                  setSelectedLaneForLink('');
+                }}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                Close
               </button>
             </div>
           </div>
