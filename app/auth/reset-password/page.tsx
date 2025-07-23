@@ -10,6 +10,7 @@ export default function ResetPassword() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isPageLoading, setIsPageLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [password, setPassword] = useState('');
@@ -21,11 +22,16 @@ export default function ResetPassword() {
     const token = searchParams.get('token');
     const type = searchParams.get('type');
     
+    console.log('Reset password page loaded with:', { token, type });
+    
+    // For password reset, we just need to check if we have the token
     if (token && type === 'recovery') {
       setHasToken(true);
     } else {
       setError('Link de recuperação inválido ou expirado.');
     }
+    
+    setIsPageLoading(false);
   }, [searchParams]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
@@ -45,8 +51,7 @@ export default function ResetPassword() {
     setError(null);
 
     try {
-      const token = searchParams.get('token');
-      
+      // Use the correct password reset API
       const { data, error } = await supabase.auth.updateUser({
         password: password
       });
@@ -103,6 +108,23 @@ export default function ResetPassword() {
       setIsLoading(false);
     }
   };
+
+  if (isPageLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-8">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Carregando...
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!hasToken) {
     return (
