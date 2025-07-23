@@ -64,6 +64,47 @@ interface Tag {
 function NotesApp() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  
+  // Handle authentication errors from URL parameters
+  useEffect(() => {
+    const handleAuthErrors = () => {
+      // Check for error parameters in URL hash
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        const error = params.get('error');
+        const errorCode = params.get('error_code');
+        const errorDescription = params.get('error_description');
+        
+        if (error === 'access_denied' && errorCode === 'otp_expired') {
+          // Clear the error from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Show user-friendly error message
+          setToast({
+            message: 'O link de confirmação expirou. Por favor, solicite um novo link de confirmação.',
+            type: 'error'
+          });
+        }
+      }
+
+      // Check for auth_error query parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('auth_error') === 'true') {
+        // Clear the error from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Show user-friendly error message
+        setToast({
+          message: 'Erro na autenticação. Por favor, tente novamente.',
+          type: 'error'
+        });
+      }
+    };
+
+    handleAuthErrors();
+  }, []);
+
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
