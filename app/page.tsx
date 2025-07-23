@@ -925,36 +925,126 @@ function NotesApp() {
               </div>
             </div>
 
-            <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-              {/* Middle Column */}
-              <div className="middle-column">
-                            <div className="search-container">
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Pesquisar notas..."
-                value={searchTerm}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+            {showKanban ? (
+              <KanbanBoard 
+                notes={notes}
+                tags={tags}
+                onNoteSelect={(noteId) => {
+                  setShowKanban(false);
+                  handleNoteSelect(noteId);
+                }}
               />
-              <div className="drag-hint">
-                <i className="ri-drag-move-line"></i>
-                <span>Drag to reorder notes</span>
-              </div>
-            </div>
+            ) : (
+              <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
+                {/* Middle Column */}
+                <div className="middle-column">
+                  <div className="search-container">
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder="Pesquisar notas..."
+                      value={searchTerm}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                    />
+                    <div className="drag-hint">
+                      <i className="ri-drag-move-line"></i>
+                      <span>Drag to reorder notes</span>
+                    </div>
+                  </div>
 
-                <Droppable droppableId="notes-list">
-                  {(provided) => (
-                    <div 
-                      className="notes-container"
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      onScroll={handleScroll}
-                    >
-                      {pinnedNotes.length > 0 && (
+                  <Droppable droppableId="notes-list">
+                    {(provided) => (
+                      <div 
+                        className="notes-container"
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        onScroll={handleScroll}
+                      >
+                        {pinnedNotes.length > 0 && (
+                          <div className="notes-section">
+                            <div className="notes-section-title">Notas Fixadas</div>
+                            {pinnedNotes.map((note: Note, index: number) => (
+                              <Draggable key={note.id} draggableId={note.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div 
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    data-note-id={note.id}
+                                    className={`note-card relative group ${
+                                      selectedNote === note.id ? 'selected' : ''
+                                    } ${
+                                      isSplitView && selectedNote2 === note.id ? 'selected-secondary' : ''
+                                    } ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                                    onClick={() => handleNoteSelect(note.id)}
+                                  >
+                                    {/* Drag Handle */}
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
+                                    >
+                                      <i className="ri-drag-move-line text-sm"></i>
+                                    </div>
+                                    <div className="note-header">
+                                      <div className="note-title">{note.title || 'Sem título'}</div>
+                                      <div className="note-date">{formatDate(note.updated_at)}</div>
+                                    </div>
+                                    <div 
+                                      className="note-preview"
+                                      dangerouslySetInnerHTML={{ __html: note.content }}
+                                    />
+                                    {note.tags.length > 0 && (
+                                      <div className="note-tags">
+                                        {note.tags.map((tagName: string) => {
+                                          const tag = tags.find(t => t.name === tagName);
+                                          return (
+                                            <span 
+                                              key={tagName} 
+                                              className="tag-pill bookmark-tag"
+                                              style={{ 
+                                                backgroundColor: tag?.color || '#3b82f6',
+                                                borderColor: tag?.color || '#3b82f6'
+                                              }}
+                                            >
+                                              <i className="ri-price-tag-3-fill"></i>
+                                              {tagName}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    <div className="note-actions">
+                                      <button 
+                                        className="action-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTogglePin(note.id);
+                                        }}
+                                        aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
+                                      >
+                                        <i className="ri-pushpin-fill minimalist-icon"></i>
+                                      </button>
+                                      <button 
+                                        className="action-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteNote(note.id);
+                                        }}
+                                        aria-label="Delete note"
+                                      >
+                                        <i className="ri-delete-bin-line minimalist-icon"></i>
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="notes-section">
-                          <div className="notes-section-title">Notas Fixadas</div>
-                          {pinnedNotes.map((note: Note, index: number) => (
-                            <Draggable key={note.id} draggableId={note.id} index={index}>
+                          <div className="notes-section-title">Todas as Notas</div>
+                          {unpinnedNotes.map((note: Note, index: number) => (
+                            <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
                               {(provided, snapshot) => (
                                 <div 
                                   ref={provided.innerRef}
@@ -1029,117 +1119,28 @@ function NotesApp() {
                             </Draggable>
                           ))}
                         </div>
-                      )}
-
-                      <div className="notes-section">
-                        <div className="notes-section-title">Todas as Notas</div>
-                        {unpinnedNotes.map((note: Note, index: number) => (
-                          <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
-                            {(provided, snapshot) => (
-                                                              <div 
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  data-note-id={note.id}
-                                  className={`note-card relative group ${
-                                    selectedNote === note.id ? 'selected' : ''
-                                  } ${
-                                    isSplitView && selectedNote2 === note.id ? 'selected-secondary' : ''
-                                  } ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
-                                  onClick={() => handleNoteSelect(note.id)}
-                                >
-                                {/* Drag Handle */}
-                                <div
-                                  {...provided.dragHandleProps}
-                                  className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
-                                >
-                                  <i className="ri-drag-move-line text-sm"></i>
-                                </div>
-                                <div className="note-header">
-                                  <div className="note-title">{note.title || 'Sem título'}</div>
-                                  <div className="note-date">{formatDate(note.updated_at)}</div>
-                                </div>
-                                <div 
-                      className="note-preview"
-                      dangerouslySetInnerHTML={{ __html: note.content }}
-                    />
-                                {note.tags.length > 0 && (
-                                  <div className="note-tags">
-                                    {note.tags.map((tagName: string) => {
-                                      const tag = tags.find(t => t.name === tagName);
-                                      return (
-                                        <span 
-                                          key={tagName} 
-                                          className="tag-pill bookmark-tag"
-                                          style={{ 
-                                            backgroundColor: tag?.color || '#3b82f6',
-                                            borderColor: tag?.color || '#3b82f6'
-                                          }}
-                                        >
-                                          <i className="ri-price-tag-3-fill"></i>
-                                          {tagName}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                                <div className="note-actions">
-                                  <button 
-                                    className="action-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleTogglePin(note.id);
-                                    }}
-                                    aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
-                                  >
-                                    <i className="ri-pushpin-fill minimalist-icon"></i>
-                                  </button>
-                                  <button 
-                                    className="action-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteNote(note.id);
-                                    }}
-                                    aria-label="Delete note"
-                                  >
-                                    <i className="ri-delete-bin-line minimalist-icon"></i>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
+                        
+                        {/* Scroll to Top Button */}
+                        {showScrollTop && (
+                          <button
+                            className="scroll-to-top-btn"
+                            onClick={scrollToTop}
+                            aria-label="Scroll to top"
+                          >
+                            <i className="ri-arrow-up-line"></i>
+                          </button>
+                        )}
+                        {provided.placeholder}
                       </div>
-                      
-                      {/* Scroll to Top Button */}
-                      {showScrollTop && (
-                        <button
-                          className="scroll-to-top-btn"
-                          onClick={scrollToTop}
-                          aria-label="Scroll to top"
-                        >
-                          <i className="ri-arrow-up-line"></i>
-                        </button>
-                      )}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
+                    )}
+                  </Droppable>
+                </div>
 
-              {/* Right Pane */}
-              <div className={`right-pane ${isSplitView ? 'split-view' : ''}`}>
-                {showKanban ? (
-                  <KanbanBoard 
-                    notes={notes}
-                    tags={tags}
-                    onNoteSelect={(noteId) => {
-                      setShowKanban(false);
-                      handleNoteSelect(noteId);
-                    }}
-                  />
-                ) : isSplitView ? (
-                  // Split View Layout
-                  <div className="split-view-container">
+                                 {/* Right Pane */}
+                 <div className={`right-pane ${isSplitView ? 'split-view' : ''}`}>
+                   {isSplitView ? (
+                     // Split View Layout
+                     <div className="split-view-container">
                     {/* Split View Toggle */}
                                          <div className="split-view-header">
                        <div className="split-view-title">Visualização Dividida</div>
