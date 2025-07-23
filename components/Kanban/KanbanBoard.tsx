@@ -521,13 +521,26 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
               {columns.length} columns • {cards.length} cards
             </span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setShowLinkModal(true)}
               className="new-note-btn"
             >
               <i className="ri-link mr-2"></i>
               Link Note
+            </button>
+            <button
+              onClick={() => {
+                // Trigger the add lane functionality from react-trello
+                const addLaneButton = document.querySelector('.react-trello-add-lane');
+                if (addLaneButton) {
+                  (addLaneButton as HTMLElement).click();
+                }
+              }}
+              className="new-note-btn"
+            >
+              <i className="ri-add-line mr-2"></i>
+              New Lane
             </button>
           </div>
         </div>
@@ -740,15 +753,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
             font-family: inherit !important;
           }
           
-          .react-trello-lane {
-            background-color: ${isDark ? 'var(--bg-secondary)' : '#ffffff'} !important;
-            border: 1px solid ${isDark ? 'var(--border-color)' : '#e5e7eb'} !important;
-            border-radius: 12px !important;
-            margin: 0 8px !important;
-            max-height: calc(100vh - 220px) !important;
-            display: flex !important;
-            flex-direction: column !important;
-          }
+                      .react-trello-lane {
+              background-color: ${isDark ? 'var(--bg-secondary)' : '#ffffff'} !important;
+              border: 1px solid ${isDark ? 'var(--border-color)' : '#e5e7eb'} !important;
+              border-radius: 12px !important;
+              margin: 0 8px !important;
+              min-height: calc(100vh - 200px) !important;
+            }
           
           .react-trello-lane-header {
             background-color: ${isDark ? 'var(--bg-secondary)' : '#ffffff'} !important;
@@ -812,19 +823,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           }
           
           .react-trello-add-lane {
-            background-color: transparent !important;
-            border: 2px dashed ${isDark ? '#6b7280' : '#9ca3af'} !important;
-            border-radius: 8px !important;
-            color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
-            margin: 0 8px !important;
-            padding: 20px !important;
-            text-align: center !important;
-            cursor: pointer !important;
-            transition: all 0.2s !important;
-            min-height: calc(100vh - 200px) !important;
-            display: flex !important;
-            align-items: center !important;
-            justify-content: center !important;
+            display: none !important;
           }
           
           .react-trello-add-lane:hover {
