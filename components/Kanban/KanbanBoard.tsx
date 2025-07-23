@@ -524,11 +524,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowLinkModal(true)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isDark 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
+              className="new-note-btn"
             >
               <i className="ri-link mr-2"></i>
               Link Note
@@ -738,58 +734,61 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       <div className="flex-1 overflow-hidden">
         <style jsx global>{`
           .react-trello-board {
-            background-color: ${isDark ? '#111827' : '#f9fafb'} !important;
-            color: ${isDark ? 'white' : '#111827'} !important;
+            background-color: ${isDark ? 'var(--bg-primary)' : '#f9fafb'} !important;
+            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
             height: 100% !important;
             font-family: inherit !important;
           }
           
           .react-trello-lane {
-            background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
-            border: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
-            border-radius: 8px !important;
+            background-color: ${isDark ? 'var(--bg-secondary)' : '#ffffff'} !important;
+            border: 1px solid ${isDark ? 'var(--border-color)' : '#e5e7eb'} !important;
+            border-radius: 12px !important;
             margin: 0 8px !important;
-            min-height: calc(100vh - 200px) !important;
+            max-height: calc(100vh - 220px) !important;
+            display: flex !important;
+            flex-direction: column !important;
           }
           
           .react-trello-lane-header {
-            background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
-            color: ${isDark ? 'white' : '#111827'} !important;
-            border-bottom: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
+            background-color: ${isDark ? 'var(--bg-secondary)' : '#ffffff'} !important;
+            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
+            border-bottom: 1px solid ${isDark ? 'var(--border-color)' : '#e5e7eb'} !important;
             padding: 12px 16px !important;
+            font-weight: 600 !important;
           }
           
           .react-trello-lane-title {
-            color: ${isDark ? 'white' : '#111827'} !important;
+            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
           }
           
           .react-trello-card {
-            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
-            border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
+            background-color: ${isDark ? 'var(--bg-card)' : '#f3f4f6'} !important;
+            border: 1px solid ${isDark ? 'var(--border-color)' : '#d1d5db'} !important;
             border-radius: 8px !important;
             margin: 8px !important;
             padding: 12px !important;
-            color: ${isDark ? 'white' : '#111827'} !important;
+            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
             cursor: pointer !important;
             transition: all 0.2s !important;
           }
           
           .react-trello-card:hover {
-            background-color: ${isDark ? '#4b5563' : '#e5e7eb'} !important;
+            background-color: ${isDark ? 'var(--bg-hover)' : '#e5e7eb'} !important;
             transform: translateY(-1px) !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            border-color: var(--bg-blue) !important;
           }
           
           .react-trello-card-title {
-            color: ${isDark ? 'white' : '#111827'} !important;
+            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
             font-weight: 500 !important;
             margin-bottom: 8px !important;
           }
           
           .react-trello-card-description {
-            color: ${isDark ? '#d1d5db' : '#6b7280'} !important;
+            color: ${isDark ? 'var(--text-secondary)' : '#6b7280'} !important;
             font-size: 0.875rem !important;
             line-height: 1.25rem !important;
           }
@@ -807,9 +806,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           }
           
           .react-trello-add-card:hover {
-            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
-            border-color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
-            color: ${isDark ? 'white' : '#111827'} !important;
+            background-color: ${isDark ? 'var(--bg-hover)' : '#f3f4f6'} !important;
+            border-color: ${isDark ? 'var(--bg-blue)' : '#6b7280'} !important;
+            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
           }
           
           .react-trello-add-lane {
@@ -829,9 +828,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           }
           
           .react-trello-add-lane:hover {
-            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
-            border-color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
-            color: ${isDark ? 'white' : '#111827'} !important;
+            background-color: ${isDark ? 'var(--bg-hover)' : '#f3f4f6'} !important;
+            border-color: ${isDark ? 'var(--bg-blue)' : '#6b7280'} !important;
+            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
           }
           
           .react-trello-lane-header__button {
@@ -849,7 +848,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           }
           
           .react-trello-card-adder-form {
-            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            background-color: ${isDark ? 'var(--bg-card)' : '#f3f4f6'} !important;
             border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
             border-radius: 8px !important;
             margin: 8px !important;

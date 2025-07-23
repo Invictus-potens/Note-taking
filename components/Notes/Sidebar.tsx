@@ -61,10 +61,10 @@ const Sidebar: React.FC<SidebarProps> = ({
   return (
     <aside className="w-64 bg-gray-900 text-white flex flex-col h-full border-r border-gray-800">
       <div className="p-4">
-        <Button onClick={onNewNote} className="w-full mb-4">
+        <button onClick={onNewNote} className="new-note-btn w-full mb-4">
           <Plus className="w-4 h-4 mr-2" />
           Nova nota
-        </Button>
+        </button>
       </div>
       <div className="px-4">
         <div className="mb-2 flex items-center justify-between">
