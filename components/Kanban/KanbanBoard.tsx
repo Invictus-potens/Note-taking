@@ -40,9 +40,10 @@ interface KanbanBoardProps {
   notes: Note[];
   tags: Array<{ id: string; name: string; color?: string }>;
   onNoteSelect?: (noteId: string) => void;
+  isDark?: boolean;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, isDark = true }) => {
   const { user } = useAuth();
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [cards, setCards] = useState<KanbanCard[]>([]);
@@ -99,8 +100,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
 
   // Initialize with default columns if none exist
   const initializeDefaultColumns = useCallback(async () => {
-    if (!user || columns.length > 0) return;
+    if (!user) return;
 
+    // Check if user already has columns in the database
+    const { data: existingColumns, error: checkError } = await supabase
+      .from('kanban_columns')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('position', { ascending: true });
+
+    if (checkError) {
+      console.error('Error checking existing columns:', checkError);
+      return;
+    }
+
+    // If columns already exist, don't create default ones
+    if (existingColumns && existingColumns.length > 0) {
+      setColumns(existingColumns);
+      return;
+    }
+
+    // Only create default columns if none exist
     const defaultColumns = [
       { title: 'To Do', position: 0 },
       { title: 'In Progress', position: 1 },
@@ -123,7 +143,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     } catch (error) {
       console.error('Error initializing default columns:', error);
     }
-  }, [user, columns.length]);
+  }, [user]);
 
   useEffect(() => {
     fetchKanbanData();
@@ -530,67 +550,67 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
       <div className="flex-1 overflow-hidden">
         <style jsx global>{`
           .react-trello-board {
-            background-color: #111827 !important;
-            color: white !important;
+            background-color: ${isDark ? '#111827' : '#f9fafb'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
             height: 100% !important;
             font-family: inherit !important;
           }
           
           .react-trello-lane {
-            background-color: #1f2937 !important;
-            border: 1px solid #374151 !important;
+            background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+            border: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
             border-radius: 8px !important;
             margin: 0 8px !important;
             min-height: calc(100vh - 200px) !important;
           }
           
           .react-trello-lane-header {
-            background-color: #1f2937 !important;
-            color: white !important;
-            border-bottom: 1px solid #374151 !important;
+            background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+            border-bottom: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
             padding: 12px 16px !important;
           }
           
           .react-trello-lane-title {
-            color: white !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
           }
           
           .react-trello-card {
-            background-color: #374151 !important;
-            border: 1px solid #4b5563 !important;
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
             border-radius: 8px !important;
             margin: 8px !important;
             padding: 12px !important;
-            color: white !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
             cursor: pointer !important;
             transition: all 0.2s !important;
           }
           
           .react-trello-card:hover {
-            background-color: #4b5563 !important;
+            background-color: ${isDark ? '#4b5563' : '#e5e7eb'} !important;
             transform: translateY(-1px) !important;
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
           }
           
           .react-trello-card-title {
-            color: white !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
             font-weight: 500 !important;
             margin-bottom: 8px !important;
           }
           
           .react-trello-card-description {
-            color: #d1d5db !important;
+            color: ${isDark ? '#d1d5db' : '#6b7280'} !important;
             font-size: 0.875rem !important;
             line-height: 1.25rem !important;
           }
           
           .react-trello-add-card {
             background-color: transparent !important;
-            border: 2px dashed #6b7280 !important;
+            border: 2px dashed ${isDark ? '#6b7280' : '#9ca3af'} !important;
             border-radius: 8px !important;
-            color: #9ca3af !important;
+            color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
             margin: 8px !important;
             padding: 12px !important;
             text-align: center !important;
@@ -599,16 +619,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
           }
           
           .react-trello-add-card:hover {
-            background-color: #374151 !important;
-            border-color: #9ca3af !important;
-            color: white !important;
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border-color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
           }
           
           .react-trello-add-lane {
             background-color: transparent !important;
-            border: 2px dashed #6b7280 !important;
+            border: 2px dashed ${isDark ? '#6b7280' : '#9ca3af'} !important;
             border-radius: 8px !important;
-            color: #9ca3af !important;
+            color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
             margin: 0 8px !important;
             padding: 20px !important;
             text-align: center !important;
@@ -621,15 +641,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
           }
           
           .react-trello-add-lane:hover {
-            background-color: #374151 !important;
-            border-color: #9ca3af !important;
-            color: white !important;
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border-color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
           }
           
           .react-trello-lane-header__button {
             background-color: transparent !important;
             border: none !important;
-            color: #9ca3af !important;
+            color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
             cursor: pointer !important;
             padding: 4px !important;
             border-radius: 4px !important;
@@ -641,18 +661,18 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
           }
           
           .react-trello-card-adder-form {
-            background-color: #374151 !important;
-            border: 1px solid #4b5563 !important;
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
             border-radius: 8px !important;
             margin: 8px !important;
             padding: 12px !important;
           }
           
           .react-trello-card-adder-form__input {
-            background-color: #4b5563 !important;
-            border: 1px solid #6b7280 !important;
+            background-color: ${isDark ? '#4b5563' : '#ffffff'} !important;
+            border: 1px solid ${isDark ? '#6b7280' : '#d1d5db'} !important;
             border-radius: 4px !important;
-            color: white !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
             padding: 8px 12px !important;
             width: 100% !important;
             margin-bottom: 8px !important;
@@ -679,17 +699,17 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
           }
           
           .react-trello-card-adder-form__button--cancel {
-            background-color: #6b7280 !important;
+            background-color: ${isDark ? '#6b7280' : '#9ca3af'} !important;
           }
           
           .react-trello-card-adder-form__button--cancel:hover {
-            background-color: #4b5563 !important;
+            background-color: ${isDark ? '#4b5563' : '#6b7280'} !important;
           }
           
           .react-trello-lane-header__title-input {
             background-color: transparent !important;
             border: none !important;
-            color: white !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
             font-weight: 600 !important;
             font-size: 1rem !important;
             width: 100% !important;
@@ -697,7 +717,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
           
           .react-trello-lane-header__title-input:focus {
             outline: none !important;
-            background-color: #374151 !important;
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
             border-radius: 4px !important;
             padding: 2px 4px !important;
           }
@@ -722,7 +742,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
           draggable
           laneDraggable
           cardDraggable
-          style={{ backgroundColor: '#111827' }}
+          style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
         />
       </div>
     </div>

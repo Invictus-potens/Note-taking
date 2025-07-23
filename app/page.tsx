@@ -930,6 +930,7 @@ function NotesApp() {
               <KanbanBoard 
                 notes={notes}
                 tags={tags}
+                isDark={isDark}
                 onNoteSelect={(noteId) => {
                   setShowKanban(false);
                   handleNoteSelect(noteId);
