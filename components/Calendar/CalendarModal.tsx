@@ -34,9 +34,10 @@ interface CalendarModalProps {
 const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }) => {
   const { user } = useAuth();
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showEventInput, setShowEventInput] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [hasInitialized, setHasInitialized] = useState(false);
 
   // Fetch events from database
   const fetchEvents = useCallback(async () => {
@@ -93,12 +94,20 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
     }
   }, [user]);
 
-  // Load events and cleanup on mount
+  // Initialize calendar only once when user is available
   useEffect(() => {
-    if (isOpen && user) {
+    if (user && !hasInitialized) {
+      setHasInitialized(true);
       cleanupPastEvents().then(() => fetchEvents());
     }
-  }, [isOpen, user, fetchEvents, cleanupPastEvents]);
+  }, [user, hasInitialized, fetchEvents, cleanupPastEvents]);
+
+  // Refresh events when modal opens (but don't re-initialize)
+  useEffect(() => {
+    if (isOpen && user && hasInitialized) {
+      fetchEvents();
+    }
+  }, [isOpen, user, hasInitialized, fetchEvents]);
 
   // Save event to database
   const saveEvent = useCallback(async (eventData: Omit<CalendarEvent, 'id'>) => {
@@ -269,7 +278,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
             </button>
           </div>
           <div className="calendar-modal-content">
-            {loading ? (
+            {loading && !hasInitialized ? (
               <div className="calendar-loading">Loading events...</div>
             ) : (
               <FullCalendar {...calendarOptions} />
