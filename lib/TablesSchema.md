@@ -38,14 +38,14 @@ create table public.calendar_events (
   start_date timestamp with time zone not null,
   end_date timestamp with time zone null,
   all_day boolean null default false,
-  color text null default '#3b82f6',
+  color text null default '#3b82f6'::text,
   reminder_minutes integer null,
   reminder_set boolean null default false,
   created_at timestamp with time zone null default now(),
   updated_at timestamp with time zone null default now(),
   constraint calendar_events_pkey primary key (id),
-  constraint calendar_events_user_id_fkey foreign key (user_id) references auth.users (id) on delete cascade
-) tablespace pg_default;
+  constraint calendar_events_user_id_fkey foreign KEY (user_id) references auth.users (id) on delete CASCADE
+) TABLESPACE pg_default;
 
 -- Notes table
 create table public.notes (
@@ -71,6 +71,10 @@ create extension if not exists "uuid-ossp"; // in case of the error  - extension
 
 -- Migration to add color column to existing tags table (run this if the table already exists)
 -- ALTER TABLE public.tags ADD COLUMN IF NOT EXISTS color text null default '#3b82f6';
+
+-- Migration to add reminder columns to existing calendar_events table (run this if the table already exists)
+-- ALTER TABLE public.calendar_events ADD COLUMN IF NOT EXISTS reminder_minutes integer null;
+-- ALTER TABLE public.calendar_events ADD COLUMN IF NOT EXISTS reminder_set boolean null default false;
 
 -- Function to automatically delete past events (run this to create the function)
 -- CREATE OR REPLACE FUNCTION cleanup_past_events()
