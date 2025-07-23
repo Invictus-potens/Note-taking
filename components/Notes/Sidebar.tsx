@@ -1,6 +1,16 @@
 import React, { useState } from 'react';
+import dynamic from 'next/dynamic';
 import Button from '../ui/Button';
 import { Plus } from 'lucide-react';
+
+// Dynamic imports for client-side only components
+const Droppable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Droppable })), {
+  ssr: false
+});
+
+const Draggable = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Draggable })), {
+  ssr: false
+});
 
 interface Folder {
   id: string;
@@ -53,12 +63,12 @@ const Sidebar: React.FC<SidebarProps> = ({
       <div className="p-4">
         <Button onClick={onNewNote} className="w-full mb-4">
           <Plus className="w-4 h-4 mr-2" />
-          New Note
+          Nova nota
         </Button>
       </div>
       <div className="px-4">
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400">FOLDERS</span>
+          <span className="text-xs font-semibold text-gray-400">Pastas</span>
           <button className="text-gray-400 hover:text-white" onClick={() => setShowNewFolder(v => !v)}>
             <Plus className="w-4 h-4" />
           </button>
@@ -81,20 +91,29 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         )}
         <ul className="mb-6 space-y-1">
-          {folders.map(folder => (
-            <li key={folder.id}>
-              <button
-                className={`flex items-center w-full px-2 py-1.5 rounded-lg transition-colors text-sm ${selectedFolder === folder.id ? 'bg-blue-700 text-white' : 'hover:bg-gray-800 text-gray-300'}`}
-                onClick={() => onFolderSelect(folder.id)}
-              >
-                <span className="flex-1 text-left">{folder.name}</span>
-                <span className="ml-2 text-xs bg-gray-800 px-2 py-0.5 rounded-full">{folder.count}</span>
-              </button>
-            </li>
+          {folders.map((folder, index) => (
+            <Droppable key={folder.id} droppableId={`folder-${folder.id}`}>
+              {(provided, snapshot) => (
+                <li
+                  ref={provided.innerRef}
+                  {...provided.droppableProps}
+                  className={`${snapshot.isDraggingOver ? 'bg-blue-800' : ''}`}
+                >
+                  <button
+                    className={`flex items-center w-full px-2 py-1.5 rounded-lg transition-colors text-sm ${selectedFolder === folder.id ? 'bg-blue-700 text-white' : 'hover:bg-gray-800 text-gray-300'}`}
+                    onClick={() => onFolderSelect(folder.id)}
+                  >
+                    <span className="flex-1 text-left">{folder.name}</span>
+                    <span className="ml-2 text-xs bg-gray-800 px-2 py-0.5 rounded-full">{folder.count}</span>
+                  </button>
+                  {provided.placeholder}
+                </li>
+              )}
+            </Droppable>
           ))}
         </ul>
         <div className="mb-2 flex items-center justify-between">
-          <span className="text-xs font-semibold text-gray-400">TAGS</span>
+          <span className="text-xs font-semibold text-gray-400">Etiquetas</span>
           <button className="text-gray-400 hover:text-white" onClick={() => setShowNewTag(v => !v)}>
             <Plus className="w-4 h-4" />
           </button>
