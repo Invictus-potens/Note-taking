@@ -24,6 +24,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordReset, setIsPasswordReset] = useState(false);
   const [resetEmailSent, setResetEmailSent] = useState(false);
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
 
   if (!isOpen) return null;
 
@@ -55,7 +56,9 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
     setErrors({});
     try {
       if (isPasswordReset) {
-        const { error } = await supabase.auth.resetPasswordForEmail(formData.email);
+        const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`
+        });
         if (error) throw error;
         setResetEmailSent(true);
       } else if (isLogin) {
@@ -67,17 +70,45 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         onAuthSuccess();
         onClose();
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
-          options: { data: { name: formData.name } }
+          options: { 
+            data: { name: formData.name },
+            emailRedirectTo: `${window.location.origin}/auth/confirm`
+          }
         });
         if (error) throw error;
-        onAuthSuccess();
-        onClose();
+        
+        // Check if email confirmation is required
+        if (data.user && !data.session) {
+          setEmailConfirmationSent(true);
+        } else {
+          onAuthSuccess();
+          onClose();
+        }
       }
     } catch (error: any) {
       setErrors({ general: error.message || 'Authentication failed. Please try again.' });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResendConfirmation = async () => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: formData.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/confirm`
+        }
+      });
+      if (error) throw error;
+      setErrors({ general: 'Email de confirmação reenviado! Verifique sua caixa de entrada.' });
+    } catch (error: any) {
+      setErrors({ general: error.message || 'Failed to resend confirmation email.' });
     } finally {
       setIsLoading(false);
     }
@@ -106,6 +137,19 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         {resetEmailSent ? (
           <div className="mb-4 p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
             <p className="text-sm text-green-600 dark:text-green-400">Password reset email sent! Check your inbox.</p>
+          </div>
+        ) : emailConfirmationSent ? (
+          <div className="mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm text-blue-600 dark:text-blue-400 mb-2">
+              Email de confirmação enviado! Verifique sua caixa de entrada e clique no link para confirmar sua conta.
+            </p>
+            <button
+              onClick={handleResendConfirmation}
+              disabled={isLoading}
+              className="text-sm text-blue-600 dark:text-blue-400 hover:underline disabled:opacity-50"
+            >
+              {isLoading ? 'Reenviando...' : 'Reenviar email de confirmação'}
+            </button>
           </div>
         ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -159,7 +203,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
         </form>
         )}
         <div className="mt-6 text-center">
-          {!isPasswordReset && (
+          {!isPasswordReset && !emailConfirmationSent && (
             <p className="text-sm text-gray-600 dark:text-gray-400">
               <button
                 onClick={() => setIsPasswordReset(true)}
@@ -173,6 +217,15 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }: AuthModalP
             <p className="text-sm text-gray-600 dark:text-gray-400">
               <button
                 onClick={() => { setIsPasswordReset(false); setResetEmailSent(false); }}
+                className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium"
+              >
+                Back to Sign In
+              </button>
+            </p>
+          ) : emailConfirmationSent ? (
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              <button
+                onClick={() => { setEmailConfirmationSent(false); setIsLogin(true); }}
                 className="text-blue-600 hover:text-blue-700 cursor-pointer font-medium"
               >
                 Back to Sign In

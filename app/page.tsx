@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, ChangeEvent, useRef } from 'react';
+import { useState, useEffect, ChangeEvent, useRef, useCallback } from 'react';
 import * as React from 'react';
 import dynamic from 'next/dynamic';
 import { useAuth } from '../lib/authContext';
@@ -17,6 +17,8 @@ import DragDropWrapper from '../components/ui/DragDropWrapper';
 import ClientOnly from '../components/ui/ClientOnly';
 import Toast from '../components/ui/Toast';
 import DragDropHint from '../components/ui/DragDropHint';
+import CalendarModal from '../components/Calendar/CalendarModal';
+import KanbanBoard from '../components/Kanban/KanbanBoard';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
@@ -63,6 +65,47 @@ interface Tag {
 function NotesApp() {
   const { user, signOut } = useAuth();
   const router = useRouter();
+  
+  // Handle authentication errors from URL parameters
+  useEffect(() => {
+    const handleAuthErrors = () => {
+      // Check for error parameters in URL hash
+      const hash = window.location.hash;
+      if (hash) {
+        const params = new URLSearchParams(hash.substring(1));
+        const error = params.get('error');
+        const errorCode = params.get('error_code');
+        const errorDescription = params.get('error_description');
+        
+        if (error === 'access_denied' && errorCode === 'otp_expired') {
+          // Clear the error from URL
+          window.history.replaceState({}, document.title, window.location.pathname);
+          
+          // Show user-friendly error message
+          setToast({
+            message: 'O link de confirmação expirou. Por favor, solicite um novo link de confirmação.',
+            type: 'error'
+          });
+        }
+      }
+
+      // Check for auth_error query parameter
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('auth_error') === 'true') {
+        // Clear the error from URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        // Show user-friendly error message
+        setToast({
+          message: 'Erro na autenticação. Por favor, tente novamente.',
+          type: 'error'
+        });
+      }
+    };
+
+    handleAuthErrors();
+  }, []);
+
   const [isDark, setIsDark] = useState(true); // Default to dark theme
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFolder, setSelectedFolder] = useState('all');
@@ -82,6 +125,8 @@ function NotesApp() {
   // Modal states
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showKanban, setShowKanban] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6'); // Default blue color
@@ -860,6 +905,16 @@ function NotesApp() {
                 <div className="user-info">
                   <span className="user-email">{user?.email}</span>
                 </div>
+                <button className="calendar-btn" onClick={() => setShowCalendarModal(true)} aria-label="Open calendar">
+                  <i className="ri-calendar-line"></i>
+                </button>
+                <button 
+                  className={`kanban-btn ${showKanban ? 'active' : ''}`} 
+                  onClick={() => setShowKanban(!showKanban)} 
+                  aria-label="Toggle Kanban board"
+                >
+                  <i className="ri-medal-line"></i>
+                </button>
                 <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
                   <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
                 </button>
@@ -1073,7 +1128,16 @@ function NotesApp() {
 
               {/* Right Pane */}
               <div className={`right-pane ${isSplitView ? 'split-view' : ''}`}>
-                {isSplitView ? (
+                {showKanban ? (
+                  <KanbanBoard 
+                    notes={notes}
+                    tags={tags}
+                    onNoteSelect={(noteId) => {
+                      setShowKanban(false);
+                      handleNoteSelect(noteId);
+                    }}
+                  />
+                ) : isSplitView ? (
                   // Split View Layout
                   <div className="split-view-container">
                     {/* Split View Toggle */}
@@ -1126,12 +1190,14 @@ function NotesApp() {
                                   onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
                                   placeholder="Título da nota..."
                                 />
-                                <QuillEditor
-                                  value={currentNote.content}
-                                  onChange={(content) => setCurrentNote({ ...currentNote, content })}
-                                  placeholder="Comece a escrever sua nota..."
-                                  style={{ height: '30vh', display: 'flex', flexDirection: 'column' }}
-                                />
+                                <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                  <QuillEditor
+                                    value={currentNote.content}
+                                    onChange={(content) => setCurrentNote({ ...currentNote, content })}
+                                    placeholder="Comece a escrever sua nota..."
+                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                                  />
+                                </div>
                                 <div className="editor-tags">
                                   <div className="editor-tags-label">Etiquetas:</div>
                                   <div className="editor-tags-list">
@@ -1174,7 +1240,7 @@ function NotesApp() {
                                 <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
                                 <div
                                   className="editor-textarea"
-                                  style={{ whiteSpace: 'pre-wrap', maxHeight: '30vh', overflowY: 'auto' }}
+                                  style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
                                   dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
                                 />
                                 {currentNote.tags.length > 0 && (
@@ -1240,12 +1306,14 @@ function NotesApp() {
                                   onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote2({ ...currentNote2, title: e.target.value })}
                                   placeholder="Título da nota..."
                                 />
-                                <QuillEditor
-                                  value={currentNote2.content}
-                                  onChange={(content) => setCurrentNote2({ ...currentNote2, content })}
-                                  placeholder="Comece a escrever sua nota..."
-                                  style={{ height: '30vh', display: 'flex', flexDirection: 'column' }}
-                                />
+                                <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                  <QuillEditor
+                                    value={currentNote2.content}
+                                    onChange={(content) => setCurrentNote2({ ...currentNote2, content })}
+                                    placeholder="Comece a escrever sua nota..."
+                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                                  />
+                                </div>
                                 <div className="editor-tags">
                                   <div className="editor-tags-label">Etiquetas:</div>
                                   <div className="editor-tags-list">
@@ -1288,7 +1356,7 @@ function NotesApp() {
                                 <h1 className="editor-input">{currentNote2.title || 'Sem título'}</h1>
                                 <div
                                   className="editor-textarea"
-                                  style={{ whiteSpace: 'pre-wrap', maxHeight: '30vh', overflowY: 'auto' }}
+                                  style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
                                   dangerouslySetInnerHTML={{ __html: currentNote2.content || 'Sem conteúdo' }}
                                 />
                                 {currentNote2.tags.length > 0 && (
@@ -1546,6 +1614,13 @@ function NotesApp() {
 
         {/* AI Assistant */}
         <AIAssistant onAddToNote={handleAddAIToNote} />
+
+        {/* Calendar Modal */}
+        <CalendarModal 
+          isOpen={showCalendarModal}
+          onClose={useCallback(() => setShowCalendarModal(false), [])}
+          isDark={isDark}
+        />
       </DragDropWrapper>
       
       {/* Toast Notifications */}

@@ -20,6 +20,28 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Application Routes
+
+### Main Application
+- **`/`** - Main notes application with authentication protection
+
+### Authentication Routes
+- **`/auth/confirm`** - Email confirmation page for new user signups
+  - Handles email confirmation tokens
+  - Provides option to resend confirmation emails
+  - Auto-redirects to main app after successful confirmation
+  
+- **`/auth/reset-password`** - Password recovery page
+  - Allows users to set new passwords after requesting reset
+  - Validates password strength and confirmation
+  - Handles expired/invalid reset tokens
+  - Auto-redirects to main app after successful password reset
+
+### Authentication Flow
+1. **Sign Up**: Users register → receive confirmation email → click link → redirected to `/auth/confirm`
+2. **Password Reset**: Users request reset → receive reset email → click link → redirected to `/auth/reset-password`
+3. **Error Handling**: Expired links show user-friendly error messages with options to request new emails
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

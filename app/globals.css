@@ -5,6 +5,193 @@
 /* ReactQuill CSS - Imported globally to avoid SSR issues */
 @import 'react-quill/dist/quill.snow.css';
 
+/* Custom Quill Editor Styles for Dark Theme */
+.ql-editor {
+  color: white !important;
+  background: transparent !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-style: italic;
+}
+
+/* Quill Toolbar Dark Theme */
+.ql-toolbar {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: white !important;
+}
+
+.ql-toolbar button {
+  color: white !important;
+  background: transparent !important;
+}
+
+.ql-toolbar button:hover {
+  color: var(--bg-blue) !important;
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar button.ql-active {
+  color: var(--bg-blue) !important;
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar .ql-stroke {
+  stroke: white !important;
+}
+
+.ql-toolbar .ql-fill {
+  fill: white !important;
+}
+
+.ql-toolbar .ql-picker {
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-label {
+  color: white !important;
+  border-color: var(--border-color) !important;
+}
+
+.ql-toolbar .ql-picker-options {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-item {
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-item:hover {
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar .ql-picker-item.ql-selected {
+  color: var(--bg-blue) !important;
+}
+
+/* Quill Container Dark Theme */
+.ql-container {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: white !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+/* Quill Editor Container for Split View */
+.ql-editor-container {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+/* Quill wrapper for split view */
+.ql-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.ql-wrapper .ql-container {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.ql-wrapper .ql-editor {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+/* Custom scrollbar styling for Quill editor */
+.ql-wrapper .ql-editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-corner {
+  background: var(--bg-hover);
+}
+
+.ql-editor {
+  color: white !important;
+  background: transparent !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  resize: none !important;
+}
+
+/* Quill Editor Content Dark Theme */
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6,
+.ql-editor p,
+.ql-editor div,
+.ql-editor span {
+  color: white !important;
+}
+
+.ql-editor blockquote {
+  border-left-color: var(--border-color) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.ql-editor code {
+  background: var(--bg-hover) !important;
+  color: white !important;
+}
+
+.ql-editor pre {
+  background: var(--bg-hover) !important;
+  color: white !important;
+}
+
+/* Quill Dropdown Dark Theme */
+.ql-toolbar .ql-picker-options {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ql-toolbar .ql-picker-options .ql-picker-item {
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-options .ql-picker-item:hover {
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar .ql-picker-options .ql-picker-item.ql-selected {
+  color: var(--bg-blue) !important;
+  background: var(--bg-hover) !important;
+}
+
 /* Drag and Drop Styles */
 .sidebar-item {
   position: relative;
@@ -215,6 +402,57 @@ html, body {
   background: var(--bg-hover);
   color: var(--text-primary);
   transform: scale(1.05);
+}
+
+.calendar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 18px;
+}
+
+.calendar-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: scale(1.05);
+}
+
+.kanban-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 18px;
+}
+
+.kanban-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.kanban-btn.active {
+  background: var(--bg-blue);
+  color: white;
+  border-color: var(--bg-blue);
+}
+
+.kanban-btn.active:hover {
+  background: var(--bg-blue-hover);
 }
 
 .signout-btn {
@@ -773,6 +1011,7 @@ html, body {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-primary);
+  flex-shrink: 0;
 }
 
 .split-view-title {
@@ -790,6 +1029,7 @@ html, body {
   flex: 1;
   display: flex;
   min-height: 0;
+  overflow: hidden;
 }
 
 .split-note-pane {
@@ -798,6 +1038,8 @@ html, body {
   flex-direction: column;
   border-right: 1px solid var(--border-color);
   background: var(--bg-secondary);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .split-note-pane:last-child {
@@ -811,6 +1053,7 @@ html, body {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-primary);
+  flex-shrink: 0;
 }
 
 .split-note-title {
@@ -827,10 +1070,11 @@ html, body {
 .split-note-content {
   flex: 1;
   padding: 16px;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
 }
 
 .split-note-empty {
@@ -965,6 +1209,34 @@ html, body {
   outline: none;
   resize: none;
   font-family: inherit;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar for editor textarea */
+.editor-textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editor-textarea::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
+.editor-textarea::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.editor-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.editor-textarea::-webkit-scrollbar-corner {
+  background: var(--bg-hover);
 }
 
 .editor-textarea::placeholder {
@@ -1840,5 +2112,1112 @@ html, body {
     font-size: 20px;
     bottom: 15px;
     left: 15px;
+  }
+}
+
+/* Calendar Loading State */
+.calendar-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Calendar Modal */
+.calendar-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.calendar-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 800px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Performance optimizations */
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.calendar-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.calendar-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.calendar-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.calendar-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.calendar-modal-content {
+  padding: 24px;
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
+  /* Performance optimizations */
+  will-change: scroll-position;
+}
+
+/* FullCalendar Theme Customization - Optimized */
+.fc {
+  font-family: inherit;
+  /* Performance optimizations */
+  contain: layout style paint;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--border-color);
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--border-color);
+}
+
+.fc-daygrid-day {
+  background: var(--bg-primary);
+  /* Performance optimizations */
+  contain: layout style;
+}
+
+.fc-daygrid-day:hover {
+  background: var(--bg-hover);
+}
+
+.fc-daygrid-day.fc-day-today {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.fc-daygrid-day-number {
+  color: var(--text-primary);
+}
+
+.fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+  color: var(--text-secondary);
+}
+
+.fc-col-header-cell {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+  /* Performance optimizations */
+  contain: layout style;
+}
+
+.fc-button {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  /* Performance optimizations */
+  contain: layout style;
+}
+
+.fc-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--bg-blue);
+}
+
+.fc-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.fc-button-primary {
+  background: var(--bg-blue);
+  border-color: var(--bg-blue);
+  color: white;
+}
+
+.fc-button-primary:hover {
+  background: var(--bg-blue-hover);
+  border-color: var(--bg-blue-hover);
+}
+
+.fc-toolbar-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.fc-event {
+  border-radius: 4px;
+  border: none;
+  padding: 2px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  /* Performance optimizations */
+  contain: layout style;
+}
+
+.fc-event:hover {
+  opacity: 0.9;
+}
+
+/* Dark theme specific overrides */
+[data-theme="dark"] .fc {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .fc-daygrid-day {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .fc-daygrid-day:hover {
+  background: var(--bg-hover);
+}
+
+[data-theme="dark"] .fc-col-header-cell {
+  background: var(--bg-secondary);
+}
+
+/* Responsive Calendar */
+@media (max-width: 768px) {
+  .calendar-modal {
+    width: 95vw;
+    max-height: 95vh;
+    margin: 10px;
+  }
+  
+  .calendar-modal-content {
+    padding: 16px;
+  }
+  
+  .fc-toolbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .fc-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .fc-toolbar-title {
+    font-size: 16px;
+  }
+}
+
+/* Event Input Modal */
+.event-input-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.event-input-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 500px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.event-input-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.event-input-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.event-input-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.event-input-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.event-input-form {
+  padding: 24px;
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.event-input,
+.event-textarea {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-search);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
+}
+
+.event-input:focus,
+.event-textarea:focus {
+  outline: none;
+  border-color: var(--bg-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.event-input::placeholder,
+.event-textarea::placeholder {
+  color: var(--text-secondary);
+}
+
+.event-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.event-checkbox {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--bg-blue);
+}
+
+.date-time-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.event-input-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.event-input-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.event-input-btn:hover {
+  background: var(--bg-hover);
+}
+
+.event-input-btn.primary {
+  background: var(--bg-blue);
+  color: white;
+  border-color: var(--bg-blue);
+}
+
+.event-input-btn.primary:hover {
+  background: var(--bg-blue-hover);
+}
+
+/* Responsive Event Input Modal */
+@media (max-width: 768px) {
+  .event-input-modal {
+    width: 95vw;
+    margin: 10px;
+  }
+  
+  .event-input-form {
+    padding: 16px;
+  }
+  
+  .date-time-group {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .event-input-modal-actions {
+    flex-direction: column;
+  }
+  
+  .event-input-btn {
+    width: 100%;
+  }
+}
+
+/* Event Action Modal */
+.event-action-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.event-action-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 400px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.event-action-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.event-action-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.event-action-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.event-action-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.event-action-content {
+  padding: 24px;
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
+}
+
+.event-details {
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.event-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.event-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 12px 0;
+  line-height: 1.5;
+}
+
+.event-time {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.event-time i {
+  font-size: 16px;
+}
+
+.event-reminder-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: #f59e0b;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(245, 158, 11, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.2);
+}
+
+.event-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.event-action-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  width: 100%;
+}
+
+.event-action-btn:hover {
+  background: var(--bg-hover);
+}
+
+.event-action-btn.edit {
+  border-color: var(--bg-blue);
+  color: var(--bg-blue);
+}
+
+.event-action-btn.edit:hover {
+  background: var(--bg-blue);
+  color: white;
+}
+
+.event-action-btn.reminder {
+  border-color: #f59e0b;
+  color: #f59e0b;
+}
+
+.event-action-btn.reminder:hover {
+  background: #f59e0b;
+  color: white;
+}
+
+.event-action-btn.delete {
+  border-color: #ef4444;
+  color: #ef4444;
+}
+
+.event-action-btn.delete:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.event-action-btn.secondary {
+  border-color: var(--border-color);
+  color: var(--text-secondary);
+}
+
+.event-action-btn.secondary:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.event-action-btn.primary {
+  background: var(--bg-blue);
+  color: white;
+  border-color: var(--bg-blue);
+}
+
+.event-action-btn.primary:hover {
+  background: var(--bg-blue-hover);
+}
+
+.reminder-input {
+  margin-top: 16px;
+}
+
+.reminder-input h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.reminder-description {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 16px 0;
+  line-height: 1.5;
+}
+
+.reminder-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.reminder-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.reminder-option:hover {
+  background: var(--bg-hover);
+}
+
+.reminder-option input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--bg-blue);
+}
+
+.reminder-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+/* Responsive Event Action Modal */
+@media (max-width: 768px) {
+  .event-action-modal {
+    width: 95vw;
+    margin: 10px;
+  }
+  
+  .event-action-content {
+    padding: 16px;
+  }
+  
+  .reminder-actions {
+    flex-direction: column;
+  }
+  
+  .event-action-btn {
+    width: 100%;
+  }
+}
+
+/* Kanban Board Styles */
+.kanban-board {
+  height: 100%;
+  display: flex;
+  background: var(--bg-primary);
+}
+
+.kanban-sidebar {
+  width: 320px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.kanban-sidebar-header {
+  padding: 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kanban-sidebar-content {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.kanban-sidebar-card {
+  background: var(--bg-primary);
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 16px;
+  border: 1px solid var(--border-color);
+}
+
+.kanban-sidebar-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
+}
+
+.kanban-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.kanban-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.kanban-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.kanban-add-column-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-blue);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+}
+
+.kanban-add-column-btn:hover {
+  background: var(--bg-blue-hover);
+  transform: translateY(-1px);
+}
+
+.kanban-container {
+  flex: 1;
+  overflow-x: auto;
+  padding: 24px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.kanban-columns {
+  display: flex;
+  gap: 24px;
+  min-height: calc(100vh - 200px);
+  align-items: flex-start;
+  padding-bottom: 24px;
+}
+
+.kanban-column {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 320px;
+  max-width: 320px;
+  flex-shrink: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: all 0.2s ease;
+}
+
+.kanban-column.dragging {
+  transform: rotate(2deg);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.kanban-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kanban-column-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  flex: 1;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.kanban-column-title:hover {
+  background: var(--bg-hover);
+}
+
+.kanban-column-title.editing {
+  background: var(--bg-hover);
+  border: 1px solid var(--border-color);
+}
+
+.kanban-column-delete {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.kanban-column-delete:hover {
+  background: #ef4444;
+  color: white;
+}
+
+.kanban-cards {
+  min-height: 200px;
+  transition: background 0.2s ease;
+}
+
+.kanban-cards.dragging-over {
+  background: rgba(59, 130, 246, 0.1);
+  border-radius: 8px;
+}
+
+.kanban-card {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 12px;
+  margin-bottom: 12px;
+  cursor: grab;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border-color: var(--bg-blue);
+}
+
+.kanban-card.dragging {
+  transform: rotate(2deg) scale(1.02);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
+}
+
+.kanban-card-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 8px;
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.kanban-card-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.kanban-card-tag {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: white;
+  opacity: 0.9;
+}
+
+.kanban-card-tag-count {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #666;
+  background: #f0f0f0;
+}
+
+.kanban-add-note {
+  margin-top: 16px;
+}
+
+.kanban-add-note-select {
+  width: 100%;
+  padding: 8px 12px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kanban-add-note-select:focus {
+  outline: none;
+  border-color: var(--bg-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.kanban-add-note-select:hover {
+  border-color: var(--bg-blue);
+}
+
+.kanban-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+}
+
+.kanban-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 0;
+  max-width: 400px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kanban-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.kanban-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kanban-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.kanban-modal-content {
+  padding: 24px;
+}
+
+.kanban-modal-input {
+  width: 100%;
+  padding: 12px 16px;
+  background: var(--bg-search);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 14px;
+  margin-bottom: 20px;
+  transition: all 0.2s ease;
+}
+
+.kanban-modal-input:focus {
+  outline: none;
+  border-color: var(--bg-blue);
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.kanban-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+}
+
+.kanban-modal-btn {
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid var(--border-color);
+  font-size: 14px;
+}
+
+.kanban-modal-btn.primary {
+  background: var(--bg-blue);
+  color: white;
+  border-color: var(--bg-blue);
+}
+
+.kanban-modal-btn.primary:hover {
+  background: var(--bg-blue-hover);
+}
+
+.kanban-modal-btn.secondary {
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+.kanban-modal-btn.secondary:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Responsive Kanban */
+@media (max-width: 768px) {
+  .kanban-header {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .kanban-title {
+    font-size: 20px;
+    text-align: center;
+  }
+
+  .kanban-container {
+    padding: 16px;
+  }
+
+  .kanban-columns {
+    gap: 16px;
+  }
+
+  .kanban-column {
+    min-width: 280px;
+    max-width: 280px;
+  }
+
+  .kanban-modal {
+    max-width: 90%;
   }
 }
