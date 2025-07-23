@@ -1,19 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import dynamic from 'next/dynamic';
-import { DragDropContext, Droppable, Draggable, DropResult } from 'react-beautiful-dnd';
+import Board from 'react-trello';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/authContext';
-
-// Dynamic imports for client-side only components
-const DroppableComponent = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Droppable })), {
-  ssr: false
-});
-
-const DraggableComponent = dynamic(() => import('react-beautiful-dnd').then(mod => ({ default: mod.Draggable })), {
-  ssr: false
-});
 
 interface Note {
   id: string;
@@ -50,16 +40,19 @@ interface KanbanBoardProps {
   notes: Note[];
   tags: Array<{ id: string; name: string; color?: string }>;
   onNoteSelect?: (noteId: string) => void;
+  isDark?: boolean;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, isDark = true }) => {
   const { user } = useAuth();
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [cards, setCards] = useState<KanbanCard[]>([]);
   const [loading, setLoading] = useState(true);
-  const [editingColumn, setEditingColumn] = useState<string | null>(null);
-  const [newColumnTitle, setNewColumnTitle] = useState('');
-  const [showAddColumn, setShowAddColumn] = useState(false);
+  const [editingCard, setEditingCard] = useState<any>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showLinkModal, setShowLinkModal] = useState(false);
+  const [selectedLaneForLink, setSelectedLaneForLink] = useState<string>('');
+  const [editForm, setEditForm] = useState({ title: '', content: '', tags: [] as string[] });
 
   // Fetch Kanban data
   const fetchKanbanData = useCallback(async () => {
@@ -107,16 +100,44 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     }
   }, [user, notes]);
 
+  // Update cards when notes change (without re-fetching from database)
+  const updateCardsWithNotes = useCallback(() => {
+    setCards(prevCards => 
+      prevCards.map(card => ({
+        ...card,
+        note: notes.find(note => note.id === card.note_id)
+      }))
+    );
+  }, [notes]);
+
   // Initialize with default columns if none exist
   const initializeDefaultColumns = useCallback(async () => {
-    if (!user || columns.length > 0) return;
+    if (!user) return;
 
+    // Check if user already has columns in the database
+    const { data: existingColumns, error: checkError } = await supabase
+      .from('kanban_columns')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('position', { ascending: true });
+
+    if (checkError) {
+      console.error('Error checking existing columns:', checkError);
+      return;
+    }
+
+    // If columns already exist, don't create default ones
+    if (existingColumns && existingColumns.length > 0) {
+      setColumns(existingColumns);
+      return;
+    }
+
+    // Only create default columns if none exist
     const defaultColumns = [
-      { title: 'Aguardando início', position: 0 },
-      { title: 'Aguardando retorno do cliente/vendedor', position: 1 },
-      { title: 'Aguardando análise', position: 2 },
-      { title: 'Coleta de dados', position: 3 },
-      { title: 'Em análise', position: 4 }
+      { title: 'To Do', position: 0 },
+      { title: 'In Progress', position: 1 },
+      { title: 'Review', position: 2 },
+      { title: 'Done', position: 3 }
     ];
 
     try {
@@ -134,7 +155,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     } catch (error) {
       console.error('Error initializing default columns:', error);
     }
-  }, [user, columns.length]);
+  }, [user]);
 
   useEffect(() => {
     fetchKanbanData();
@@ -144,9 +165,161 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     initializeDefaultColumns();
   }, [initializeDefaultColumns]);
 
-  // Create new column
-  const handleCreateColumn = async () => {
-    if (!user || !newColumnTitle.trim()) return;
+  // Update cards when notes change (without re-fetching)
+  useEffect(() => {
+    if (cards.length > 0) {
+      updateCardsWithNotes();
+    }
+  }, [notes, updateCardsWithNotes]);
+
+  // Convert data to react-trello format
+  const getKanbanData = () => {
+    return {
+      lanes: columns.map(column => ({
+        id: column.id,
+        title: column.title,
+        cards: cards
+          .filter(card => card.column_id === column.id)
+          .sort((a, b) => a.position - b.position)
+          .map(card => ({
+            id: card.id,
+            title: card.note?.title || 'Untitled',
+            description: card.note?.content || '',
+            note_id: card.note_id,
+            note: card.note,
+            created_at: card.created_at,
+            tags: card.note?.tags || [],
+            label: card.note?.tags?.slice(0, 2).join(', ') || '',
+            laneId: column.id
+          }))
+      }))
+    };
+  };
+
+  // Handle card creation
+  const handleCardCreate = async (card: any, laneId: string) => {
+    if (!user) return;
+
+    try {
+      // Create a new note first
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .insert([{
+          user_id: user.id,
+          title: card.title,
+          content: card.description || '',
+          folder: 'kanban',
+          tags: card.tags || [],
+          is_pinned: false,
+          is_private: false
+        }])
+        .select();
+
+      if (noteError) {
+        console.error('Error creating note:', noteError);
+        return;
+      }
+
+      // Create the card
+      const newPosition = cards.filter(c => c.column_id === laneId).length;
+      const { data: cardData, error: cardError } = await supabase
+        .from('kanban_cards')
+        .insert([{
+          user_id: user.id,
+          note_id: noteData[0].id,
+          column_id: laneId,
+          position: newPosition
+        }])
+        .select();
+
+      if (cardError) {
+        console.error('Error creating card:', cardError);
+        return;
+      }
+
+      const newCard = {
+        ...cardData[0],
+        note: noteData[0]
+      };
+
+      setCards(prev => [...prev, newCard]);
+    } catch (error) {
+      console.error('Error creating card:', error);
+    }
+  };
+
+  // Handle card update
+  const handleCardUpdate = async (cardId: string, card: any) => {
+    if (!user) return;
+
+    try {
+      const existingCard = cards.find(c => c.id === cardId);
+      if (!existingCard) return;
+
+      // Update the note
+      const { error: noteError } = await supabase
+        .from('notes')
+        .update({
+          title: card.title,
+          content: card.description,
+          tags: card.tags,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', existingCard.note_id)
+        .eq('user_id', user.id);
+
+      if (noteError) {
+        console.error('Error updating note:', noteError);
+        return;
+      }
+
+      // Update local state
+      setCards(prev => prev.map(c => 
+        c.id === cardId 
+          ? { 
+              ...c, 
+              note: { 
+                ...c.note!, 
+                title: card.title, 
+                content: card.description, 
+                tags: card.tags 
+              } 
+            }
+          : c
+      ));
+
+      setShowEditModal(false);
+      setEditingCard(null);
+    } catch (error) {
+      console.error('Error updating card:', error);
+    }
+  };
+
+  // Handle card delete
+  const handleCardDelete = async (cardId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('kanban_cards')
+        .delete()
+        .eq('id', cardId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error deleting card:', error);
+        return;
+      }
+
+      setCards(prev => prev.filter(card => card.id !== cardId));
+    } catch (error) {
+      console.error('Error deleting card:', error);
+    }
+  };
+
+  // Handle lane creation
+  const handleLaneCreate = async (lane: any) => {
+    if (!user) return;
 
     try {
       const newPosition = columns.length;
@@ -154,7 +327,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
         .from('kanban_columns')
         .insert([{
           user_id: user.id,
-          title: newColumnTitle.trim(),
+          title: lane.title,
           position: newPosition
         }])
         .select();
@@ -165,22 +338,20 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
       }
 
       setColumns(prev => [...prev, data[0]]);
-      setNewColumnTitle('');
-      setShowAddColumn(false);
     } catch (error) {
       console.error('Error creating column:', error);
     }
   };
 
-  // Update column title
-  const handleUpdateColumnTitle = async (columnId: string, newTitle: string) => {
-    if (!user || !newTitle.trim()) return;
+  // Handle lane update
+  const handleLaneUpdate = async (laneId: string, lane: any) => {
+    if (!user) return;
 
     try {
       const { error } = await supabase
         .from('kanban_columns')
-        .update({ title: newTitle.trim() })
-        .eq('id', columnId)
+        .update({ title: lane.title })
+        .eq('id', laneId)
         .eq('user_id', user.id);
 
       if (error) {
@@ -189,24 +360,23 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
       }
 
       setColumns(prev => prev.map(col => 
-        col.id === columnId ? { ...col, title: newTitle.trim() } : col
+        col.id === laneId ? { ...col, title: lane.title } : col
       ));
-      setEditingColumn(null);
     } catch (error) {
       console.error('Error updating column:', error);
     }
   };
 
-  // Delete column
-  const handleDeleteColumn = async (columnId: string) => {
+  // Handle lane delete
+  const handleLaneDelete = async (laneId: string) => {
     if (!user) return;
 
     try {
-      // Delete all cards in the column first
+      // Delete all cards in the lane first
       const { error: cardsError } = await supabase
         .from('kanban_cards')
         .delete()
-        .eq('column_id', columnId)
+        .eq('column_id', laneId)
         .eq('user_id', user.id);
 
       if (cardsError) {
@@ -214,159 +384,124 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
         return;
       }
 
-      // Delete the column
-      const { error: columnError } = await supabase
+      // Delete the lane
+      const { error: laneError } = await supabase
         .from('kanban_columns')
         .delete()
-        .eq('id', columnId)
+        .eq('id', laneId)
         .eq('user_id', user.id);
 
-      if (columnError) {
-        console.error('Error deleting column:', columnError);
+      if (laneError) {
+        console.error('Error deleting column:', laneError);
         return;
       }
 
-      setColumns(prev => prev.filter(col => col.id !== columnId));
-      setCards(prev => prev.filter(card => card.column_id !== columnId));
+      setColumns(prev => prev.filter(col => col.id !== laneId));
+      setCards(prev => prev.filter(card => card.column_id !== laneId));
     } catch (error) {
       console.error('Error deleting column:', error);
     }
   };
 
-  // Add note to column
-  const handleAddNoteToColumn = async (columnId: string, noteId: string) => {
+  // Handle card movement
+  const handleCardMove = async (cardId: string, sourceLaneId: string, targetLaneId: string, position: number) => {
     if (!user) return;
 
-    // Check if note is already in a column
-    const existingCard = cards.find(card => card.note_id === noteId);
-    if (existingCard) return;
+    try {
+      // Update card position in database
+      const { error } = await supabase
+        .from('kanban_cards')
+        .update({ 
+          column_id: targetLaneId,
+          position: position
+        })
+        .eq('id', cardId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error moving card:', error);
+        return;
+      }
+
+      // Update local state
+      setCards(prev => prev.map(c => 
+        c.id === cardId 
+          ? { ...c, column_id: targetLaneId, position: position }
+          : c
+      ));
+    } catch (error) {
+      console.error('Error moving card:', error);
+    }
+  };
+
+  // Handle card click (open in note editor)
+  const handleCardClick = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId);
+    if (card) {
+      onNoteSelect?.(card.note_id);
+    }
+  };
+
+  // Handle card edit
+  const handleCardEdit = (cardId: string) => {
+    const card = cards.find(c => c.id === cardId);
+    if (card) {
+      setEditingCard(card);
+      setEditForm({
+        title: card.note?.title || '',
+        content: card.note?.content || '',
+        tags: card.note?.tags || []
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  // Handle linking existing note to kanban card
+  const handleLinkNote = async (noteId: string, laneId: string) => {
+    if (!user) return;
 
     try {
-      const newPosition = cards.filter(card => card.column_id === columnId).length;
-      const { data, error } = await supabase
+      // Check if note is already linked to a card
+      const existingCard = cards.find(card => card.note_id === noteId);
+      if (existingCard) {
+        console.log('Note is already linked to a card');
+        return;
+      }
+
+      // Create a new card linked to the existing note
+      const newPosition = cards.filter(c => c.column_id === laneId).length;
+      const { data: cardData, error: cardError } = await supabase
         .from('kanban_cards')
         .insert([{
           user_id: user.id,
           note_id: noteId,
-          column_id: columnId,
+          column_id: laneId,
           position: newPosition
         }])
         .select();
 
-      if (error) {
-        console.error('Error adding note to column:', error);
+      if (cardError) {
+        console.error('Error creating card:', cardError);
         return;
       }
 
+      const note = notes.find(n => n.id === noteId);
       const newCard = {
-        ...data[0],
-        note: notes.find(note => note.id === noteId)
+        ...cardData[0],
+        note: note
       };
 
       setCards(prev => [...prev, newCard]);
+      setShowLinkModal(false);
+      setSelectedLaneForLink('');
     } catch (error) {
-      console.error('Error adding note to column:', error);
+      console.error('Error linking note:', error);
     }
-  };
-
-  // Handle drag and drop
-  const handleDragEnd = async (result: DropResult) => {
-    const { source, destination, type } = result;
-
-    if (!destination) return;
-
-    if (type === 'COLUMN') {
-      // Reorder columns
-      const reorderedColumns = Array.from(columns);
-      const [removed] = reorderedColumns.splice(source.index, 1);
-      reorderedColumns.splice(destination.index, 0, removed);
-
-      setColumns(reorderedColumns);
-
-      // Update positions in database
-      try {
-        const updates = reorderedColumns.map((col, index) => ({
-          id: col.id,
-          position: index
-        }));
-
-        for (const update of updates) {
-          await supabase
-            .from('kanban_columns')
-            .update({ position: update.position })
-            .eq('id', update.id)
-            .eq('user_id', user?.id);
-        }
-      } catch (error) {
-        console.error('Error updating column positions:', error);
-      }
-    } else if (type === 'CARD') {
-      // Move card between columns
-      const sourceColumnId = source.droppableId;
-      const destColumnId = destination.droppableId;
-      const cardId = result.draggableId;
-
-      const card = cards.find(c => c.id === cardId);
-      if (!card) return;
-
-      // Remove card from source column
-      const sourceCards = cards.filter(c => c.column_id === sourceColumnId);
-      const destCards = cards.filter(c => c.column_id === destColumnId);
-
-      // Update positions
-      const updatedCards = cards.map(c => {
-        if (c.column_id === sourceColumnId && c.position > source.index) {
-          return { ...c, position: c.position - 1 };
-        }
-        if (c.column_id === destColumnId && c.position >= destination.index) {
-          return { ...c, position: c.position + 1 };
-        }
-        if (c.id === cardId) {
-          return { ...c, column_id: destColumnId, position: destination.index };
-        }
-        return c;
-      });
-
-      setCards(updatedCards);
-
-      // Update in database
-      try {
-        await supabase
-          .from('kanban_cards')
-          .update({ 
-            column_id: destColumnId, 
-            position: destination.index 
-          })
-          .eq('id', cardId)
-          .eq('user_id', user?.id);
-
-        // Update positions for other cards
-        const cardsToUpdate = updatedCards.filter(c => 
-          (c.column_id === sourceColumnId || c.column_id === destColumnId) && c.id !== cardId
-        );
-
-        for (const cardToUpdate of cardsToUpdate) {
-          await supabase
-            .from('kanban_cards')
-            .update({ position: cardToUpdate.position })
-            .eq('id', cardToUpdate.id)
-            .eq('user_id', user?.id);
-        }
-      } catch (error) {
-        console.error('Error updating card position:', error);
-      }
-    }
-  };
-
-  // Get available notes (not already in Kanban)
-  const getAvailableNotes = () => {
-    const usedNoteIds = new Set(cards.map(card => card.note_id));
-    return notes.filter(note => !usedNoteIds.has(note.id));
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-400">Loading Kanban board...</p>
@@ -376,350 +511,427 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
   }
 
   return (
-    <div className="h-full flex">
-      {/* Left Sidebar - Inbox */}
-      <div className="w-80 bg-gray-800 border-r border-gray-700 flex flex-col">
-        <div className="p-6 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white mb-2">Inbox</h2>
-          <p className="text-gray-400 text-sm">Capture tudo, onde quer que esteja</p>
-        </div>
-        
-        <div className="flex-1 p-6 overflow-y-auto">
-          <div className="mb-6">
-            <div className="bg-gray-700 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <i className="ri-mail-line text-white text-sm"></i>
-                </div>
-                <div>
-                  <h4 className="text-white font-medium text-sm">Adicionar via email</h4>
-                  <p className="text-gray-400 text-xs">Envie para inbox@app.trello.com</p>
-                </div>
-              </div>
-              <a href="#" className="text-blue-400 text-xs hover:underline">Saiba mais</a>
-            </div>
-            
-            <div className="bg-gray-700 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
-                  <i className="ri-slack-fill text-white text-sm"></i>
-                </div>
-                <div>
-                  <h4 className="text-white font-medium text-sm">Conectar Slack</h4>
-                  <p className="text-gray-400 text-xs">Salve mensagens como cartões</p>
-                </div>
-              </div>
-              <a href="#" className="text-blue-400 text-xs hover:underline">Conectar conta</a>
-            </div>
-            
-            <div className="bg-gray-700 rounded-lg p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center">
-                  <i className="ri-microsoft-fill text-white text-sm"></i>
-                </div>
-                <div>
-                  <h4 className="text-white font-medium text-sm">Conectar Teams</h4>
-                  <p className="text-gray-400 text-xs">Salve mensagens como cartões</p>
-                </div>
-              </div>
-              <a href="#" className="text-blue-400 text-xs hover:underline">Conectar conta</a>
-            </div>
+    <div className={`h-full flex flex-col ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+      {/* Board Header */}
+      <div className={`${isDark ? 'bg-gray-800 border-gray-700' : 'bg-gray-100 border-gray-300'} border-b p-4`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <h1 className={`text-xl font-bold ${isDark ? 'text-white' : 'text-gray-900'}`}>Kanban Board</h1>
+            <span className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              {columns.length} columns • {cards.length} cards
+            </span>
           </div>
-          
-          {/* Notes in Inbox */}
-          <div className="mb-6">
-            <h3 className="text-white font-medium mb-3">Suas Notas</h3>
-            <div className="space-y-2">
-              {notes.slice(0, 5).map((note) => (
-                <div
-                  key={note.id}
-                  className="bg-gray-700 rounded-lg p-3 cursor-pointer hover:bg-gray-600 transition-colors"
-                  onClick={() => onNoteSelect?.(note.id)}
-                >
-                  <h4 className="text-white font-medium text-sm mb-1 line-clamp-2">
-                    {note.title || 'Sem título'}
-                  </h4>
-                  {note.tags && note.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      {note.tags.slice(0, 2).map((tagName) => {
-                        const tag = tags.find(t => t.name === tagName);
-                        return (
-                          <span
-                            key={tagName}
-                            className="px-2 py-1 text-xs rounded-full text-white"
-                            style={{ 
-                              backgroundColor: tag?.color || '#3b82f6',
-                              opacity: 0.8
-                            }}
-                          >
-                            {tagName}
-                          </span>
-                        );
-                      })}
-                      {note.tags.length > 2 && (
-                        <span className="px-2 py-1 text-xs text-gray-400">
-                          +{note.tags.length - 2}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              ))}
-              {notes.length > 5 && (
-                <div className="text-center">
-                  <span className="text-gray-400 text-sm">
-                    +{notes.length - 5} mais notas
-                  </span>
-                </div>
-              )}
-            </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowLinkModal(true)}
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDark 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
+            >
+              <i className="ri-link mr-2"></i>
+              Link Note
+            </button>
           </div>
-          
-          <button className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium">
-            Adicionar um cartão
-          </button>
         </div>
       </div>
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col">
-        {/* Board Header */}
-        <div className="bg-gradient-to-r from-purple-900 to-blue-900 p-6 border-b border-gray-700">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <h1 className="text-2xl font-bold text-white">Desenvolvimento</h1>
-              <div className="flex items-center gap-2">
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-grid-line"></i>
-                </button>
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-arrow-down-s-line"></i>
-                </button>
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-rocket-line"></i>
-                </button>
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-flashlight-line"></i>
-                </button>
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-list-check"></i>
-                </button>
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-star-line"></i>
-                </button>
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-user-line"></i>
-                </button>
-                <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                  <i className="ri-more-line"></i>
-                </button>
+      {/* Edit Card Modal */}
+      {showEditModal && editingCard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto`}>
+            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Edit Card</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="card-title" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Title</label>
+                <input
+                  id="card-title"
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter card title"
+                  className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="card-content" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Content</label>
+                <textarea
+                  id="card-content"
+                  value={editForm.content}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="Enter card content"
+                  rows={4}
+                  className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
+                />
+              </div>
+              
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Tags</label>
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <button
+                      key={tag.id}
+                      type="button"
+                      className={`px-3 py-1 rounded-full text-sm border ${
+                        editForm.tags.includes(tag.name)
+                          ? 'text-white'
+                          : isDark ? 'text-gray-300 border-gray-600' : 'text-gray-700 border-gray-400'
+                      }`}
+                      style={{
+                        backgroundColor: editForm.tags.includes(tag.name) ? tag.color || '#3b82f6' : 'transparent',
+                        borderColor: tag.color || '#3b82f6'
+                      }}
+                      onClick={() => {
+                        setEditForm(prev => ({
+                          ...prev,
+                          tags: prev.tags.includes(tag.name)
+                            ? prev.tags.filter(t => t !== tag.name)
+                            : [...prev.tags, tag.name]
+                        }));
+                      }}
+                    >
+                      {tag.name}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <div className="flex -space-x-2">
-                  <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">ST</div>
-                  <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">JD</div>
-                  <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">MK</div>
-                </div>
-              </div>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-                Compartilhar
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => handleCardUpdate(editingCard.id, editForm)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Save
+              </button>
+              <button
+                onClick={() => {
+                  setShowEditModal(false);
+                  setEditingCard(null);
+                }}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                Cancel
               </button>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Add Column Modal */}
-        {showAddColumn && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 rounded-lg p-6 w-96">
-              <h3 className="text-lg font-semibold text-white mb-4">Add New Column</h3>
-              <input
-                type="text"
-                value={newColumnTitle}
-                onChange={(e) => setNewColumnTitle(e.target.value)}
-                placeholder="Column title..."
-                className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white mb-4 focus:outline-none focus:border-blue-500"
-                onKeyPress={(e) => e.key === 'Enter' && handleCreateColumn()}
-              />
-              <div className="flex gap-3">
-                <button
-                  onClick={handleCreateColumn}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+      {/* Link Note Modal */}
+      {showLinkModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto`}>
+            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Link Note to Kanban</h3>
+            
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="lane-select" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Select Column</label>
+                <select
+                  id="lane-select"
+                  value={selectedLaneForLink}
+                  onChange={(e) => setSelectedLaneForLink(e.target.value)}
+                  className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                    isDark 
+                      ? 'bg-gray-700 border-gray-600 text-white' 
+                      : 'bg-white border-gray-300 text-gray-900'
+                  }`}
                 >
-                  Create
-                </button>
-                <button
-                  onClick={() => {
-                    setShowAddColumn(false);
-                    setNewColumnTitle('');
-                  }}
-                  className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-                >
-                  Cancel
-                </button>
+                  <option value="">Select a column...</option>
+                  {columns.map((column) => (
+                    <option key={column.id} value={column.id}>
+                      {column.title}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Kanban Board */}
-        <div className="flex-1 overflow-x-auto bg-gradient-to-r from-purple-900 to-blue-900">
-          <div className="p-6">
-            <DragDropContext onDragEnd={handleDragEnd}>
-              <DroppableComponent droppableId="columns" direction="horizontal" type="COLUMN">
-                {(provided) => (
-                  <div
-                    ref={provided.innerRef}
-                    {...provided.droppableProps}
-                    className="flex gap-6 min-h-full"
-                  >
-                    {columns.map((column, columnIndex) => (
-                      <DraggableComponent key={column.id} draggableId={column.id} index={columnIndex}>
-                        {(provided, snapshot) => (
-                          <div
-                            ref={provided.innerRef}
-                            {...provided.draggableProps}
-                            className={`bg-gray-800 rounded-lg p-4 w-80 flex-shrink-0 ${
-                              snapshot.isDragging ? 'shadow-2xl transform rotate-2' : ''
-                            }`}
-                          >
-                            {/* Column Header */}
-                            <div
-                              {...provided.dragHandleProps}
-                              className="flex items-center justify-between mb-4 cursor-grab active:cursor-grabbing"
-                            >
-                              {editingColumn === column.id ? (
-                                <input
-                                  type="text"
-                                  value={column.title}
-                                  onChange={(e) => setColumns(prev => 
-                                    prev.map(col => col.id === column.id ? { ...col, title: e.target.value } : col)
-                                  )}
-                                  onBlur={() => handleUpdateColumnTitle(column.id, column.title)}
-                                  onKeyPress={(e) => e.key === 'Enter' && handleUpdateColumnTitle(column.id, column.title)}
-                                  className="flex-1 bg-gray-700 border border-gray-600 rounded px-2 py-1 text-white focus:outline-none focus:border-blue-500"
-                                  autoFocus
-                                />
-                              ) : (
-                                <h3 
-                                  className="text-lg font-semibold text-white flex-1 cursor-pointer"
-                                  onClick={() => setEditingColumn(column.id)}
+              
+              <div>
+                <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Select Note</label>
+                <div className="max-h-60 overflow-y-auto space-y-2">
+                  {notes
+                    .filter(note => !cards.some(card => card.note_id === note.id)) // Only show unlinked notes
+                    .map((note) => (
+                      <button
+                        key={note.id}
+                        onClick={() => selectedLaneForLink && handleLinkNote(note.id, selectedLaneForLink)}
+                        disabled={!selectedLaneForLink}
+                        className={`w-full p-3 text-left rounded-lg border transition-colors ${
+                          isDark 
+                            ? 'bg-gray-700 border-gray-600 hover:bg-gray-600' 
+                            : 'bg-gray-50 border-gray-300 hover:bg-gray-100'
+                        } ${
+                          !selectedLaneForLink 
+                            ? 'opacity-50 cursor-not-allowed' 
+                            : isDark ? 'text-white' : 'text-gray-900'
+                        }`}
+                      >
+                        <div className="font-medium">{note.title || 'Untitled'}</div>
+                        <div className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                          {note.content.substring(0, 100)}...
+                        </div>
+                        {note.tags.length > 0 && (
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {note.tags.slice(0, 3).map((tagName) => {
+                              const tag = tags.find(t => t.name === tagName);
+                              return (
+                                <span
+                                  key={tagName}
+                                  className="px-2 py-1 text-xs rounded-full"
+                                  style={{
+                                    backgroundColor: tag?.color || '#3b82f6',
+                                    color: 'white'
+                                  }}
                                 >
-                                  {column.title}
-                                </h3>
-                              )}
-                              <div className="flex items-center gap-1">
-                                <button className="text-gray-400 hover:text-white transition-colors p-1">
-                                  <i className="ri-arrow-right-s-line"></i>
-                                </button>
-                                <button className="text-gray-400 hover:text-white transition-colors p-1">
-                                  <i className="ri-more-line"></i>
-                                </button>
-                              </div>
-                            </div>
-
-                            {/* Column Cards */}
-                            <DroppableComponent droppableId={column.id} type="CARD">
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.droppableProps}
-                                  className={`min-h-[200px] ${
-                                    snapshot.isDraggingOver ? 'bg-blue-900 bg-opacity-20 rounded' : ''
-                                  }`}
-                                >
-                                  {cards
-                                    .filter(card => card.column_id === column.id)
-                                    .sort((a, b) => a.position - b.position)
-                                    .map((card, cardIndex) => (
-                                      <DraggableComponent key={card.id} draggableId={card.id} index={cardIndex}>
-                                        {(provided, snapshot) => (
-                                          <div
-                                            ref={provided.innerRef}
-                                            {...provided.draggableProps}
-                                            {...provided.dragHandleProps}
-                                            className={`bg-gray-700 rounded-lg p-4 mb-3 cursor-grab active:cursor-grabbing ${
-                                              snapshot.isDragging ? 'shadow-lg transform rotate-1' : ''
-                                            }`}
-                                            onClick={() => onNoteSelect?.(card.note_id)}
-                                          >
-                                            <h4 className="font-medium text-white mb-2 line-clamp-2">
-                                              {card.note?.title || 'Untitled'}
-                                            </h4>
-                                            {card.note?.tags && card.note.tags.length > 0 && (
-                                              <div className="flex flex-wrap gap-1 mb-2">
-                                                {card.note.tags.slice(0, 3).map((tagName) => {
-                                                  const tag = tags.find(t => t.name === tagName);
-                                                  return (
-                                                    <span
-                                                      key={tagName}
-                                                      className="px-2 py-1 text-xs rounded-full text-white"
-                                                      style={{ 
-                                                        backgroundColor: tag?.color || '#3b82f6',
-                                                        opacity: 0.8
-                                                      }}
-                                                    >
-                                                      {tagName}
-                                                    </span>
-                                                  );
-                                                })}
-                                                {card.note.tags.length > 3 && (
-                                                  <span className="px-2 py-1 text-xs text-gray-400">
-                                                    +{card.note.tags.length - 3}
-                                                  </span>
-                                                )}
-                                              </div>
-                                            )}
-                                            <div className="flex items-center justify-between text-gray-400 text-xs">
-                                              <div className="flex items-center gap-1">
-                                                <i className="ri-message-2-line"></i>
-                                                <span>2</span>
-                                              </div>
-                                            </div>
-                                          </div>
-                                        )}
-                                      </DraggableComponent>
-                                    ))}
-                                  {provided.placeholder}
-                                </div>
-                              )}
-                            </DroppableComponent>
-
-                            {/* Add Note Button */}
-                            <div className="mt-4">
-                              <button
-                                onClick={() => {
-                                  // Show dropdown or modal to add note
-                                }}
-                                className="w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
-                              >
-                                <i className="ri-add-line"></i>
-                                Adicionar um cartão
-                              </button>
-                            </div>
+                                  {tagName}
+                                </span>
+                              );
+                            })}
                           </div>
                         )}
-                      </DraggableComponent>
+                      </button>
                     ))}
-                    {provided.placeholder}
-                    
-                    {/* Add Column Button */}
-                    <button
-                      onClick={() => setShowAddColumn(true)}
-                      className="w-80 h-12 bg-gray-800 bg-opacity-50 border-2 border-dashed border-gray-600 rounded-lg hover:bg-gray-700 hover:border-gray-500 transition-colors flex items-center justify-center text-gray-400 hover:text-white"
-                    >
-                      <i className="ri-add-line mr-2"></i>
-                      Adicionar uma lista
-                    </button>
+                </div>
+                {notes.filter(note => !cards.some(card => card.note_id === note.id)).length === 0 && (
+                  <div className={`text-center py-4 ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+                    All notes are already linked to kanban cards
                   </div>
                 )}
-              </DroppableComponent>
-            </DragDropContext>
+              </div>
+            </div>
+            
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={() => {
+                  setShowLinkModal(false);
+                  setSelectedLaneForLink('');
+                }}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Kanban Board */}
+      <div className="flex-1 overflow-hidden">
+        <style jsx global>{`
+          .react-trello-board {
+            background-color: ${isDark ? '#111827' : '#f9fafb'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+            height: 100% !important;
+            font-family: inherit !important;
+          }
+          
+          .react-trello-lane {
+            background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+            border: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
+            border-radius: 8px !important;
+            margin: 0 8px !important;
+            min-height: calc(100vh - 200px) !important;
+          }
+          
+          .react-trello-lane-header {
+            background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+            border-bottom: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
+            padding: 12px 16px !important;
+          }
+          
+          .react-trello-lane-title {
+            color: ${isDark ? 'white' : '#111827'} !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+          }
+          
+          .react-trello-card {
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
+            border-radius: 8px !important;
+            margin: 8px !important;
+            padding: 12px !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+          }
+          
+          .react-trello-card:hover {
+            background-color: ${isDark ? '#4b5563' : '#e5e7eb'} !important;
+            transform: translateY(-1px) !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+          }
+          
+          .react-trello-card-title {
+            color: ${isDark ? 'white' : '#111827'} !important;
+            font-weight: 500 !important;
+            margin-bottom: 8px !important;
+          }
+          
+          .react-trello-card-description {
+            color: ${isDark ? '#d1d5db' : '#6b7280'} !important;
+            font-size: 0.875rem !important;
+            line-height: 1.25rem !important;
+          }
+          
+          .react-trello-add-card {
+            background-color: transparent !important;
+            border: 2px dashed ${isDark ? '#6b7280' : '#9ca3af'} !important;
+            border-radius: 8px !important;
+            color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
+            margin: 8px !important;
+            padding: 12px !important;
+            text-align: center !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+          }
+          
+          .react-trello-add-card:hover {
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border-color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+          }
+          
+          .react-trello-add-lane {
+            background-color: transparent !important;
+            border: 2px dashed ${isDark ? '#6b7280' : '#9ca3af'} !important;
+            border-radius: 8px !important;
+            color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
+            margin: 0 8px !important;
+            padding: 20px !important;
+            text-align: center !important;
+            cursor: pointer !important;
+            transition: all 0.2s !important;
+            min-height: calc(100vh - 200px) !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+          }
+          
+          .react-trello-add-lane:hover {
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border-color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+          }
+          
+          .react-trello-lane-header__button {
+            background-color: transparent !important;
+            border: none !important;
+            color: ${isDark ? '#9ca3af' : '#6b7280'} !important;
+            cursor: pointer !important;
+            padding: 4px !important;
+            border-radius: 4px !important;
+            transition: color 0.2s !important;
+          }
+          
+          .react-trello-lane-header__button:hover {
+            color: #ef4444 !important;
+          }
+          
+          .react-trello-card-adder-form {
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
+            border-radius: 8px !important;
+            margin: 8px !important;
+            padding: 12px !important;
+          }
+          
+          .react-trello-card-adder-form__input {
+            background-color: ${isDark ? '#4b5563' : '#ffffff'} !important;
+            border: 1px solid ${isDark ? '#6b7280' : '#d1d5db'} !important;
+            border-radius: 4px !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+            padding: 8px 12px !important;
+            width: 100% !important;
+            margin-bottom: 8px !important;
+          }
+          
+          .react-trello-card-adder-form__input:focus {
+            outline: none !important;
+            border-color: #3b82f6 !important;
+          }
+          
+          .react-trello-card-adder-form__button {
+            background-color: #3b82f6 !important;
+            border: none !important;
+            border-radius: 4px !important;
+            color: white !important;
+            padding: 6px 12px !important;
+            cursor: pointer !important;
+            margin-right: 8px !important;
+            transition: background-color 0.2s !important;
+          }
+          
+          .react-trello-card-adder-form__button:hover {
+            background-color: #2563eb !important;
+          }
+          
+          .react-trello-card-adder-form__button--cancel {
+            background-color: ${isDark ? '#6b7280' : '#9ca3af'} !important;
+          }
+          
+          .react-trello-card-adder-form__button--cancel:hover {
+            background-color: ${isDark ? '#4b5563' : '#6b7280'} !important;
+          }
+          
+          .react-trello-lane-header__title-input {
+            background-color: transparent !important;
+            border: none !important;
+            color: ${isDark ? 'white' : '#111827'} !important;
+            font-weight: 600 !important;
+            font-size: 1rem !important;
+            width: 100% !important;
+          }
+          
+          .react-trello-lane-header__title-input:focus {
+            outline: none !important;
+            background-color: ${isDark ? '#374151' : '#f3f4f6'} !important;
+            border-radius: 4px !important;
+            padding: 2px 4px !important;
+          }
+        `}</style>
+        
+        <Board
+          data={getKanbanData()}
+          onCardAdd={handleCardCreate}
+          onCardUpdate={handleCardUpdate}
+          onCardDelete={handleCardDelete}
+          onLaneAdd={handleLaneCreate}
+          onLaneUpdate={handleLaneUpdate}
+          onLaneDelete={handleLaneDelete}
+          onCardMoveAcrossLanes={handleCardMove}
+          onCardClick={handleCardClick}
+          onCardEdit={handleCardEdit}
+          editable
+          canAddLanes
+          canAddCards
+          canEditLanes
+          canEditCards
+          draggable
+          laneDraggable
+          cardDraggable
+          style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
+        />
       </div>
     </div>
   );

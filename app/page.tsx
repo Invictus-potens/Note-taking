@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, ChangeEvent, useRef, useCallback } from 'react';
@@ -925,36 +926,127 @@ function NotesApp() {
               </div>
             </div>
 
-            <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
-              {/* Middle Column */}
-              <div className="middle-column">
-                            <div className="search-container">
-              <input
-                type="text"
-                className="search-input"
-                placeholder="Pesquisar notas..."
-                value={searchTerm}
-                onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+            {showKanban ? (
+              <KanbanBoard 
+                notes={notes}
+                tags={tags}
+                isDark={isDark}
+                onNoteSelect={(noteId) => {
+                  setShowKanban(false);
+                  handleNoteSelect(noteId);
+                }}
               />
-              <div className="drag-hint">
-                <i className="ri-drag-move-line"></i>
-                <span>Drag to reorder notes</span>
-              </div>
-            </div>
+            ) : (
+              <div className="main-content-columns" style={{ display: 'flex', flexDirection: 'row', height: '100%' }}>
+                {/* Middle Column */}
+                <div className="middle-column">
+                  <div className="search-container">
+                    <input
+                      type="text"
+                      className="search-input"
+                      placeholder="Pesquisar notas..."
+                      value={searchTerm}
+                      onChange={(e: ChangeEvent<HTMLInputElement>) => setSearchTerm(e.target.value)}
+                    />
+                    <div className="drag-hint">
+                      <i className="ri-drag-move-line"></i>
+                      <span>Drag to reorder notes</span>
+                    </div>
+                  </div>
 
-                <Droppable droppableId="notes-list">
-                  {(provided) => (
-                    <div 
-                      className="notes-container"
-                      ref={provided.innerRef}
-                      {...provided.droppableProps}
-                      onScroll={handleScroll}
-                    >
-                      {pinnedNotes.length > 0 && (
+                  <Droppable droppableId="notes-list">
+                    {(provided) => (
+                      <div 
+                        className="notes-container"
+                        ref={provided.innerRef}
+                        {...provided.droppableProps}
+                        onScroll={handleScroll}
+                      >
+                        {pinnedNotes.length > 0 && (
+                          <div className="notes-section">
+                            <div className="notes-section-title">Notas Fixadas</div>
+                            {pinnedNotes.map((note: Note, index: number) => (
+                              <Draggable key={note.id} draggableId={note.id} index={index}>
+                                {(provided, snapshot) => (
+                                  <div 
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    data-note-id={note.id}
+                                    className={`note-card relative group ${
+                                      selectedNote === note.id ? 'selected' : ''
+                                    } ${
+                                      isSplitView && selectedNote2 === note.id ? 'selected-secondary' : ''
+                                    } ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
+                                    onClick={() => handleNoteSelect(note.id)}
+                                  >
+                                    {/* Drag Handle */}
+                                    <div
+                                      {...provided.dragHandleProps}
+                                      className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
+                                    >
+                                      <i className="ri-drag-move-line text-sm"></i>
+                                    </div>
+                                    <div className="note-header">
+                                      <div className="note-title">{note.title || 'Sem título'}</div>
+                                      <div className="note-date">{formatDate(note.updated_at)}</div>
+                                    </div>
+                                    <div 
+                                      className="note-preview"
+                                      dangerouslySetInnerHTML={{ __html: note.content }}
+                                    />
+                                    {note.tags.length > 0 && (
+                                      <div className="note-tags">
+                                        {note.tags.map((tagName: string) => {
+                                          const tag = tags.find(t => t.name === tagName);
+                                          return (
+                                            <span 
+                                              key={tagName} 
+                                              className="tag-pill bookmark-tag"
+                                              style={{ 
+                                                backgroundColor: tag?.color || '#3b82f6',
+                                                borderColor: tag?.color || '#3b82f6'
+                                              }}
+                                            >
+                                              <i className="ri-price-tag-3-fill"></i>
+                                              {tagName}
+                                            </span>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                    <div className="note-actions">
+                                      <button 
+                                        className="action-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleTogglePin(note.id);
+                                        }}
+                                        aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
+                                      >
+                                        <i className="ri-pushpin-fill minimalist-icon"></i>
+                                      </button>
+                                      <button 
+                                        className="action-btn"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          handleDeleteNote(note.id);
+                                        }}
+                                        aria-label="Delete note"
+                                      >
+                                        <i className="ri-delete-bin-line minimalist-icon"></i>
+                                      </button>
+                                    </div>
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="notes-section">
-                          <div className="notes-section-title">Notas Fixadas</div>
-                          {pinnedNotes.map((note: Note, index: number) => (
-                            <Draggable key={note.id} draggableId={note.id} index={index}>
+                          <div className="notes-section-title">Todas as Notas</div>
+                          {unpinnedNotes.map((note: Note, index: number) => (
+                            <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
                               {(provided, snapshot) => (
                                 <div 
                                   ref={provided.innerRef}
@@ -1029,140 +1121,290 @@ function NotesApp() {
                             </Draggable>
                           ))}
                         </div>
-                      )}
+                        
+                        {/* Scroll to Top Button */}
+                        {showScrollTop && (
+                          <button
+                            className="scroll-to-top-btn"
+                            onClick={scrollToTop}
+                            aria-label="Scroll to top"
+                          >
+                            <i className="ri-arrow-up-line"></i>
+                          </button>
+                        )}
+                        {provided.placeholder}
+                      </div>
+                    )}
+                  </Droppable>
+                </div>
 
-                      <div className="notes-section">
-                        <div className="notes-section-title">Todas as Notas</div>
-                        {unpinnedNotes.map((note: Note, index: number) => (
-                          <Draggable key={note.id} draggableId={note.id} index={pinnedNotes.length + index}>
-                            {(provided, snapshot) => (
-                                                              <div 
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  data-note-id={note.id}
-                                  className={`note-card relative group ${
-                                    selectedNote === note.id ? 'selected' : ''
-                                  } ${
-                                    isSplitView && selectedNote2 === note.id ? 'selected-secondary' : ''
-                                  } ${snapshot.isDragging ? 'shadow-lg transform rotate-2 scale-105 z-10' : ''}`}
-                                  onClick={() => handleNoteSelect(note.id)}
-                                >
-                                {/* Drag Handle */}
-                                <div
-                                  {...provided.dragHandleProps}
-                                  className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 cursor-grab active:cursor-grabbing opacity-30 hover:opacity-100 transition-opacity z-10 bg-gray-100 dark:bg-gray-700 rounded"
-                                >
-                                  <i className="ri-drag-move-line text-sm"></i>
-                                </div>
-                                <div className="note-header">
-                                  <div className="note-title">{note.title || 'Sem título'}</div>
-                                  <div className="note-date">{formatDate(note.updated_at)}</div>
-                                </div>
-                                <div 
-                      className="note-preview"
-                      dangerouslySetInnerHTML={{ __html: note.content }}
-                    />
-                                {note.tags.length > 0 && (
-                                  <div className="note-tags">
-                                    {note.tags.map((tagName: string) => {
-                                      const tag = tags.find(t => t.name === tagName);
-                                      return (
-                                        <span 
-                                          key={tagName} 
-                                          className="tag-pill bookmark-tag"
+                {/* Right Pane */}
+                <div className={`right-pane ${isSplitView ? 'split-view' : ''}`}>
+                  {isSplitView ? (
+                    // Split View Layout
+                    <div className="split-view-container">
+                      {/* Split View Toggle */}
+                      <div className="split-view-header">
+                        <div className="split-view-title">Visualização Dividida</div>
+                        <div className="split-view-actions">
+                          {currentNote && currentNote2 && (
+                            <button className="editor-btn" onClick={handleSwapNotes}>
+                              <i className="ri-swap-line minimalist-icon"></i>
+                              Trocar
+                            </button>
+                          )}
+                          <button className="editor-btn" onClick={handleToggleSplitView}>
+                            <i className="ri-layout-grid-line minimalist-icon"></i>
+                            Sair da Divisão
+                          </button>
+                        </div>
+                      </div>
+                    
+                      <div className="split-view-content">
+                        {/* First Note */}
+                        <div className="split-note-pane">
+                          <div className="split-note-header">
+                            <div className="split-note-title">Nota 1</div>
+                            <div className="split-note-actions">
+                              {isEditing ? (
+                                <>
+                                  <button className="editor-btn" onClick={handleCancelEdit}>
+                                    Cancelar
+                                  </button>
+                                  <button className="editor-btn primary" onClick={handleSaveNote}>
+                                    Salvar
+                                  </button>
+                                </>
+                              ) : (
+                                <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
+                                  Editar
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {currentNote ? (
+                            <div className="split-note-content">
+                              {isEditing ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    className="editor-input"
+                                    value={currentNote.title}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                                    placeholder="Título da nota..."
+                                  />
+                                  <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                    <QuillEditor
+                                      value={currentNote.content}
+                                      onChange={(content) => setCurrentNote({ ...currentNote, content })}
+                                      placeholder="Comece a escrever sua nota..."
+                                      style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                                    />
+                                  </div>
+                                  <div className="editor-tags">
+                                    <div className="editor-tags-label">Etiquetas:</div>
+                                    <div className="editor-tags-list">
+                                      {tags.length === 0 && (
+                                        <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
+                                      )}
+                                      {tags.map((tag: Tag) => (
+                                        <button
+                                          key={tag.id}
+                                          type="button"
+                                          className={`tag-pill editor-tag-btn bookmark-tag${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
                                           style={{ 
-                                            backgroundColor: tag?.color || '#3b82f6',
-                                            borderColor: tag?.color || '#3b82f6'
+                                            backgroundColor: currentNote.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
+                                            borderColor: tag.color || '#3b82f6',
+                                            color: currentNote.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
+                                          }}
+                                          onClick={() => {
+                                            if (currentNote.tags.includes(tag.name)) {
+                                              setCurrentNote({
+                                                ...currentNote,
+                                                tags: currentNote.tags.filter(t => t !== tag.name)
+                                              });
+                                            } else {
+                                              setCurrentNote({
+                                                ...currentNote,
+                                                tags: [...currentNote.tags, tag.name]
+                                              });
+                                            }
                                           }}
                                         >
                                           <i className="ri-price-tag-3-fill"></i>
-                                          {tagName}
-                                        </span>
-                                      );
-                                    })}
+                                          {tag.name}
+                                        </button>
+                                      ))}
+                                    </div>
                                   </div>
-                                )}
-                                <div className="note-actions">
-                                  <button 
-                                    className="action-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleTogglePin(note.id);
-                                    }}
-                                    aria-label={note.is_pinned ? "Unpin note" : "Pin note"}
-                                  >
-                                    <i className="ri-pushpin-fill minimalist-icon"></i>
-                                  </button>
-                                  <button 
-                                    className="action-btn"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleDeleteNote(note.id);
-                                    }}
-                                    aria-label="Delete note"
-                                  >
-                                    <i className="ri-delete-bin-line minimalist-icon"></i>
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                          </Draggable>
-                        ))}
-                      </div>
-                      
-                      {/* Scroll to Top Button */}
-                      {showScrollTop && (
-                        <button
-                          className="scroll-to-top-btn"
-                          onClick={scrollToTop}
-                          aria-label="Scroll to top"
-                        >
-                          <i className="ri-arrow-up-line"></i>
-                        </button>
-                      )}
-                      {provided.placeholder}
-                    </div>
-                  )}
-                </Droppable>
-              </div>
+                                </>
+                              ) : (
+                                <>
+                                  <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
+                                  <div
+                                    className="editor-textarea"
+                                    style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
+                                    dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
+                                  />
+                                  {currentNote.tags.length > 0 && (
+                                    <div className="note-tags" style={{ marginTop: '16px' }}>
+                                      {currentNote.tags.map((tagName: string) => {
+                                        const tag = tags.find(t => t.name === tagName);
+                                        return (
+                                          <span 
+                                            key={tagName} 
+                                            className="tag-pill bookmark-tag"
+                                            style={{ 
+                                              backgroundColor: tag?.color || '#3b82f6',
+                                              borderColor: tag?.color || '#3b82f6'
+                                            }}
+                                          >
+                                            <i className="ri-price-tag-3-fill"></i>
+                                            {tagName}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="split-note-empty">
+                              <div className="empty-icon">📝</div>
+                              <div className="empty-title">Selecione uma nota</div>
+                            </div>
+                          )}
+                        </div>
 
-              {/* Right Pane */}
-              <div className={`right-pane ${isSplitView ? 'split-view' : ''}`}>
-                {showKanban ? (
-                  <KanbanBoard 
-                    notes={notes}
-                    tags={tags}
-                    onNoteSelect={(noteId) => {
-                      setShowKanban(false);
-                      handleNoteSelect(noteId);
-                    }}
-                  />
-                ) : isSplitView ? (
-                  // Split View Layout
-                  <div className="split-view-container">
-                    {/* Split View Toggle */}
-                                         <div className="split-view-header">
-                       <div className="split-view-title">Visualização Dividida</div>
-                       <div className="split-view-actions">
-                         {currentNote && currentNote2 && (
-                           <button className="editor-btn" onClick={handleSwapNotes}>
-                             <i className="ri-swap-line minimalist-icon"></i>
-                             Trocar
-                           </button>
-                         )}
-                         <button className="editor-btn" onClick={handleToggleSplitView}>
-                           <i className="ri-layout-grid-line minimalist-icon"></i>
-                           Sair da Divisão
-                         </button>
-                       </div>
-                     </div>
-                    
-                    <div className="split-view-content">
-                      {/* First Note */}
-                      <div className="split-note-pane">
-                        <div className="split-note-header">
-                          <div className="split-note-title">Nota 1</div>
-                          <div className="split-note-actions">
+                        {/* Second Note */}
+                        <div className="split-note-pane">
+                          <div className="split-note-header">
+                            <div className="split-note-title">Nota 2</div>
+                            <div className="split-note-actions">
+                              {isEditing2 ? (
+                                <>
+                                  <button className="editor-btn" onClick={handleCancelEdit2}>
+                                    Cancelar
+                                  </button>
+                                  <button className="editor-btn primary" onClick={handleSaveNote2}>
+                                    Salvar
+                                  </button>
+                                </>
+                              ) : (
+                                <button className="editor-btn primary" onClick={() => setIsEditing2(true)}>
+                                  Editar
+                                </button>
+                              )}
+                            </div>
+                          </div>
+                          {currentNote2 ? (
+                            <div className="split-note-content">
+                              {isEditing2 ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    className="editor-input"
+                                    value={currentNote2.title}
+                                    onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote2({ ...currentNote2, title: e.target.value })}
+                                    placeholder="Título da nota..."
+                                  />
+                                  <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                    <QuillEditor
+                                      value={currentNote2.content}
+                                      onChange={(content) => setCurrentNote2({ ...currentNote2, content })}
+                                      placeholder="Comece a escrever sua nota..."
+                                      style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                                    />
+                                  </div>
+                                  <div className="editor-tags">
+                                    <div className="editor-tags-label">Etiquetas:</div>
+                                    <div className="editor-tags-list">
+                                      {tags.length === 0 && (
+                                        <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
+                                      )}
+                                      {tags.map((tag: Tag) => (
+                                        <button
+                                          key={tag.id}
+                                          type="button"
+                                          className={`tag-pill editor-tag-btn bookmark-tag${currentNote2.tags.includes(tag.name) ? ' selected' : ''}`}
+                                          style={{ 
+                                            backgroundColor: currentNote2.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
+                                            borderColor: tag.color || '#3b82f6',
+                                            color: currentNote2.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
+                                          }}
+                                          onClick={() => {
+                                            if (currentNote2.tags.includes(tag.name)) {
+                                              setCurrentNote2({
+                                                ...currentNote2,
+                                                tags: currentNote2.tags.filter(t => t !== tag.name)
+                                              });
+                                            } else {
+                                              setCurrentNote2({
+                                                ...currentNote2,
+                                                tags: [...currentNote2.tags, tag.name]
+                                              });
+                                            }
+                                          }}
+                                        >
+                                          <i className="ri-price-tag-3-fill"></i>
+                                          {tag.name}
+                                        </button>
+                                      ))}
+                                    </div>
+                                  </div>
+                                </>
+                              ) : (
+                                <>
+                                  <h1 className="editor-input">{currentNote2.title || 'Sem título'}</h1>
+                                  <div
+                                    className="editor-textarea"
+                                    style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
+                                    dangerouslySetInnerHTML={{ __html: currentNote2.content || 'Sem conteúdo' }}
+                                  />
+                                  {currentNote2.tags.length > 0 && (
+                                    <div className="note-tags" style={{ marginTop: '16px' }}>
+                                      {currentNote2.tags.map((tagName: string) => {
+                                        const tag = tags.find(t => t.name === tagName);
+                                        return (
+                                          <span 
+                                            key={tagName} 
+                                            className="tag-pill bookmark-tag"
+                                            style={{ 
+                                              backgroundColor: tag?.color || '#3b82f6',
+                                              borderColor: tag?.color || '#3b82f6'
+                                            }}
+                                          >
+                                            <i className="ri-price-tag-3-fill"></i>
+                                            {tagName}
+                                          </span>
+                                        );
+                                      })}
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </div>
+                          ) : (
+                            <div className="split-note-empty">
+                              <div className="empty-icon">📝</div>
+                              <div className="empty-title">Selecione uma nota</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    // Single Note Layout
+                    currentNote ? (
+                      <div className="note-editor">
+                        <div className="editor-header">
+                          <div className="editor-title">Editor de Notas</div>
+                          <div className="editor-actions">
+                            <button className="editor-btn" onClick={handleToggleSplitView}>
+                              <i className="ri-layout-column-line minimalist-icon"></i>
+                              Divisão
+                            </button>
                             {isEditing ? (
                               <>
                                 <button className="editor-btn" onClick={handleCancelEdit}>
@@ -1179,340 +1421,102 @@ function NotesApp() {
                             )}
                           </div>
                         </div>
-                        {currentNote ? (
-                          <div className="split-note-content">
-                            {isEditing ? (
-                              <>
-                                <input
-                                  type="text"
-                                  className="editor-input"
-                                  value={currentNote.title}
-                                  onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
-                                  placeholder="Título da nota..."
-                                />
-                                <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                                  <QuillEditor
-                                    value={currentNote.content}
-                                    onChange={(content) => setCurrentNote({ ...currentNote, content })}
-                                    placeholder="Comece a escrever sua nota..."
-                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
-                                  />
-                                </div>
-                                <div className="editor-tags">
-                                  <div className="editor-tags-label">Etiquetas:</div>
-                                  <div className="editor-tags-list">
-                                    {tags.length === 0 && (
-                                      <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
-                                    )}
-                                                                  {tags.map((tag: Tag) => (
-                                <button
-                                  key={tag.id}
-                                  type="button"
-                                  className={`tag-pill editor-tag-btn bookmark-tag${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
-                                  style={{ 
-                                    backgroundColor: currentNote.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
-                                    borderColor: tag.color || '#3b82f6',
-                                    color: currentNote.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
-                                  }}
-                                  onClick={() => {
-                                    if (currentNote.tags.includes(tag.name)) {
-                                      setCurrentNote({
-                                        ...currentNote,
-                                        tags: currentNote.tags.filter(t => t !== tag.name)
-                                      });
-                                    } else {
-                                      setCurrentNote({
-                                        ...currentNote,
-                                        tags: [...currentNote.tags, tag.name]
-                                      });
-                                    }
-                                  }}
-                                >
-                                  <i className="ri-price-tag-3-fill"></i>
-                                  {tag.name}
-                                </button>
-                              ))}
-                                  </div>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
-                                <div
-                                  className="editor-textarea"
-                                  style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
-                                  dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
-                                />
-                                {currentNote.tags.length > 0 && (
-                                  <div className="note-tags" style={{ marginTop: '16px' }}>
-                                    {currentNote.tags.map((tagName: string) => {
-                                      const tag = tags.find(t => t.name === tagName);
-                                      return (
-                                        <span 
-                                          key={tagName} 
-                                          className="tag-pill bookmark-tag"
-                                          style={{ 
-                                            backgroundColor: tag?.color || '#3b82f6',
-                                            borderColor: tag?.color || '#3b82f6'
-                                          }}
-                                        >
-                                          <i className="ri-price-tag-3-fill"></i>
-                                          {tagName}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="split-note-empty">
-                            <div className="empty-icon">📝</div>
-                            <div className="empty-title">Selecione uma nota</div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Second Note */}
-                      <div className="split-note-pane">
-                        <div className="split-note-header">
-                          <div className="split-note-title">Nota 2</div>
-                          <div className="split-note-actions">
-                            {isEditing2 ? (
-                              <>
-                                <button className="editor-btn" onClick={handleCancelEdit2}>
-                                  Cancelar
-                                </button>
-                                <button className="editor-btn primary" onClick={handleSaveNote2}>
-                                  Salvar
-                                </button>
-                              </>
-                            ) : (
-                              <button className="editor-btn primary" onClick={() => setIsEditing2(true)}>
-                                Editar
-                              </button>
-                            )}
-                          </div>
-                        </div>
-                        {currentNote2 ? (
-                          <div className="split-note-content">
-                            {isEditing2 ? (
-                              <>
-                                <input
-                                  type="text"
-                                  className="editor-input"
-                                  value={currentNote2.title}
-                                  onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote2({ ...currentNote2, title: e.target.value })}
-                                  placeholder="Título da nota..."
-                                />
-                                <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
-                                  <QuillEditor
-                                    value={currentNote2.content}
-                                    onChange={(content) => setCurrentNote2({ ...currentNote2, content })}
-                                    placeholder="Comece a escrever sua nota..."
-                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
-                                  />
-                                </div>
-                                <div className="editor-tags">
-                                  <div className="editor-tags-label">Etiquetas:</div>
-                                  <div className="editor-tags-list">
-                                    {tags.length === 0 && (
-                                      <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
-                                    )}
-                                    {tags.map((tag: Tag) => (
-                                      <button
-                                        key={tag.id}
-                                        type="button"
-                                        className={`tag-pill editor-tag-btn bookmark-tag${currentNote2.tags.includes(tag.name) ? ' selected' : ''}`}
-                                        style={{ 
-                                          backgroundColor: currentNote2.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
-                                          borderColor: tag.color || '#3b82f6',
-                                          color: currentNote2.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
-                                        }}
-                                        onClick={() => {
-                                          if (currentNote2.tags.includes(tag.name)) {
-                                            setCurrentNote2({
-                                              ...currentNote2,
-                                              tags: currentNote2.tags.filter(t => t !== tag.name)
-                                            });
-                                          } else {
-                                            setCurrentNote2({
-                                              ...currentNote2,
-                                              tags: [...currentNote2.tags, tag.name]
-                                            });
-                                          }
-                                        }}
-                                      >
-                                        <i className="ri-price-tag-3-fill"></i>
-                                        {tag.name}
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              </>
-                            ) : (
-                              <>
-                                <h1 className="editor-input">{currentNote2.title || 'Sem título'}</h1>
-                                <div
-                                  className="editor-textarea"
-                                  style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
-                                  dangerouslySetInnerHTML={{ __html: currentNote2.content || 'Sem conteúdo' }}
-                                />
-                                {currentNote2.tags.length > 0 && (
-                                  <div className="note-tags" style={{ marginTop: '16px' }}>
-                                    {currentNote2.tags.map((tagName: string) => {
-                                      const tag = tags.find(t => t.name === tagName);
-                                      return (
-                                        <span 
-                                          key={tagName} 
-                                          className="tag-pill bookmark-tag"
-                                          style={{ 
-                                            backgroundColor: tag?.color || '#3b82f6',
-                                            borderColor: tag?.color || '#3b82f6'
-                                          }}
-                                        >
-                                          <i className="ri-price-tag-3-fill"></i>
-                                          {tagName}
-                                        </span>
-                                      );
-                                    })}
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </div>
-                        ) : (
-                          <div className="split-note-empty">
-                            <div className="empty-icon">📝</div>
-                            <div className="empty-title">Selecione uma nota</div>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  // Single Note Layout
-                  currentNote ? (
-                    <div className="note-editor">
-                      <div className="editor-header">
-                        <div className="editor-title">Editor de Notas</div>
-                        <div className="editor-actions">
-                          <button className="editor-btn" onClick={handleToggleSplitView}>
-                            <i className="ri-layout-column-line minimalist-icon"></i>
-                            Divisão
-                          </button>
+                        <div className="editor-content" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
                           {isEditing ? (
                             <>
-                              <button className="editor-btn" onClick={handleCancelEdit}>
-                                Cancelar
-                              </button>
-                              <button className="editor-btn primary" onClick={handleSaveNote}>
-                                Salvar
-                              </button>
-                            </>
-                          ) : (
-                            <button className="editor-btn primary" onClick={() => setIsEditing(true)}>
-                              Editar
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      <div className="editor-content" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-                        {isEditing ? (
-                          <>
-                            <input
-                              type="text"
-                              className="editor-input"
-                              value={currentNote.title}
-                              onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
-                              placeholder="Título da nota..."
-                            />
-                            <QuillEditor
-                              value={currentNote.content}
-                              onChange={(content) => setCurrentNote({ ...currentNote, content })}
-                              placeholder="Comece a escrever sua nota..."
-                              style={{ height: '40vh', display: 'flex', flexDirection: 'column' }}
-                            />
-                            <div className="editor-tags">
-                              <div className="editor-tags-label">Etiquetas:</div>
-                              <div className="editor-tags-list">
-                                {tags.length === 0 && (
-                                  <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
-                                )}
-                                {tags.map((tag: Tag) => (
-                                  <button
-                                    key={tag.id}
-                                    type="button"
-                                    className={`tag-pill editor-tag-btn bookmark-tag${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
-                                    style={{ 
-                                      backgroundColor: currentNote.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
-                                      borderColor: tag.color || '#3b82f6',
-                                      color: currentNote.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
-                                    }}
-                                    onClick={() => {
-                                      if (currentNote.tags.includes(tag.name)) {
-                                        setCurrentNote({
-                                          ...currentNote,
-                                          tags: currentNote.tags.filter(t => t !== tag.name)
-                                        });
-                                      } else {
-                                        setCurrentNote({
-                                          ...currentNote,
-                                          tags: [...currentNote.tags, tag.name]
-                                        });
-                                      }
-                                    }}
-                                  >
-                                    <i className="ri-price-tag-3-fill"></i>
-                                    {tag.name}
-                                  </button>
-                                ))}
-                              </div>
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
-                            <div
-                              className="editor-textarea"
-                              style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}
-                              dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
-                            />
-                            {currentNote.tags.length > 0 && (
-                              <div className="note-tags" style={{ marginTop: '16px' }}>
-                                {currentNote.tags.map((tagName: string) => {
-                                  const tag = tags.find(t => t.name === tagName);
-                                  return (
-                                    <span 
-                                      key={tagName} 
-                                      className="tag-pill bookmark-tag"
+                              <input
+                                type="text"
+                                className="editor-input"
+                                value={currentNote.title}
+                                onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
+                                placeholder="Título da nota..."
+                              />
+                              <QuillEditor
+                                value={currentNote.content}
+                                onChange={(content) => setCurrentNote({ ...currentNote, content })}
+                                placeholder="Comece a escrever sua nota..."
+                                style={{ height: '40vh', display: 'flex', flexDirection: 'column' }}
+                              />
+                              <div className="editor-tags">
+                                <div className="editor-tags-label">Etiquetas:</div>
+                                <div className="editor-tags-list">
+                                  {tags.length === 0 && (
+                                    <span className="editor-tags-empty">Nenhuma etiqueta criada ainda.</span>
+                                  )}
+                                  {tags.map((tag: Tag) => (
+                                    <button
+                                      key={tag.id}
+                                      type="button"
+                                      className={`tag-pill editor-tag-btn bookmark-tag${currentNote.tags.includes(tag.name) ? ' selected' : ''}`}
                                       style={{ 
-                                        backgroundColor: tag?.color || '#3b82f6',
-                                        borderColor: tag?.color || '#3b82f6'
+                                        backgroundColor: currentNote.tags.includes(tag.name) ? (tag.color || '#3b82f6') : 'transparent',
+                                        borderColor: tag.color || '#3b82f6',
+                                        color: currentNote.tags.includes(tag.name) ? 'white' : (tag.color || '#3b82f6')
+                                      }}
+                                      onClick={() => {
+                                        if (currentNote.tags.includes(tag.name)) {
+                                          setCurrentNote({
+                                            ...currentNote,
+                                            tags: currentNote.tags.filter(t => t !== tag.name)
+                                          });
+                                        } else {
+                                          setCurrentNote({
+                                            ...currentNote,
+                                            tags: [...currentNote.tags, tag.name]
+                                          });
+                                        }
                                       }}
                                     >
                                       <i className="ri-price-tag-3-fill"></i>
-                                      {tagName}
-                                    </span>
-                                  );
-                                })}
+                                      {tag.name}
+                                    </button>
+                                  ))}
+                                </div>
                               </div>
-                            )}
-                          </>
-                        )}
+                            </>
+                          ) : (
+                            <>
+                              <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
+                              <div
+                                className="editor-textarea"
+                                style={{ whiteSpace: 'pre-wrap', maxHeight: '40vh', overflowY: 'auto' }}
+                                dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
+                              />
+                              {currentNote.tags.length > 0 && (
+                                <div className="note-tags" style={{ marginTop: '16px' }}>
+                                  {currentNote.tags.map((tagName: string) => {
+                                    const tag = tags.find(t => t.name === tagName);
+                                    return (
+                                      <span 
+                                        key={tagName} 
+                                        className="tag-pill bookmark-tag"
+                                        style={{ 
+                                          backgroundColor: tag?.color || '#3b82f6',
+                                          borderColor: tag?.color || '#3b82f6'
+                                        }}
+                                      >
+                                        <i className="ri-price-tag-3-fill"></i>
+                                        {tagName}
+                                      </span>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="empty-state">
-                      <div className="empty-icon">📝</div>
-                      <div className="empty-title">Editor de Notas</div>
-                      <div className="empty-subtitle"></div>
-                    </div>
-                  )
-                )}
+                    ) : (
+                      <div className="empty-state">
+                        <div className="empty-icon">📝</div>
+                        <div className="empty-title">Editor de Notas</div>
+                        <div className="empty-subtitle"></div>
+                      </div>
+                    )
+                  )}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 
@@ -1576,28 +1580,28 @@ function NotesApp() {
                   onChange={(e: ChangeEvent<HTMLInputElement>) => setNewTagName(e.target.value)}
                   onKeyPress={(e) => e.key === 'Enter' && handleCreateTag()}
                 />
-                                 <div className="modal-color-picker">
-                   <label htmlFor="newTagColor">Cor:</label>
-                   <input
-                     type="color"
-                     id="newTagColor"
-                     value={newTagColor}
-                     onChange={(e) => setNewTagColor(e.target.value)}
-                     className="modal-color-input"
-                   />
-                   <div className="color-palette">
-                     {tagColors.map((color) => (
-                       <button
-                         key={color}
-                         type="button"
-                         className={`color-option ${newTagColor === color ? 'selected' : ''}`}
-                         style={{ backgroundColor: color }}
-                         onClick={() => setNewTagColor(color)}
-                         aria-label={`Select color ${color}`}
-                       />
-                     ))}
-                   </div>
-                 </div>
+                <div className="modal-color-picker">
+                  <label htmlFor="newTagColor">Cor:</label>
+                  <input
+                    type="color"
+                    id="newTagColor"
+                    value={newTagColor}
+                    onChange={(e) => setNewTagColor(e.target.value)}
+                    className="modal-color-input"
+                  />
+                  <div className="color-palette">
+                    {tagColors.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        className={`color-option ${newTagColor === color ? 'selected' : ''}`}
+                        style={{ backgroundColor: color }}
+                        onClick={() => setNewTagColor(color)}
+                        aria-label={`Select color ${color}`}
+                      />
+                    ))}
+                  </div>
+                </div>
                 {modalError && <div className="modal-error">{modalError}</div>}
                 <div className="modal-actions">
                   <button className="modal-btn" onClick={() => setShowTagModal(false)}>
