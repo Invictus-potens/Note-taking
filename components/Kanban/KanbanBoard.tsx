@@ -450,20 +450,24 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Title</label>
+                <label htmlFor="card-title" className="block text-sm font-medium text-gray-300 mb-2">Title</label>
                 <input
+                  id="card-title"
                   type="text"
                   value={editForm.title}
                   onChange={(e) => setEditForm(prev => ({ ...prev, title: e.target.value }))}
+                  placeholder="Enter card title"
                   className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 />
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Content</label>
+                <label htmlFor="card-content" className="block text-sm font-medium text-gray-300 mb-2">Content</label>
                 <textarea
+                  id="card-content"
                   value={editForm.content}
                   onChange={(e) => setEditForm(prev => ({ ...prev, content: e.target.value }))}
+                  placeholder="Enter card content"
                   rows={4}
                   className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                 />
@@ -715,8 +719,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
           canAddCards
           canEditLanes
           canEditCards
-          canDeleteLanes
-          canDeleteCards
           draggable
           laneDraggable
           cardDraggable
