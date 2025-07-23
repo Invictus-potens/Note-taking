@@ -5,6 +5,169 @@
 /* ReactQuill CSS - Imported globally to avoid SSR issues */
 @import 'react-quill/dist/quill.snow.css';
 
+/* Custom Quill Editor Styles for Dark Theme */
+.ql-editor {
+  color: white !important;
+  background: transparent !important;
+}
+
+.ql-editor.ql-blank::before {
+  color: rgba(255, 255, 255, 0.6) !important;
+  font-style: italic;
+}
+
+/* Quill Toolbar Dark Theme */
+.ql-toolbar {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: white !important;
+}
+
+.ql-toolbar button {
+  color: white !important;
+  background: transparent !important;
+}
+
+.ql-toolbar button:hover {
+  color: var(--bg-blue) !important;
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar button.ql-active {
+  color: var(--bg-blue) !important;
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar .ql-stroke {
+  stroke: white !important;
+}
+
+.ql-toolbar .ql-fill {
+  fill: white !important;
+}
+
+.ql-toolbar .ql-picker {
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-label {
+  color: white !important;
+  border-color: var(--border-color) !important;
+}
+
+.ql-toolbar .ql-picker-options {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-item {
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-item:hover {
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar .ql-picker-item.ql-selected {
+  color: var(--bg-blue) !important;
+}
+
+/* Quill Container Dark Theme */
+.ql-container {
+  background: var(--bg-primary) !important;
+  border-color: var(--border-color) !important;
+  color: white !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+/* Quill Editor Container for Split View */
+.ql-editor-container {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+/* Quill wrapper for split view */
+.ql-wrapper {
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.ql-wrapper .ql-container {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.ql-wrapper .ql-editor {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+}
+
+.ql-editor {
+  color: white !important;
+  background: transparent !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  resize: none !important;
+}
+
+/* Quill Editor Content Dark Theme */
+.ql-editor h1,
+.ql-editor h2,
+.ql-editor h3,
+.ql-editor h4,
+.ql-editor h5,
+.ql-editor h6,
+.ql-editor p,
+.ql-editor div,
+.ql-editor span {
+  color: white !important;
+}
+
+.ql-editor blockquote {
+  border-left-color: var(--border-color) !important;
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.ql-editor code {
+  background: var(--bg-hover) !important;
+  color: white !important;
+}
+
+.ql-editor pre {
+  background: var(--bg-hover) !important;
+  color: white !important;
+}
+
+/* Quill Dropdown Dark Theme */
+.ql-toolbar .ql-picker-options {
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border-color) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+}
+
+.ql-toolbar .ql-picker-options .ql-picker-item {
+  color: white !important;
+}
+
+.ql-toolbar .ql-picker-options .ql-picker-item:hover {
+  background: var(--bg-hover) !important;
+}
+
+.ql-toolbar .ql-picker-options .ql-picker-item.ql-selected {
+  color: var(--bg-blue) !important;
+  background: var(--bg-hover) !important;
+}
+
 /* Drag and Drop Styles */
 .sidebar-item {
   position: relative;
@@ -794,6 +957,7 @@ html, body {
   padding: 16px 24px;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-primary);
+  flex-shrink: 0;
 }
 
 .split-view-title {
@@ -811,6 +975,7 @@ html, body {
   flex: 1;
   display: flex;
   min-height: 0;
+  overflow: hidden;
 }
 
 .split-note-pane {
@@ -819,6 +984,8 @@ html, body {
   flex-direction: column;
   border-right: 1px solid var(--border-color);
   background: var(--bg-secondary);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .split-note-pane:last-child {
@@ -832,6 +999,7 @@ html, body {
   padding: 12px 16px;
   border-bottom: 1px solid var(--border-color);
   background: var(--bg-primary);
+  flex-shrink: 0;
 }
 
 .split-note-title {
@@ -848,10 +1016,11 @@ html, body {
 .split-note-content {
   flex: 1;
   padding: 16px;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  min-height: 0;
 }
 
 .split-note-empty {

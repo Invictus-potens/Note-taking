@@ -1172,12 +1172,14 @@ function NotesApp() {
                                   onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote({ ...currentNote, title: e.target.value })}
                                   placeholder="Título da nota..."
                                 />
-                                <QuillEditor
-                                  value={currentNote.content}
-                                  onChange={(content) => setCurrentNote({ ...currentNote, content })}
-                                  placeholder="Comece a escrever sua nota..."
-                                  style={{ height: '30vh', display: 'flex', flexDirection: 'column' }}
-                                />
+                                <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                  <QuillEditor
+                                    value={currentNote.content}
+                                    onChange={(content) => setCurrentNote({ ...currentNote, content })}
+                                    placeholder="Comece a escrever sua nota..."
+                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                                  />
+                                </div>
                                 <div className="editor-tags">
                                   <div className="editor-tags-label">Etiquetas:</div>
                                   <div className="editor-tags-list">
@@ -1286,12 +1288,14 @@ function NotesApp() {
                                   onChange={(e: ChangeEvent<HTMLInputElement>) => setCurrentNote2({ ...currentNote2, title: e.target.value })}
                                   placeholder="Título da nota..."
                                 />
-                                <QuillEditor
-                                  value={currentNote2.content}
-                                  onChange={(content) => setCurrentNote2({ ...currentNote2, content })}
-                                  placeholder="Comece a escrever sua nota..."
-                                  style={{ height: '30vh', display: 'flex', flexDirection: 'column' }}
-                                />
+                                <div className="ql-wrapper" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                                  <QuillEditor
+                                    value={currentNote2.content}
+                                    onChange={(content) => setCurrentNote2({ ...currentNote2, content })}
+                                    placeholder="Comece a escrever sua nota..."
+                                    style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}
+                                  />
+                                </div>
                                 <div className="editor-tags">
                                   <div className="editor-tags-label">Etiquetas:</div>
                                   <div className="editor-tags-list">
