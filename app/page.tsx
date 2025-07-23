@@ -18,6 +18,7 @@ import ClientOnly from '../components/ui/ClientOnly';
 import Toast from '../components/ui/Toast';
 import DragDropHint from '../components/ui/DragDropHint';
 import CalendarModal from '../components/Calendar/CalendarModal';
+import KanbanBoard from '../components/Kanban/KanbanBoard';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
@@ -125,6 +126,7 @@ function NotesApp() {
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
+  const [showKanban, setShowKanban] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6'); // Default blue color
@@ -906,6 +908,13 @@ function NotesApp() {
                 <button className="calendar-btn" onClick={() => setShowCalendarModal(true)} aria-label="Open calendar">
                   <i className="ri-calendar-line"></i>
                 </button>
+                <button 
+                  className={`kanban-btn ${showKanban ? 'active' : ''}`} 
+                  onClick={() => setShowKanban(!showKanban)} 
+                  aria-label="Toggle Kanban board"
+                >
+                  <i className="ri-medal-line"></i>
+                </button>
                 <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
                   <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
                 </button>
@@ -1119,7 +1128,16 @@ function NotesApp() {
 
               {/* Right Pane */}
               <div className={`right-pane ${isSplitView ? 'split-view' : ''}`}>
-                {isSplitView ? (
+                {showKanban ? (
+                  <KanbanBoard 
+                    notes={notes}
+                    tags={tags}
+                    onNoteSelect={(noteId) => {
+                      setShowKanban(false);
+                      handleNoteSelect(noteId);
+                    }}
+                  />
+                ) : isSplitView ? (
                   // Split View Layout
                   <div className="split-view-container">
                     {/* Split View Toggle */}
