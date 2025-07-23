@@ -1222,7 +1222,7 @@ function NotesApp() {
                                 <h1 className="editor-input">{currentNote.title || 'Sem título'}</h1>
                                 <div
                                   className="editor-textarea"
-                                  style={{ whiteSpace: 'pre-wrap', maxHeight: '30vh', overflowY: 'auto' }}
+                                  style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
                                   dangerouslySetInnerHTML={{ __html: currentNote.content || 'Sem conteúdo' }}
                                 />
                                 {currentNote.tags.length > 0 && (
@@ -1338,7 +1338,7 @@ function NotesApp() {
                                 <h1 className="editor-input">{currentNote2.title || 'Sem título'}</h1>
                                 <div
                                   className="editor-textarea"
-                                  style={{ whiteSpace: 'pre-wrap', maxHeight: '30vh', overflowY: 'auto' }}
+                                  style={{ flex: 1, whiteSpace: 'pre-wrap', overflowY: 'auto' }}
                                   dangerouslySetInnerHTML={{ __html: currentNote2.content || 'Sem conteúdo' }}
                                 />
                                 {currentNote2.tags.length > 0 && (

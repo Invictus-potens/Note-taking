@@ -111,6 +111,30 @@
   overflow-y: auto !important;
 }
 
+/* Custom scrollbar styling for Quill editor */
+.ql-wrapper .ql-editor::-webkit-scrollbar {
+  width: 8px;
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.ql-wrapper .ql-editor::-webkit-scrollbar-corner {
+  background: var(--bg-hover);
+}
+
 .ql-editor {
   color: white !important;
   background: transparent !important;
@@ -1155,6 +1179,34 @@ html, body {
   outline: none;
   resize: none;
   font-family: inherit;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  overflow-y: auto;
+}
+
+/* Custom scrollbar for editor textarea */
+.editor-textarea::-webkit-scrollbar {
+  width: 8px;
+}
+
+.editor-textarea::-webkit-scrollbar-track {
+  background: var(--bg-hover);
+  border-radius: 4px;
+}
+
+.editor-textarea::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
+  transition: background 0.2s ease;
+}
+
+.editor-textarea::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+.editor-textarea::-webkit-scrollbar-corner {
+  background: var(--bg-hover);
 }
 
 .editor-textarea::placeholder {
