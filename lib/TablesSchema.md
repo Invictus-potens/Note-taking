@@ -39,6 +39,8 @@ create table public.calendar_events (
   end_date timestamp with time zone null,
   all_day boolean null default false,
   color text null default '#3b82f6',
+  reminder_minutes integer null,
+  reminder_set boolean null default false,
   created_at timestamp with time zone null default now(),
   updated_at timestamp with time zone null default now(),
   constraint calendar_events_pkey primary key (id),

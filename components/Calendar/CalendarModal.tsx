@@ -8,6 +8,7 @@ import interactionPlugin from '@fullcalendar/interaction';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/authContext';
 import EventInputModal from './EventInputModal';
+import EventActionModal from './EventActionModal';
 
 // Dynamic import only for the main FullCalendar component
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
@@ -23,6 +24,8 @@ interface CalendarEvent {
   end?: string;
   allDay?: boolean;
   color?: string;
+  reminder_minutes?: number;
+  reminder_set?: boolean;
 }
 
 interface CalendarModalProps {
@@ -36,7 +39,10 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(false);
   const [showEventInput, setShowEventInput] = useState(false);
+  const [showEventAction, setShowEventAction] = useState(false);
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [hasInitialized, setHasInitialized] = useState(false);
 
   // Fetch events from database
@@ -64,7 +70,9 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
         start: event.start_date,
         end: event.end_date,
         allDay: event.all_day,
-        color: event.color
+        color: event.color,
+        reminder_minutes: event.reminder_minutes,
+        reminder_set: event.reminder_set
       })) || [];
 
       setEvents(transformedEvents);
@@ -108,6 +116,13 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
       fetchEvents();
     }
   }, [isOpen, user, hasInitialized, fetchEvents]);
+
+  // Request notification permission when calendar opens
+  useEffect(() => {
+    if (isOpen && 'Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission();
+    }
+  }, [isOpen]);
 
   // Save event to database
   const saveEvent = useCallback(async (eventData: Omit<CalendarEvent, 'id'>) => {
@@ -205,6 +220,73 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
     }
   }, [user]);
 
+  // Set reminder for event
+  const setEventReminder = useCallback(async (eventId: string, reminderMinutes: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('calendar_events')
+        .update({
+          reminder_minutes: parseInt(reminderMinutes),
+          reminder_set: true,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', eventId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error setting reminder:', error);
+        return;
+      }
+
+      // Schedule the reminder notification
+      scheduleReminderNotification(eventId, parseInt(reminderMinutes));
+    } catch (error) {
+      console.error('Error setting reminder:', error);
+    }
+  }, [user]);
+
+  // Schedule reminder notification
+  const scheduleReminderNotification = useCallback((eventId: string, reminderMinutes: number) => {
+    const event = events.find(e => e.id === eventId);
+    if (!event) return;
+
+    const eventStart = new Date(event.start);
+    const reminderTime = new Date(eventStart.getTime() - (reminderMinutes * 60 * 1000));
+    const now = new Date();
+
+    if (reminderTime > now) {
+      const timeoutId = setTimeout(() => {
+        showNotification(event.title, event.description || 'No description');
+      }, reminderTime.getTime() - now.getTime());
+
+      // Store the timeout ID for potential cancellation
+      localStorage.setItem(`reminder_${eventId}`, timeoutId.toString());
+    }
+  }, [events]);
+
+  // Show browser notification
+  const showNotification = useCallback((title: string, body: string) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, {
+        body,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico'
+      });
+    } else if ('Notification' in window && Notification.permission !== 'denied') {
+      Notification.requestPermission().then(permission => {
+        if (permission === 'granted') {
+          new Notification(title, {
+            body,
+            icon: '/favicon.ico',
+            badge: '/favicon.ico'
+          });
+        }
+      });
+    }
+  }, []);
+
   // Memoize event handlers to prevent unnecessary re-renders
   const handleDateClick = useCallback((arg: DateSelectArg) => {
     setSelectedDate(arg.startStr.split('T')[0]);
@@ -212,10 +294,18 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
   }, []);
 
   const handleEventClick = useCallback((arg: EventClickArg) => {
-    if (confirm(`Are you sure you want to delete the event '${arg.event.title}'`)) {
-      deleteEvent(arg.event.id);
-    }
-  }, [deleteEvent]);
+    const event = {
+      id: arg.event.id,
+      title: arg.event.title,
+      description: arg.event.extendedProps.description,
+      start: arg.event.startStr,
+      end: arg.event.endStr,
+      allDay: arg.event.allDay,
+      color: arg.event.backgroundColor
+    };
+    setSelectedEvent(event);
+    setShowEventAction(true);
+  }, []);
 
   const handleEventChange = useCallback((arg: EventChangeArg) => {
     updateEvent(arg.event.id, {
@@ -227,6 +317,22 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
   const handleSaveEvent = useCallback((eventData: Omit<CalendarEvent, 'id'>) => {
     saveEvent(eventData);
   }, [saveEvent]);
+
+  const handleEditEvent = useCallback((event: CalendarEvent) => {
+    setEditingEvent(event);
+    setShowEventInput(true);
+    setShowEventAction(false);
+  }, []);
+
+  const handleDeleteEvent = useCallback((eventId: string) => {
+    deleteEvent(eventId);
+    setShowEventAction(false);
+  }, [deleteEvent]);
+
+  const handleSetReminder = useCallback((eventId: string, reminderTime: string) => {
+    setEventReminder(eventId, reminderTime);
+    setShowEventAction(false);
+  }, [setEventReminder]);
 
   // Memoize calendar options to prevent unnecessary re-renders
   const calendarOptions = useMemo(() => ({
@@ -289,9 +395,27 @@ const CalendarModal: React.FC<CalendarModalProps> = ({ isOpen, onClose, isDark }
 
       <EventInputModal
         isOpen={showEventInput}
-        onClose={() => setShowEventInput(false)}
+        onClose={() => {
+          setShowEventInput(false);
+          setEditingEvent(null);
+        }}
         onSave={handleSaveEvent}
+        onUpdate={updateEvent}
         selectedDate={selectedDate}
+        isDark={isDark}
+        editingEvent={editingEvent}
+      />
+
+      <EventActionModal
+        isOpen={showEventAction}
+        onClose={() => {
+          setShowEventAction(false);
+          setSelectedEvent(null);
+        }}
+        event={selectedEvent}
+        onEdit={handleEditEvent}
+        onDelete={handleDeleteEvent}
+        onSetReminder={handleSetReminder}
         isDark={isDark}
       />
     </>

@@ -10,31 +10,37 @@ interface CalendarEvent {
   end?: string;
   allDay?: boolean;
   color?: string;
+  reminder_minutes?: number;
+  reminder_set?: boolean;
 }
 
 interface EventInputModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (event: Omit<CalendarEvent, 'id'>) => void;
+  onUpdate?: (eventId: string, event: Partial<CalendarEvent>) => void;
   selectedDate?: string;
   isDark: boolean;
+  editingEvent?: CalendarEvent | null;
 }
 
 const EventInputModal: React.FC<EventInputModalProps> = ({ 
   isOpen, 
   onClose, 
   onSave, 
+  onUpdate,
   selectedDate,
-  isDark 
+  isDark,
+  editingEvent
 }) => {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [startDate, setStartDate] = useState(selectedDate || new Date().toISOString().split('T')[0]);
-  const [startTime, setStartTime] = useState('09:00');
-  const [endDate, setEndDate] = useState(selectedDate || new Date().toISOString().split('T')[0]);
-  const [endTime, setEndTime] = useState('10:00');
-  const [allDay, setAllDay] = useState(false);
-  const [color, setColor] = useState('#3b82f6');
+  const [title, setTitle] = useState(editingEvent?.title || '');
+  const [description, setDescription] = useState(editingEvent?.description || '');
+  const [startDate, setStartDate] = useState(editingEvent?.start ? editingEvent.start.split('T')[0] : selectedDate || new Date().toISOString().split('T')[0]);
+  const [startTime, setStartTime] = useState(editingEvent?.start ? editingEvent.start.split('T')[1]?.substring(0, 5) || '09:00' : '09:00');
+  const [endDate, setEndDate] = useState(editingEvent?.end ? editingEvent.end.split('T')[0] : selectedDate || new Date().toISOString().split('T')[0]);
+  const [endTime, setEndTime] = useState(editingEvent?.end ? editingEvent.end.split('T')[1]?.substring(0, 5) || '10:00' : '10:00');
+  const [allDay, setAllDay] = useState(editingEvent?.allDay || false);
+  const [color, setColor] = useState(editingEvent?.color || '#3b82f6');
 
   const eventColors = [
     '#ef4444', // red
@@ -56,14 +62,20 @@ const EventInputModal: React.FC<EventInputModalProps> = ({
     const startDateTime = allDay ? startDate : `${startDate}T${startTime}`;
     const endDateTime = allDay ? endDate : `${endDate}T${endTime}`;
 
-    onSave({
+    const eventData = {
       title: title.trim(),
       description: description.trim(),
       start: startDateTime,
       end: endDateTime,
       allDay,
       color
-    });
+    };
+
+    if (editingEvent && onUpdate) {
+      onUpdate(editingEvent.id, eventData);
+    } else {
+      onSave(eventData);
+    }
 
     // Reset form
     setTitle('');
@@ -96,7 +108,7 @@ const EventInputModal: React.FC<EventInputModalProps> = ({
     <div className="event-input-modal-overlay" onClick={handleCancel}>
       <div className="event-input-modal" onClick={(e) => e.stopPropagation()}>
         <div className="event-input-modal-header">
-          <h3>Add New Event</h3>
+          <h3>{editingEvent ? 'Edit Event' : 'Add New Event'}</h3>
           <button 
             className="event-input-modal-close"
             onClick={handleCancel}
@@ -216,7 +228,7 @@ const EventInputModal: React.FC<EventInputModalProps> = ({
               Cancel
             </button>
             <button type="submit" className="event-input-btn primary">
-              Save Event
+              {editingEvent ? 'Update Event' : 'Save Event'}
             </button>
           </div>
         </form>
