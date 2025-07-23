@@ -3,22 +3,16 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 import { EventClickArg, DateSelectArg, EventChangeArg } from '@fullcalendar/core';
+import dayGridPlugin from '@fullcalendar/daygrid';
+import interactionPlugin from '@fullcalendar/interaction';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/authContext';
 import EventInputModal from './EventInputModal';
 
-// Dynamic imports for better performance
+// Dynamic import only for the main FullCalendar component
 const FullCalendar = dynamic(() => import('@fullcalendar/react'), {
   ssr: false,
   loading: () => <div className="calendar-loading">Loading calendar...</div>
-});
-
-const dayGridPlugin = dynamic(() => import('@fullcalendar/daygrid'), {
-  ssr: false
-});
-
-const interactionPlugin = dynamic(() => import('@fullcalendar/interaction'), {
-  ssr: false
 });
 
 interface CalendarEvent {
