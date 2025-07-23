@@ -60,6 +60,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
   const [editingColumn, setEditingColumn] = useState<string | null>(null);
   const [newColumnTitle, setNewColumnTitle] = useState('');
   const [showAddColumn, setShowAddColumn] = useState(false);
+  const [showAddCard, setShowAddCard] = useState<string | null>(null);
+  const [newCardTitle, setNewCardTitle] = useState('');
 
   // Fetch Kanban data
   const fetchKanbanData = useCallback(async () => {
@@ -112,11 +114,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     if (!user || columns.length > 0) return;
 
     const defaultColumns = [
-      { title: 'Aguardando início', position: 0 },
-      { title: 'Aguardando retorno do cliente/vendedor', position: 1 },
-      { title: 'Aguardando análise', position: 2 },
-      { title: 'Coleta de dados', position: 3 },
-      { title: 'Em análise', position: 4 }
+      { title: 'To Do', position: 0 },
+      { title: 'In Progress', position: 1 },
+      { title: 'Review', position: 2 },
+      { title: 'Done', position: 3 }
     ];
 
     try {
@@ -169,6 +170,61 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
       setShowAddColumn(false);
     } catch (error) {
       console.error('Error creating column:', error);
+    }
+  };
+
+  // Create new card
+  const handleCreateCard = async (columnId: string) => {
+    if (!user || !newCardTitle.trim()) return;
+
+    try {
+      const newPosition = cards.filter(card => card.column_id === columnId).length;
+      
+      // Create a new note first
+      const { data: noteData, error: noteError } = await supabase
+        .from('notes')
+        .insert([{
+          user_id: user.id,
+          title: newCardTitle.trim(),
+          content: '',
+          folder: 'kanban',
+          tags: [],
+          is_pinned: false,
+          is_private: false
+        }])
+        .select();
+
+      if (noteError) {
+        console.error('Error creating note:', noteError);
+        return;
+      }
+
+      // Create the card
+      const { data: cardData, error: cardError } = await supabase
+        .from('kanban_cards')
+        .insert([{
+          user_id: user.id,
+          note_id: noteData[0].id,
+          column_id: columnId,
+          position: newPosition
+        }])
+        .select();
+
+      if (cardError) {
+        console.error('Error creating card:', cardError);
+        return;
+      }
+
+      const newCard = {
+        ...cardData[0],
+        note: noteData[0]
+      };
+
+      setCards(prev => [...prev, newCard]);
+      setNewCardTitle('');
+      setShowAddCard(null);
+    } catch (error) {
+      console.error('Error creating card:', error);
     }
   };
 
@@ -233,39 +289,25 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     }
   };
 
-  // Add note to column
-  const handleAddNoteToColumn = async (columnId: string, noteId: string) => {
+  // Delete card
+  const handleDeleteCard = async (cardId: string) => {
     if (!user) return;
 
-    // Check if note is already in a column
-    const existingCard = cards.find(card => card.note_id === noteId);
-    if (existingCard) return;
-
     try {
-      const newPosition = cards.filter(card => card.column_id === columnId).length;
-      const { data, error } = await supabase
+      const { error } = await supabase
         .from('kanban_cards')
-        .insert([{
-          user_id: user.id,
-          note_id: noteId,
-          column_id: columnId,
-          position: newPosition
-        }])
-        .select();
+        .delete()
+        .eq('id', cardId)
+        .eq('user_id', user.id);
 
       if (error) {
-        console.error('Error adding note to column:', error);
+        console.error('Error deleting card:', error);
         return;
       }
 
-      const newCard = {
-        ...data[0],
-        note: notes.find(note => note.id === noteId)
-      };
-
-      setCards(prev => [...prev, newCard]);
+      setCards(prev => prev.filter(card => card.id !== cardId));
     } catch (error) {
-      console.error('Error adding note to column:', error);
+      console.error('Error deleting card:', error);
     }
   };
 
@@ -358,15 +400,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
     }
   };
 
-  // Get available notes (not already in Kanban)
-  const getAvailableNotes = () => {
-    const usedNoteIds = new Set(cards.map(card => card.note_id));
-    return notes.filter(note => !usedNoteIds.has(note.id));
-  };
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
+      <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <p className="text-gray-400">Loading Kanban board...</p>
@@ -376,50 +412,24 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
   }
 
   return (
-    <div className="h-full flex flex-col bg-gradient-to-r from-purple-900 to-blue-900">
+    <div className="h-full flex flex-col bg-gray-900">
       {/* Board Header */}
-      <div className="bg-gradient-to-r from-purple-900 to-blue-900 p-6 border-b border-gray-700">
+      <div className="bg-gray-800 border-b border-gray-700 p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-white">Desenvolvimento</h1>
-            <div className="flex items-center gap-2">
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-grid-line"></i>
-              </button>
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-arrow-down-s-line"></i>
-              </button>
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-rocket-line"></i>
-              </button>
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-flashlight-line"></i>
-              </button>
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-list-check"></i>
-              </button>
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-star-line"></i>
-              </button>
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-user-line"></i>
-              </button>
-              <button className="p-2 text-gray-300 hover:text-white hover:bg-gray-700 rounded">
-                <i className="ri-more-line"></i>
-              </button>
-            </div>
+            <h1 className="text-xl font-bold text-white">Kanban Board</h1>
+            <span className="text-gray-400 text-sm">
+              {columns.length} columns • {cards.length} cards
+            </span>
           </div>
           
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <div className="flex -space-x-2">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-xs font-medium">ST</div>
-                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-medium">JD</div>
-                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center text-white text-xs font-medium">MK</div>
-              </div>
-            </div>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
-              Compartilhar
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => setShowAddColumn(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <i className="ri-add-line"></i>
+              Add Column
             </button>
           </div>
         </div>
@@ -459,8 +469,42 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
         </div>
       )}
 
+      {/* Add Card Modal */}
+      {showAddCard && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-gray-800 rounded-lg p-6 w-96">
+            <h3 className="text-lg font-semibold text-white mb-4">Add New Card</h3>
+            <input
+              type="text"
+              value={newCardTitle}
+              onChange={(e) => setNewCardTitle(e.target.value)}
+              placeholder="Card title..."
+              className="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white mb-4 focus:outline-none focus:border-blue-500"
+              onKeyPress={(e) => e.key === 'Enter' && handleCreateCard(showAddCard)}
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => handleCreateCard(showAddCard)}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                Create
+              </button>
+              <button
+                onClick={() => {
+                  setShowAddCard(null);
+                  setNewCardTitle('');
+                }}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto bg-gradient-to-r from-purple-900 to-blue-900">
+      <div className="flex-1 overflow-x-auto bg-gray-900">
         <div className="p-6 min-h-full">
           <DragDropContext onDragEnd={handleDragEnd}>
             <DroppableComponent droppableId="columns" direction="horizontal" type="COLUMN">
@@ -508,11 +552,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
                               </h3>
                             )}
                             <div className="flex items-center gap-1">
-                              <button className="text-gray-400 hover:text-white transition-colors p-1">
-                                <i className="ri-arrow-right-s-line"></i>
-                              </button>
-                              <button className="text-gray-400 hover:text-white transition-colors p-1">
-                                <i className="ri-more-line"></i>
+                              <span className="text-gray-400 text-sm">
+                                {cards.filter(card => card.column_id === column.id).length}
+                              </span>
+                              <button 
+                                onClick={() => handleDeleteColumn(column.id)}
+                                className="text-gray-400 hover:text-red-400 transition-colors p-1"
+                                title="Delete column"
+                              >
+                                <i className="ri-delete-bin-line"></i>
                               </button>
                             </div>
                           </div>
@@ -537,14 +585,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
                                           ref={provided.innerRef}
                                           {...provided.draggableProps}
                                           {...provided.dragHandleProps}
-                                          className={`bg-gray-700 rounded-lg p-4 mb-3 cursor-grab active:cursor-grabbing ${
+                                          className={`bg-gray-700 rounded-lg p-4 mb-3 cursor-grab active:cursor-grabbing hover:bg-gray-600 transition-colors ${
                                             snapshot.isDragging ? 'shadow-lg transform rotate-1' : ''
                                           }`}
                                           onClick={() => onNoteSelect?.(card.note_id)}
                                         >
-                                          <h4 className="font-medium text-white mb-2 line-clamp-2">
-                                            {card.note?.title || 'Untitled'}
-                                          </h4>
+                                          <div className="flex items-start justify-between mb-2">
+                                            <h4 className="font-medium text-white line-clamp-2 flex-1">
+                                              {card.note?.title || 'Untitled'}
+                                            </h4>
+                                            <button 
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteCard(card.id);
+                                              }}
+                                              className="text-gray-400 hover:text-red-400 transition-colors ml-2"
+                                              title="Delete card"
+                                            >
+                                              <i className="ri-delete-bin-line text-sm"></i>
+                                            </button>
+                                          </div>
+                                          
                                           {card.note?.tags && card.note.tags.length > 0 && (
                                             <div className="flex flex-wrap gap-1 mb-2">
                                               {card.note.tags.slice(0, 3).map((tagName) => {
@@ -569,10 +630,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
                                               )}
                                             </div>
                                           )}
-                                          <div className="flex items-center justify-between text-gray-400 text-xs">
-                                            <div className="flex items-center gap-1">
-                                              <i className="ri-message-2-line"></i>
-                                              <span>2</span>
+                                          
+                                          <div className="text-gray-400 text-xs">
+                                            {card.note?.content && card.note.content.length > 0 && (
+                                              <div className="line-clamp-2 text-gray-300 mb-1">
+                                                {card.note.content.replace(/<[^>]*>/g, '').substring(0, 100)}
+                                                {card.note.content.length > 100 && '...'}
+                                              </div>
+                                            )}
+                                            <div className="flex items-center justify-between">
+                                              <span>Created {new Date(card.created_at).toLocaleDateString()}</span>
                                             </div>
                                           </div>
                                         </div>
@@ -584,16 +651,14 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
                             )}
                           </DroppableComponent>
 
-                          {/* Add Note Button */}
+                          {/* Add Card Button */}
                           <div className="mt-4">
                             <button
-                              onClick={() => {
-                                // Show dropdown or modal to add note
-                              }}
+                              onClick={() => setShowAddCard(column.id)}
                               className="w-full p-3 text-gray-400 hover:text-white hover:bg-gray-700 rounded-lg transition-colors text-left flex items-center gap-2"
                             >
                               <i className="ri-add-line"></i>
-                              Adicionar um cartão
+                              Add a card
                             </button>
                           </div>
                         </div>
@@ -609,7 +674,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect }) 
                     style={{ minHeight: 'calc(100vh - 250px)' }}
                   >
                     <i className="ri-add-line mr-2"></i>
-                    Adicionar uma lista
+                    Add a list
                   </button>
                 </div>
               )}
