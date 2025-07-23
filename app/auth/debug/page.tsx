@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 export default function DebugPage() {
   const searchParams = useSearchParams();
   
-  const allParams = {};
+  const allParams: Record<string, string> = {};
   searchParams.forEach((value, key) => {
     allParams[key] = value;
   });
