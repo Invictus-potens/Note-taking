@@ -217,6 +217,27 @@ html, body {
   transform: scale(1.05);
 }
 
+.calendar-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 18px;
+}
+
+.calendar-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  transform: scale(1.05);
+}
+
 .signout-btn {
   width: 40px;
   height: 40px;
@@ -1840,5 +1861,214 @@ html, body {
     font-size: 20px;
     bottom: 15px;
     left: 15px;
+  }
+}
+
+/* Calendar Modal */
+.calendar-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.calendar-modal {
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  max-width: 90vw;
+  max-height: 90vh;
+  width: 800px;
+  overflow: hidden;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.calendar-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-primary);
+}
+
+.calendar-modal-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.calendar-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.calendar-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.calendar-modal-content {
+  padding: 24px;
+  max-height: calc(90vh - 80px);
+  overflow-y: auto;
+}
+
+/* FullCalendar Theme Customization */
+.fc {
+  font-family: inherit;
+}
+
+.fc-theme-standard td,
+.fc-theme-standard th,
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--border-color);
+}
+
+.fc-theme-standard .fc-scrollgrid {
+  border-color: var(--border-color);
+}
+
+.fc-daygrid-day {
+  background: var(--bg-primary);
+}
+
+.fc-daygrid-day:hover {
+  background: var(--bg-hover);
+}
+
+.fc-daygrid-day.fc-day-today {
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.fc-daygrid-day-number {
+  color: var(--text-primary);
+}
+
+.fc-daygrid-day.fc-day-other .fc-daygrid-day-number {
+  color: var(--text-secondary);
+}
+
+.fc-col-header-cell {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.fc-button {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.fc-button:hover {
+  background: var(--bg-hover);
+  border-color: var(--bg-blue);
+}
+
+.fc-button:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.fc-button-primary {
+  background: var(--bg-blue);
+  border-color: var(--bg-blue);
+  color: white;
+}
+
+.fc-button-primary:hover {
+  background: var(--bg-blue-hover);
+  border-color: var(--bg-blue-hover);
+}
+
+.fc-toolbar-title {
+  color: var(--text-primary);
+  font-weight: 600;
+  font-size: 18px;
+}
+
+.fc-event {
+  border-radius: 4px;
+  border: none;
+  padding: 2px 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.fc-event:hover {
+  opacity: 0.9;
+}
+
+/* Dark theme specific overrides */
+[data-theme="dark"] .fc {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .fc-daygrid-day {
+  background: var(--bg-primary);
+}
+
+[data-theme="dark"] .fc-daygrid-day:hover {
+  background: var(--bg-hover);
+}
+
+[data-theme="dark"] .fc-col-header-cell {
+  background: var(--bg-secondary);
+}
+
+/* Responsive Calendar */
+@media (max-width: 768px) {
+  .calendar-modal {
+    width: 95vw;
+    max-height: 95vh;
+    margin: 10px;
+  }
+  
+  .calendar-modal-content {
+    padding: 16px;
+  }
+  
+  .fc-toolbar {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .fc-toolbar-chunk {
+    display: flex;
+    justify-content: center;
+  }
+  
+  .fc-button {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .fc-toolbar-title {
+    font-size: 16px;
   }
 }

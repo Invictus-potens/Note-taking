@@ -17,6 +17,7 @@ import DragDropWrapper from '../components/ui/DragDropWrapper';
 import ClientOnly from '../components/ui/ClientOnly';
 import Toast from '../components/ui/Toast';
 import DragDropHint from '../components/ui/DragDropHint';
+import CalendarModal from '../components/Calendar/CalendarModal';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
@@ -82,6 +83,7 @@ function NotesApp() {
   // Modal states
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [showTagModal, setShowTagModal] = useState(false);
+  const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6'); // Default blue color
@@ -860,6 +862,9 @@ function NotesApp() {
                 <div className="user-info">
                   <span className="user-email">{user?.email}</span>
                 </div>
+                <button className="calendar-btn" onClick={() => setShowCalendarModal(true)} aria-label="Open calendar">
+                  <i className="ri-calendar-line"></i>
+                </button>
                 <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
                   <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
                 </button>
@@ -1546,6 +1551,13 @@ function NotesApp() {
 
         {/* AI Assistant */}
         <AIAssistant onAddToNote={handleAddAIToNote} />
+
+        {/* Calendar Modal */}
+        <CalendarModal 
+          isOpen={showCalendarModal}
+          onClose={() => setShowCalendarModal(false)}
+          isDark={isDark}
+        />
       </DragDropWrapper>
       
       {/* Toast Notifications */}
