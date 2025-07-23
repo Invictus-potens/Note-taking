@@ -524,20 +524,27 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           <div className="flex items-center gap-3">
             <button
               onClick={() => setShowLinkModal(true)}
-              className="new-note-btn"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDark 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
             >
               <i className="ri-link mr-2"></i>
               Link Note
             </button>
             <button
               onClick={() => {
-                // Trigger the add lane functionality from react-trello
-                const addLaneButton = document.querySelector('.react-trello-add-lane');
-                if (addLaneButton) {
-                  (addLaneButton as HTMLElement).click();
+                const laneTitle = prompt('Enter lane title:');
+                if (laneTitle && laneTitle.trim()) {
+                  handleLaneCreate({ title: laneTitle.trim() });
                 }
               }}
-              className="new-note-btn"
+              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                isDark 
+                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+                  : 'bg-blue-500 hover:bg-blue-600 text-white'
+              }`}
             >
               <i className="ri-add-line mr-2"></i>
               New Lane
