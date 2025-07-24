@@ -797,7 +797,17 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
       {/* Kanban Board */}
       <div className="flex-1 overflow-hidden">
-        <style jsx global>{`
+        {loading && (
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+              <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Loading Kanban board...</p>
+            </div>
+          </div>
+        )}
+                {!loading && (
+          <>
+            <style jsx global>{`
           .react-trello-board {
             background-color: ${isDark ? 'var(--bg-primary)' : '#f9fafb'} !important;
             color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
@@ -983,66 +993,83 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           cardDraggable
           style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
           components={{
-            LaneHeader: ({ lane, onLaneDelete, onLaneUpdate }: any) => (
-              <div className="react-trello-lane-header">
-                <div className="flex items-center justify-between w-full">
-                  <div className="flex-1">
-                    <input
-                      value={lane.title}
-                      onChange={(e) => onLaneUpdate(lane.id, { title: e.target.value })}
-                      className="react-trello-lane-header__title-input"
-                      placeholder="Enter lane title..."
-                    />
-                  </div>
-                  <div className="relative lane-menu-container">
-                    <button
-                      onClick={() => setOpenLaneMenu(openLaneMenu === lane.id ? null : lane.id)}
-                      className={`p-1 rounded transition-colors ${
-                        isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                      aria-label="Lane options"
-                    >
-                      <i className="ri-more-2-fill"></i>
-                    </button>
-                    
-                    {openLaneMenu === lane.id && (
-                      <div className={`absolute right-0 top-8 z-50 min-w-48 rounded-lg shadow-lg border ${
-                        isDark 
-                          ? 'bg-gray-800 border-gray-700' 
-                          : 'bg-white border-gray-300'
-                      }`}>
-                        <div className="py-1">
-                          <button
-                            onClick={() => handleOpenLinkModal(lane.id)}
-                            className={`w-full px-4 py-2 text-left text-sm transition-colors ${
-                              isDark 
-                                ? 'text-gray-300 hover:bg-gray-700' 
-                                : 'text-gray-700 hover:bg-gray-100'
-                            }`}
-                          >
-                            <i className="ri-link mr-2"></i>
-                            Link Note
-                          </button>
-                          <button
-                            onClick={() => onLaneDelete(lane.id)}
-                            className={`w-full px-4 py-2 text-left text-sm transition-colors ${
-                              isDark 
-                                ? 'text-red-400 hover:bg-gray-700' 
-                                : 'text-red-600 hover:bg-gray-100'
-                            }`}
-                          >
-                            <i className="ri-delete-bin-line mr-2"></i>
-                            Delete Lane
-                          </button>
-                        </div>
+            LaneHeader: ({ lane, onLaneDelete, onLaneUpdate }: any) => {
+              // Add null checks to prevent errors
+              if (!lane) {
+                return (
+                  <div className="react-trello-lane-header">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex-1">
+                        <div className="react-trello-lane-title">Loading...</div>
                       </div>
-                    )}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="react-trello-lane-header">
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex-1">
+                      <input
+                        value={lane.title || ''}
+                        onChange={(e) => onLaneUpdate && onLaneUpdate(lane.id, { title: e.target.value })}
+                        className="react-trello-lane-header__title-input"
+                        placeholder="Enter lane title..."
+                      />
+                    </div>
+                    <div className="relative lane-menu-container">
+                      <button
+                        onClick={() => setOpenLaneMenu(openLaneMenu === lane.id ? null : lane.id)}
+                        className={`p-1 rounded transition-colors ${
+                          isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                        aria-label="Lane options"
+                      >
+                        <i className="ri-more-2-fill"></i>
+                      </button>
+                      
+                      {openLaneMenu === lane.id && (
+                        <div className={`absolute right-0 top-8 z-50 min-w-48 rounded-lg shadow-lg border ${
+                          isDark 
+                            ? 'bg-gray-800 border-gray-700' 
+                            : 'bg-white border-gray-300'
+                        }`}>
+                          <div className="py-1">
+                            <button
+                              onClick={() => handleOpenLinkModal(lane.id)}
+                              className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                                isDark 
+                                  ? 'text-gray-300 hover:bg-gray-700' 
+                                  : 'text-gray-700 hover:bg-gray-100'
+                              }`}
+                            >
+                              <i className="ri-link mr-2"></i>
+                              Link Note
+                            </button>
+                            <button
+                              onClick={() => onLaneDelete && onLaneDelete(lane.id)}
+                              className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                                isDark 
+                                  ? 'text-red-400 hover:bg-gray-700' 
+                                  : 'text-red-600 hover:bg-gray-100'
+                              }`}
+                            >
+                              <i className="ri-delete-bin-line mr-2"></i>
+                              Delete Lane
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )
+              );
+            }
           }}
         />
+          </>
+        )}
       </div>
     </div>
   );
