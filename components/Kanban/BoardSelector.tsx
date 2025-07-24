@@ -72,8 +72,10 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
             return;
           }
 
-          setBoards([defaultBoard]);
-          onBoardSelect(defaultBoard.id);
+          if (defaultBoard) {
+            setBoards([defaultBoard]);
+            onBoardSelect(defaultBoard.id);
+          }
         } catch (createError) {
           console.error('Error creating default board:', createError);
         }
@@ -88,7 +90,7 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
   // Create new board
   const handleCreateBoard = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!createForm.name.trim()) return;
+    if (!createForm.name.trim() || !user) return;
 
     try {
       const { data: newBoard, error } = await supabase
