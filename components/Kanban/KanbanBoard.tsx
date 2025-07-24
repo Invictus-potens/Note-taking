@@ -53,6 +53,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
   const [showLinkModal, setShowLinkModal] = useState(false);
   const [selectedLaneForLink, setSelectedLaneForLink] = useState<string>('');
   const [editForm, setEditForm] = useState({ title: '', content: '', tags: [] as string[] });
+  const [openLaneMenu, setOpenLaneMenu] = useState<string | null>(null);
 
   // Fetch Kanban data
   const fetchKanbanData = useCallback(async () => {
@@ -85,20 +86,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         return;
       }
 
-      // Enrich cards with note data
-      const enrichedCards = cardsData?.map(card => ({
-        ...card,
-        note: notes.find(note => note.id === card.note_id)
-      })) || [];
+      // Set cards without note data initially
+      setCards(cardsData || []);
 
       setColumns(columnsData || []);
-      setCards(enrichedCards || []);
     } catch (error) {
       console.error('Error fetching Kanban data:', error);
     } finally {
       setLoading(false);
     }
-  }, [user, notes]);
+  }, [user]);
 
   // Update cards when notes change (without re-fetching from database)
   const updateCardsWithNotes = useCallback(() => {
@@ -109,6 +106,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       }))
     );
   }, [notes]);
+
+  // Initialize cards with note data when notes are available
+  const initializeCardsWithNotes = useCallback(() => {
+    if (cards.length > 0 && notes.length > 0) {
+      updateCardsWithNotes();
+    }
+  }, [cards.length, notes, updateCardsWithNotes]);
 
   // Initialize with default columns if none exist
   const initializeDefaultColumns = useCallback(async () => {
@@ -165,12 +169,31 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
     initializeDefaultColumns();
   }, [initializeDefaultColumns]);
 
+  // Initialize cards with note data when both cards and notes are available
+  useEffect(() => {
+    initializeCardsWithNotes();
+  }, [initializeCardsWithNotes]);
+
   // Update cards when notes change (without re-fetching)
   useEffect(() => {
     if (cards.length > 0) {
       updateCardsWithNotes();
     }
   }, [notes, updateCardsWithNotes]);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (openLaneMenu && !(event.target as Element).closest('.lane-menu-container')) {
+        setOpenLaneMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [openLaneMenu]);
 
   // Convert data to react-trello format
   const getKanbanData = () => {
@@ -403,8 +426,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
     }
   };
 
-  // Handle card movement
-  const handleCardMove = async (cardId: string, sourceLaneId: string, targetLaneId: string, position: number) => {
+  // Handle card movement across lanes
+  const handleCardMoveAcrossLanes = async (fromLaneId: string, toLaneId: string, cardId: string, index: number) => {
     if (!user) return;
 
     try {
@@ -412,8 +435,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       const { error } = await supabase
         .from('kanban_cards')
         .update({ 
-          column_id: targetLaneId,
-          position: position
+          column_id: toLaneId,
+          position: index
         })
         .eq('id', cardId)
         .eq('user_id', user.id);
@@ -426,7 +449,38 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       // Update local state
       setCards(prev => prev.map(c => 
         c.id === cardId 
-          ? { ...c, column_id: targetLaneId, position: position }
+          ? { ...c, column_id: toLaneId, position: index }
+          : c
+      ));
+    } catch (error) {
+      console.error('Error moving card:', error);
+    }
+  };
+
+  // Handle card movement within the same lane
+  const handleCardMove = async (fromLaneId: string, toLaneId: string, cardId: string, index: number) => {
+    if (!user) return;
+
+    try {
+      // Update card position in database
+      const { error } = await supabase
+        .from('kanban_cards')
+        .update({ 
+          column_id: toLaneId,
+          position: index
+        })
+        .eq('id', cardId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error moving card:', error);
+        return;
+      }
+
+      // Update local state
+      setCards(prev => prev.map(c => 
+        c.id === cardId 
+          ? { ...c, column_id: toLaneId, position: index }
           : c
       ));
     } catch (error) {
@@ -454,6 +508,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       });
       setShowEditModal(true);
     }
+  };
+
+  // Handle opening link modal for a specific lane
+  const handleOpenLinkModal = (laneId: string) => {
+    setSelectedLaneForLink(laneId);
+    setShowLinkModal(true);
+    setOpenLaneMenu(null);
   };
 
   // Handle linking existing note to kanban card
@@ -521,35 +582,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
               {columns.length} columns • {cards.length} cards
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowLinkModal(true)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isDark 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              <i className="ri-link mr-2"></i>
-              Link Note
-            </button>
-            <button
-              onClick={() => {
-                const laneTitle = prompt('Enter lane title:');
-                if (laneTitle && laneTitle.trim()) {
-                  handleLaneCreate({ title: laneTitle.trim() });
-                }
-              }}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                isDark 
-                  ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-                  : 'bg-blue-500 hover:bg-blue-600 text-white'
-              }`}
-            >
-              <i className="ri-add-line mr-2"></i>
-              New Lane
-            </button>
-          </div>
+
         </div>
       </div>
 
@@ -655,27 +688,39 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-96 max-h-[80vh] overflow-y-auto`}>
             <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Link Note to Kanban</h3>
             
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="lane-select" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Select Column</label>
-                <select
-                  id="lane-select"
-                  value={selectedLaneForLink}
-                  onChange={(e) => setSelectedLaneForLink(e.target.value)}
-                  className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                          <div className="space-y-4">
+                {!selectedLaneForLink && (
+                  <div>
+                    <label htmlFor="lane-select" className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Select Column</label>
+                    <select
+                      id="lane-select"
+                      value={selectedLaneForLink}
+                      onChange={(e) => setSelectedLaneForLink(e.target.value)}
+                      className={`w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500 ${
+                        isDark 
+                          ? 'bg-gray-700 border-gray-600 text-white' 
+                          : 'bg-white border-gray-300 text-gray-900'
+                      }`}
+                    >
+                      <option value="">Select a column...</option>
+                      {columns.map((column) => (
+                        <option key={column.id} value={column.id}>
+                          {column.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                {selectedLaneForLink && (
+                  <div className={`p-3 rounded-lg border ${
                     isDark 
                       ? 'bg-gray-700 border-gray-600 text-white' 
-                      : 'bg-white border-gray-300 text-gray-900'
-                  }`}
-                >
-                  <option value="">Select a column...</option>
-                  {columns.map((column) => (
-                    <option key={column.id} value={column.id}>
-                      {column.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
+                      : 'bg-gray-50 border-gray-300 text-gray-900'
+                  }`}>
+                    <div className="text-sm font-medium mb-1">Selected Column:</div>
+                    <div>{columns.find(col => col.id === selectedLaneForLink)?.title}</div>
+                  </div>
+                )}
               
               <div>
                 <label className={`block text-sm font-medium mb-2 ${isDark ? 'text-gray-300' : 'text-gray-700'}`}>Select Note</label>
@@ -924,7 +969,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           onLaneAdd={handleLaneCreate}
           onLaneUpdate={handleLaneUpdate}
           onLaneDelete={handleLaneDelete}
-          onCardMoveAcrossLanes={handleCardMove}
+          onCardMoveAcrossLanes={handleCardMoveAcrossLanes}
+          onCardMove={handleCardMove}
           onCardClick={handleCardClick}
           onCardEdit={handleCardEdit}
           editable
@@ -936,6 +982,66 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           laneDraggable
           cardDraggable
           style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
+          components={{
+            LaneHeader: ({ lane, onLaneDelete, onLaneUpdate }: any) => (
+              <div className="react-trello-lane-header">
+                <div className="flex items-center justify-between w-full">
+                  <div className="flex-1">
+                    <input
+                      value={lane.title}
+                      onChange={(e) => onLaneUpdate(lane.id, { title: e.target.value })}
+                      className="react-trello-lane-header__title-input"
+                      placeholder="Enter lane title..."
+                    />
+                  </div>
+                  <div className="relative lane-menu-container">
+                    <button
+                      onClick={() => setOpenLaneMenu(openLaneMenu === lane.id ? null : lane.id)}
+                      className={`p-1 rounded transition-colors ${
+                        isDark ? 'text-gray-400 hover:text-white' : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                      aria-label="Lane options"
+                    >
+                      <i className="ri-more-2-fill"></i>
+                    </button>
+                    
+                    {openLaneMenu === lane.id && (
+                      <div className={`absolute right-0 top-8 z-50 min-w-48 rounded-lg shadow-lg border ${
+                        isDark 
+                          ? 'bg-gray-800 border-gray-700' 
+                          : 'bg-white border-gray-300'
+                      }`}>
+                        <div className="py-1">
+                          <button
+                            onClick={() => handleOpenLinkModal(lane.id)}
+                            className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                              isDark 
+                                ? 'text-gray-300 hover:bg-gray-700' 
+                                : 'text-gray-700 hover:bg-gray-100'
+                            }`}
+                          >
+                            <i className="ri-link mr-2"></i>
+                            Link Note
+                          </button>
+                          <button
+                            onClick={() => onLaneDelete(lane.id)}
+                            className={`w-full px-4 py-2 text-left text-sm transition-colors ${
+                              isDark 
+                                ? 'text-red-400 hover:bg-gray-700' 
+                                : 'text-red-600 hover:bg-gray-100'
+                            }`}
+                          >
+                            <i className="ri-delete-bin-line mr-2"></i>
+                            Delete Lane
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )
+          }}
         />
       </div>
     </div>
