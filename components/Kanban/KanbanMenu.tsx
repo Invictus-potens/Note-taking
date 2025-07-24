@@ -19,6 +19,7 @@ interface KanbanMenuProps {
   onClose: () => void;
   currentBoardId?: string;
   onBoardSelect: (boardId: string) => void;
+  onBackToNotes: () => void;
   isDark?: boolean;
   triggerRef: React.RefObject<HTMLButtonElement>;
 }
@@ -28,6 +29,7 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
   onClose,
   currentBoardId,
   onBoardSelect,
+  onBackToNotes,
   isDark = true,
   triggerRef
 }) => {
@@ -141,11 +143,22 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
           {/* Actions */}
           <div className="kanban-menu-actions">
             <button
+              onClick={() => {
+                onBackToNotes();
+                onClose();
+              }}
+              className="kanban-back-btn"
+            >
+              <i className="ri-arrow-left-line"></i>
+              <span>Voltar para Notas</span>
+            </button>
+            
+            <button
               onClick={() => setShowBoardSelector(true)}
               className="kanban-manage-btn"
             >
               <i className="ri-add-line"></i>
-              <span>Manage Boards</span>
+              <span>Novo Board</span>
             </button>
           </div>
         </div>
@@ -154,22 +167,18 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
       {/* Board Selector Modal */}
       {showBoardSelector && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-xl w-full max-w-md mx-4`}>
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-                  Manage Boards
+          <div className={`kanban-modal ${isDark ? 'kanban-modal-dark' : 'kanban-modal-light'}`}>
+            <div className="kanban-modal-content">
+              <div className="kanban-modal-header">
+                <h2 className="kanban-modal-title">
+                  Gerenciar Boards
                 </h2>
                 <button
                   onClick={() => setShowBoardSelector(false)}
-                  className={`p-1 rounded-lg transition-colors ${
-                    isDark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
-                  }`}
+                  className="kanban-modal-close"
                   aria-label="Close board selector"
                 >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
+                  <i className="ri-close-line"></i>
                 </button>
               </div>
               

@@ -998,6 +998,10 @@ function NotesApp() {
                       setShowKanban(true);
                       setShowKanbanMenu(false);
                     }}
+                    onBackToNotes={() => {
+                      setShowKanban(false);
+                      setShowKanbanMenu(false);
+                    }}
                     isDark={isDark}
                     triggerRef={kanbanButtonRef}
                   />

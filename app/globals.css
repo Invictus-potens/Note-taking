@@ -616,9 +616,12 @@ html, body {
 .kanban-menu-actions {
   border-top: 1px solid var(--border-color);
   padding-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
-.kanban-manage-btn {
+.kanban-back-btn {
   width: 100%;
   padding: 12px;
   border-radius: 8px;
@@ -634,8 +637,89 @@ html, body {
   font-size: 14px;
 }
 
-.kanban-manage-btn:hover {
+.kanban-back-btn:hover {
   background: var(--bg-hover);
+}
+
+.kanban-manage-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  border: none;
+  background: var(--bg-blue);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.kanban-manage-btn:hover {
+  background: var(--bg-blue-hover);
+}
+
+/* Kanban Modal Styles */
+.kanban-modal {
+  border-radius: 12px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  border: 1px solid var(--border-color);
+  overflow: hidden;
+  width: 90%;
+  max-width: 480px;
+  max-height: 80vh;
+}
+
+.kanban-modal-dark {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.kanban-modal-light {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+}
+
+.kanban-modal-content {
+  padding: 0;
+}
+
+.kanban-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 16px 24px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.kanban-modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.kanban-modal-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 16px;
+}
+
+.kanban-modal-close:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
 }
 
 /* Responsive adjustments for kanban menu */
