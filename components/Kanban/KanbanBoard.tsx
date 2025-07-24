@@ -37,13 +37,14 @@ interface KanbanCard {
 }
 
 interface KanbanBoardProps {
+  boardId?: string;
   notes: Note[];
   tags: Array<{ id: string; name: string; color?: string }>;
   onNoteSelect?: (noteId: string) => void;
   isDark?: boolean;
 }
 
-const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, isDark = true }) => {
+const KanbanBoard: React.FC<KanbanBoardProps> = ({ boardId, notes, tags, onNoteSelect, isDark = true }) => {
   const { user } = useAuth();
   const [columns, setColumns] = useState<KanbanColumn[]>([]);
   const [cards, setCards] = useState<KanbanCard[]>([]);
@@ -58,17 +59,17 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
   // Fetch Kanban data
   const fetchKanbanData = useCallback(async () => {
-    if (!user) return;
+    if (!user || !boardId) return;
 
     try {
       setLoading(true);
-      console.log('Fetching Kanban data for user:', user.id);
+      console.log('Fetching Kanban data for board:', boardId);
       
-      // Fetch columns
+      // Fetch columns for this board
       const { data: columnsData, error: columnsError } = await supabase
         .from('kanban_columns')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('board_id', boardId)
         .order('position', { ascending: true });
 
       if (columnsError) {
@@ -78,11 +79,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
       console.log('Fetched columns:', columnsData);
 
-      // Fetch cards
+      // Fetch cards for this board
       const { data: cardsData, error: cardsError } = await supabase
         .from('kanban_cards')
         .select('*')
-        .eq('user_id', user.id)
+        .eq('board_id', boardId)
         .order('position', { ascending: true });
 
       if (cardsError) {
@@ -99,7 +100,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user, boardId]);
 
   // Update cards when notes change (without re-fetching from database)
   const updateCardsWithNotes = useCallback(() => {
@@ -284,7 +285,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
   // Handle card creation
   const handleCardCreate = async (card: any, laneId: string) => {
-    if (!user) return;
+    if (!user || !boardId) return;
 
     try {
       // Create a new note first
@@ -314,6 +315,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           user_id: user.id,
           note_id: noteData[0].id,
           column_id: laneId,
+          board_id: boardId,
           position: newPosition
         }])
         .select();
@@ -405,7 +407,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
   // Handle lane creation
   const handleLaneCreate = async (lane: any) => {
-    if (!user) return;
+    if (!user || !boardId) return;
 
     try {
       const newPosition = columns.length;
@@ -413,6 +415,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         .from('kanban_columns')
         .insert([{
           user_id: user.id,
+          board_id: boardId,
           title: lane.title,
           position: newPosition
         }])
@@ -582,7 +585,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
   // Handle linking existing note to kanban card
   const handleLinkNote = async (noteId: string, laneId: string) => {
-    if (!user) return;
+    if (!user || !boardId) return;
 
     try {
       // Check if note is already linked to a card
@@ -600,6 +603,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           user_id: user.id,
           note_id: noteId,
           column_id: laneId,
+          board_id: boardId,
           position: newPosition
         }])
         .select();

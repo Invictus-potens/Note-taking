@@ -83,21 +83,21 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
   }
 
   return (
-    <div className={`p-4 ${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg border ${isDark ? 'border-gray-700' : 'border-gray-300'}`}>
-      <div className="flex items-center justify-between mb-4">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
-          Select Board
+          Your Boards
         </h3>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="px-3 py-1 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
         >
           <i className="ri-add-line mr-1"></i>
           New Board
         </button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 max-h-64 overflow-y-auto">
         {boards.map((board) => (
           <button
             key={board.id}
@@ -140,10 +140,23 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
       {/* Create Board Modal */}
       {showCreateModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md`}>
-            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>
-              Create New Board
-            </h3>
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-full max-w-md mx-4`}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className={`text-lg font-semibold ${isDark ? 'text-white' : 'text-gray-900'}`}>
+                Create New Board
+              </h3>
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className={`p-1 rounded-lg transition-colors ${
+                  isDark ? 'text-gray-400 hover:text-white hover:bg-gray-700' : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+                aria-label="Close create board modal"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
             
             <form onSubmit={handleCreateBoard} className="space-y-4">
               <div>

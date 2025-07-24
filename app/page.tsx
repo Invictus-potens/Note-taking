@@ -128,6 +128,7 @@ function NotesApp() {
   const [showTagModal, setShowTagModal] = useState(false);
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showKanban, setShowKanban] = useState(false);
+  const [currentBoardId, setCurrentBoardId] = useState<string>('');
   const [newFolderName, setNewFolderName] = useState('');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6'); // Default blue color
@@ -787,6 +788,15 @@ function NotesApp() {
     <ClientOnly fallback={<div>Loading...</div>}>
       <DragDropWrapper onDragEnd={onDragEnd}>
         <div className="app-container">
+          {/* Header */}
+          <Header
+            onToggleTheme={handleToggleTheme}
+            isDark={isDark}
+            currentBoardId={currentBoardId}
+            onBoardSelect={setCurrentBoardId}
+            showKanbanControls={showKanban}
+          />
+          
           {/* Sidebar */}
           <div className="sidebar">
             <div className="sidebar-header">
@@ -928,6 +938,7 @@ function NotesApp() {
 
             {showKanban ? (
               <KanbanBoard 
+                boardId={currentBoardId}
                 notes={notes}
                 tags={tags}
                 isDark={isDark}
