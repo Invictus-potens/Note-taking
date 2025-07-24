@@ -123,15 +123,15 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ boardId, notes, tags, onNoteS
 
   // Initialize with default columns if none exist
   const initializeDefaultColumns = useCallback(async () => {
-    if (!user) return;
+    if (!user || !boardId) return;
 
-    console.log('Initializing default columns for user:', user.id);
+    console.log('Initializing default columns for board:', boardId);
 
-    // Check if user already has columns in the database
+    // Check if board already has columns in the database
     const { data: existingColumns, error: checkError } = await supabase
       .from('kanban_columns')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('board_id', boardId)
       .order('position', { ascending: true });
 
     if (checkError) {
@@ -161,7 +161,11 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ boardId, notes, tags, onNoteS
     try {
       const { data, error } = await supabase
         .from('kanban_columns')
-        .insert(defaultColumns.map(col => ({ ...col, user_id: user.id })))
+        .insert(defaultColumns.map(col => ({ 
+          ...col, 
+          user_id: user.id,
+          board_id: boardId 
+        })))
         .select();
 
       if (error) {
@@ -174,19 +178,21 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ boardId, notes, tags, onNoteS
     } catch (error) {
       console.error('Error initializing default columns:', error);
     }
-  }, [user]);
+  }, [user, boardId]);
 
   // Initialize columns first, then fetch data
   useEffect(() => {
-    initializeDefaultColumns();
-  }, [initializeDefaultColumns]);
+    if (boardId) {
+      initializeDefaultColumns();
+    }
+  }, [boardId, initializeDefaultColumns]);
 
   // Fetch data after columns are initialized
   useEffect(() => {
-    if (columns.length > 0) {
+    if (boardId && columns.length > 0) {
       fetchKanbanData();
     }
-  }, [columns.length, fetchKanbanData]);
+  }, [boardId, columns.length, fetchKanbanData]);
 
   // Enrich cards with notes when both are available
   useEffect(() => {
@@ -629,19 +635,39 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ boardId, notes, tags, onNoteS
 
   console.log('KanbanBoard render state:', {
     loading,
+    boardId,
     columnsCount: columns.length,
     cardsCount: cards.length,
     columns: columns.map(col => ({ id: col.id, title: col.title })),
     hasUser: !!user
   });
 
+  // Show message when no board is selected
+  if (!boardId) {
+    return (
+      <div className={`flex items-center justify-center h-full ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
+        <div className="text-center">
+          <div className={`text-6xl mb-4 ${isDark ? 'text-gray-600' : 'text-gray-400'}`}>
+            📋
+          </div>
+          <h2 className={`text-xl font-semibold mb-2 ${isDark ? 'text-white' : 'text-gray-900'}`}>
+            Selecione um Board
+          </h2>
+          <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+            Use o botão "Boards" no header para selecionar ou criar um board
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   // Show loading only if we don't have columns yet
   if (loading && columns.length === 0) {
     return (
-      <div className="flex items-center justify-center h-full bg-gray-900">
+      <div className={`flex items-center justify-center h-full ${isDark ? 'bg-gray-900' : 'bg-gray-50'}`}>
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-          <p className="text-gray-400">Loading Kanban board...</p>
+          <p className={`${isDark ? 'text-gray-400' : 'text-gray-600'}`}>Loading Kanban board...</p>
         </div>
       </div>
     );

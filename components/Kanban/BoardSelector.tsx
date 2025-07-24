@@ -44,7 +44,23 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
 
       if (error) throw error;
 
-      setBoards(data || []);
+      const boardsData = data || [];
+      setBoards(boardsData);
+
+      // If no boards exist, create a default one
+      if (boardsData.length === 0) {
+        console.log('No boards found, creating default board');
+        try {
+          const defaultBoard = await createBoard({
+            name: 'Meu Primeiro Board',
+            description: 'Board padrão para começar a organizar suas tarefas'
+          });
+          setBoards([defaultBoard]);
+          onBoardSelect(defaultBoard.id);
+        } catch (createError) {
+          console.error('Error creating default board:', createError);
+        }
+      }
     } catch (error) {
       console.error('Error fetching boards:', error);
     } finally {

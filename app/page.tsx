@@ -606,6 +606,67 @@ function NotesApp() {
     await signOut();
   };
 
+  // Fetch and select first available board
+  const fetchAndSelectFirstBoard = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      // Fetch boards where user is owner or member
+      const { data: boards, error } = await supabase
+        .from('kanban_boards')
+        .select(`
+          *,
+          kanban_board_members!inner(user_id)
+        `)
+        .or(`owner_id.eq.${user.id},kanban_board_members.user_id.eq.${user.id}`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching boards:', error);
+        return;
+      }
+
+      if (boards && boards.length > 0) {
+        // Select the first board
+        setCurrentBoardId(boards[0].id);
+        console.log('Auto-selected board:', boards[0].name);
+      } else {
+        // Create a default board if none exist
+        console.log('No boards found, creating default board');
+        const { data: newBoard, error: createError } = await supabase
+          .from('kanban_boards')
+          .insert({
+            name: 'Meu Primeiro Board',
+            description: 'Board padrão para começar a organizar suas tarefas',
+            owner_id: user.id
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Error creating default board:', createError);
+          return;
+        }
+
+        setCurrentBoardId(newBoard.id);
+        console.log('Created and selected default board:', newBoard.name);
+      }
+    } catch (error) {
+      console.error('Error in fetchAndSelectFirstBoard:', error);
+    }
+  }, [user]);
+
+  // Handle Kanban toggle
+  const handleToggleKanban = useCallback(() => {
+    const newShowKanban = !showKanban;
+    setShowKanban(newShowKanban);
+    
+    // If turning on Kanban and no board is selected, fetch and select first board
+    if (newShowKanban && !currentBoardId) {
+      fetchAndSelectFirstBoard();
+    }
+  }, [showKanban, currentBoardId, fetchAndSelectFirstBoard]);
+
   // Scroll functions
   const handleScroll = () => {
     if (notesContainerRef.current) {
@@ -921,7 +982,7 @@ function NotesApp() {
                 </button>
                 <button 
                   className={`kanban-btn ${showKanban ? 'active' : ''}`} 
-                  onClick={() => setShowKanban(!showKanban)} 
+                  onClick={handleToggleKanban} 
                   aria-label="Toggle Kanban board"
                 >
                   <i className="ri-medal-line"></i>
