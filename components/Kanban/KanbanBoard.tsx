@@ -86,7 +86,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         return;
       }
 
-      // Set cards without note data initially
       setCards(cardsData || []);
 
       setColumns(columnsData || []);
@@ -99,20 +98,22 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
   // Update cards when notes change (without re-fetching from database)
   const updateCardsWithNotes = useCallback(() => {
-    setCards(prevCards => 
-      prevCards.map(card => ({
-        ...card,
-        note: notes.find(note => note.id === card.note_id)
-      }))
-    );
+    console.log('Updating cards with notes:', { notesCount: notes.length });
+    setCards(prevCards => {
+      const updatedCards = prevCards.map(card => {
+        const note = notes.find(note => note.id === card.note_id);
+        console.log('Card:', card.id, 'Note found:', !!note, 'Note title:', note?.title);
+        return {
+          ...card,
+          note: note
+        };
+      });
+      console.log('Updated cards:', updatedCards.length);
+      return updatedCards;
+    });
   }, [notes]);
 
-  // Initialize cards with note data when notes are available
-  const initializeCardsWithNotes = useCallback(() => {
-    if (cards.length > 0 && notes.length > 0) {
-      updateCardsWithNotes();
-    }
-  }, [cards.length, notes, updateCardsWithNotes]);
+
 
   // Initialize with default columns if none exist
   const initializeDefaultColumns = useCallback(async () => {
@@ -169,10 +170,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
     initializeDefaultColumns();
   }, [initializeDefaultColumns]);
 
-  // Initialize cards with note data when both cards and notes are available
+  // Enrich cards with notes when both are available
   useEffect(() => {
-    initializeCardsWithNotes();
-  }, [initializeCardsWithNotes]);
+    if (cards.length > 0 && notes.length > 0) {
+      console.log('Enriching cards with notes:', { cardsCount: cards.length, notesCount: notes.length });
+      updateCardsWithNotes();
+    }
+  }, [cards.length, notes, updateCardsWithNotes]);
 
   // Update cards when notes change (without re-fetching)
   useEffect(() => {
@@ -838,30 +842,33 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           }
           
           .react-trello-card {
-            background-color: ${isDark ? 'var(--bg-card)' : '#f3f4f6'} !important;
-            border: 1px solid ${isDark ? 'var(--border-color)' : '#d1d5db'} !important;
+            background-color: ${isDark ? '#374151' : '#ffffff'} !important;
+            border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
             border-radius: 8px !important;
             margin: 8px !important;
             padding: 12px !important;
-            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
+            color: ${isDark ? '#e5e7eb' : '#1f2937'} !important;
             cursor: pointer !important;
             transition: all 0.2s !important;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
           }
           
           .react-trello-card:hover {
-            background-color: ${isDark ? 'var(--bg-hover)' : '#e5e7eb'} !important;
+            background-color: ${isDark ? '#4b5563' : '#f9fafb'} !important;
             transform: translateY(-1px) !important;
-            border-color: var(--bg-blue) !important;
+            border-color: ${isDark ? '#3b82f6' : '#3b82f6'} !important;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
           }
           
           .react-trello-card-title {
-            color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
-            font-weight: 500 !important;
+            color: ${isDark ? '#e5e7eb' : '#1f2937'} !important;
+            font-weight: 600 !important;
             margin-bottom: 8px !important;
+            font-size: 1rem !important;
           }
           
           .react-trello-card-description {
-            color: ${isDark ? 'var(--text-secondary)' : '#6b7280'} !important;
+            color: ${isDark ? '#d1d5db' : '#4b5563'} !important;
             font-size: 0.875rem !important;
             line-height: 1.25rem !important;
           }
@@ -1001,6 +1008,19 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
                     <div className="flex items-center justify-between w-full">
                       <div className="flex-1">
                         <div className="react-trello-lane-title">Loading...</div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+
+              // If lane has no title, show a default
+              if (!lane.title) {
+                return (
+                  <div className="react-trello-lane-header">
+                    <div className="flex items-center justify-between w-full">
+                      <div className="flex-1">
+                        <div className="react-trello-lane-title">Untitled Lane</div>
                       </div>
                     </div>
                   </div>
