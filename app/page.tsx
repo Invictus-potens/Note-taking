@@ -614,15 +614,12 @@ function NotesApp() {
     if (!user) return;
 
     try {
-      // Fetch boards where user is owner or member
-      const { data: boards, error } = await supabase
-        .from('kanban_boards')
-        .select(`
-          *,
-          kanban_board_members!inner(user_id)
-        `)
-        .or(`owner_id.eq.${user.id},kanban_board_members.user_id.eq.${user.id}`)
-        .order('created_at', { ascending: false });
+        // Fetch boards where user is owner (single user mode)
+  const { data: boards, error } = await supabase
+    .from('kanban_boards')
+    .select('*')
+    .eq('owner_id', user.id)
+    .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching boards:', error);

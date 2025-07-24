@@ -2,10 +2,10 @@
 'use client';
 
 import { useState } from 'react';
-import { Sun, Moon, Users } from 'lucide-react';
+import { Sun, Moon } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import CollaborationModal from '../Kanban/CollaborationModal';
-import { useCollaboration } from '../../lib/useCollaboration';
+// import CollaborationModal from '../Kanban/CollaborationModal';
+// import { useCollaboration } from '../../lib/useCollaboration';
 
 interface HeaderProps {
   onToggleTheme?: () => void;
@@ -21,10 +21,10 @@ export default function Header({
   showKanbanControls = false 
 }: HeaderProps) {
   const router = useRouter();
-  const [showCollaboration, setShowCollaboration] = useState(false);
+  // const [showCollaboration, setShowCollaboration] = useState(false);
   
   // Temporarily disable collaboration hook to test
-  const permissions = { canInviteUsers: false };
+  // const permissions = { canInviteUsers: false };
 
   return (
     <>
@@ -35,8 +35,8 @@ export default function Header({
               Scribe
             </h1>
             
-            {/* Collaboration Button - Only show if user has permission and board is selected */}
-            {showKanbanControls && currentBoardId && permissions?.canInviteUsers && (
+            {/* Collaboration Button - Commented out for single user */}
+            {/* {showKanbanControls && currentBoardId && permissions?.canInviteUsers && (
               <div className="flex items-center space-x-2 ml-6">
                 <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
                 
@@ -49,7 +49,7 @@ export default function Header({
                   <span>Collaborate</span>
                 </button>
               </div>
-            )}
+            )} */}
           </div>
 
           <div className="flex items-center space-x-4">
@@ -68,15 +68,15 @@ export default function Header({
         </div>
       </header>
 
-      {/* Collaboration Modal */}
-      {showCollaboration && currentBoardId && (
+      {/* Collaboration Modal - Commented out for single user */}
+      {/* {showCollaboration && currentBoardId && (
         <CollaborationModal
           boardId={currentBoardId}
           isOpen={showCollaboration}
           onClose={() => setShowCollaboration(false)}
           isDark={isDark}
         />
-      )}
+      )} */}
     </>
   );
 }

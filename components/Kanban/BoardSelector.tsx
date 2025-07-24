@@ -3,8 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../../lib/supabaseClient';
 import { useAuth } from '../../lib/authContext';
-import { useCollaboration } from '../../lib/useCollaboration';
-import { KanbanBoard } from '../../types/collaboration';
+// import { useCollaboration } from '../../lib/useCollaboration';
+// import { KanbanBoard } from '../../types/collaboration';
+
+interface KanbanBoard {
+  id: string;
+  name: string;
+  description?: string;
+  owner_id: string;
+  created_at: string;
+  updated_at: string;
+}
 
 interface BoardSelectorProps {
   selectedBoardId?: string;
@@ -23,7 +32,7 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', description: '' });
 
-  const { createBoard } = useCollaboration();
+  // const { createBoard } = useCollaboration();
 
   // Fetch user's boards
   const fetchBoards = async () => {
@@ -32,14 +41,11 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
     try {
       setLoading(true);
 
-      // Fetch boards where user is owner or member
+      // Fetch boards where user is owner (single user mode)
       const { data, error } = await supabase
         .from('kanban_boards')
-        .select(`
-          *,
-          kanban_board_members!inner(user_id)
-        `)
-        .or(`owner_id.eq.${user.id},kanban_board_members.user_id.eq.${user.id}`)
+        .select('*')
+        .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -51,10 +57,21 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
       if (boardsData.length === 0) {
         console.log('No boards found, creating default board');
         try {
-          const defaultBoard = await createBoard({
-            name: 'Meu Primeiro Board',
-            description: 'Board padrão para começar a organizar suas tarefas'
-          });
+          const { data: defaultBoard, error: createError } = await supabase
+            .from('kanban_boards')
+            .insert({
+              name: 'Meu Primeiro Board',
+              description: 'Board padrão para começar a organizar suas tarefas',
+              owner_id: user.id
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating default board:', createError);
+            return;
+          }
+
           setBoards([defaultBoard]);
           onBoardSelect(defaultBoard.id);
         } catch (createError) {
@@ -74,7 +91,21 @@ const BoardSelector: React.FC<BoardSelectorProps> = ({
     if (!createForm.name.trim()) return;
 
     try {
-      const newBoard = await createBoard(createForm);
+      const { data: newBoard, error } = await supabase
+        .from('kanban_boards')
+        .insert({
+          name: createForm.name,
+          description: createForm.description,
+          owner_id: user.id
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating board:', error);
+        return;
+      }
+
       setBoards(prev => [newBoard, ...prev]);
       onBoardSelect(newBoard.id);
       setCreateForm({ name: '', description: '' });

@@ -1144,18 +1144,7 @@ html, body {
   flex-direction: column;
 }
 
-.kanban-menu-container {
-  position: fixed;
-  top: 60px; 
-  left: 0;
-  width: 100%;
-  height: calc(100% - 60px);
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 20px;
-  z-index: 40;
-}
+
 
 .split-view-header {
   display: flex;

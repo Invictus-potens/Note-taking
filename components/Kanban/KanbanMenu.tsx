@@ -41,14 +41,11 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
     if (!user) return;
 
     try {
-      // Fetch boards where user is owner or member
+      // Fetch boards where user is owner (single user mode)
       const { data, error } = await supabase
         .from('kanban_boards')
-        .select(`
-          *,
-          kanban_board_members!inner(user_id)
-        `)
-        .or(`owner_id.eq.${user.id},kanban_board_members.user_id.eq.${user.id}`)
+        .select('*')
+        .eq('owner_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -156,7 +153,6 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
 
       {/* Board Selector Modal */}
       {showBoardSelector && (
-        <div className="kanban-menu-container">
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-xl w-full max-w-md mx-4`}>
             <div className="p-6">
@@ -188,7 +184,6 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
               />
             </div>
           </div>
-        </div>
         </div>
       )}
     </>
