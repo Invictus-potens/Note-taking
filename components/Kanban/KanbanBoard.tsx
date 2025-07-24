@@ -237,6 +237,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
     console.log('getKanbanData called:', {
       columnsCount: columns.length,
       cardsCount: cards.length,
+      columns: columns.map(col => ({ id: col.id, title: col.title })),
       lanesWithCards: data.lanes.map(lane => ({
         laneId: lane.id,
         laneTitle: lane.title,
@@ -1111,9 +1112,70 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           cardDraggable
           style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
           components={{
+            Card: ({ card }: any) => {
+              console.log('Card component called with:', card);
+              
+              if (!card) {
+                return (
+                  <div className="react-trello-card">
+                    <div className="text-center text-gray-500">Loading...</div>
+                  </div>
+                );
+              }
+
+              return (
+                <div className="react-trello-card">
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="react-trello-card-title flex-1">{card.title || 'Untitled'}</div>
+                    <div className="flex items-center gap-1 ml-2">
+                      {card.note?.is_pinned && (
+                        <i className="ri-pushpin-2-fill text-xs text-yellow-500"></i>
+                      )}
+                      {card.note?.is_private && (
+                        <i className="ri-lock-line text-xs text-gray-500"></i>
+                      )}
+                    </div>
+                  </div>
+                  
+                  {card.description && (
+                    <div 
+                      className="react-trello-card-description mb-3"
+                      dangerouslySetInnerHTML={{ __html: card.description }}
+                    />
+                  )}
+                  
+                  <div className="flex items-center justify-between">
+                    {card.tags && card.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {card.tags.slice(0, 2).map((tag: string, index: number) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 text-xs rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-sm"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {card.tags.length > 2 && (
+                          <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 font-medium">
+                            +{card.tags.length - 2}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    
+                    <div className="text-xs text-gray-500 ml-auto">
+                      {card.created_at && new Date(card.created_at).toLocaleDateString()}
+                    </div>
+                  </div>
+                </div>
+              );
+            },
             LaneHeader: ({ lane, onLaneDelete, onLaneUpdate }: any) => {
+              console.log('LaneHeader called with lane:', lane);
+              
               // Add null checks to prevent errors
               if (!lane) {
+                console.log('Lane is null/undefined');
                 return (
                   <div className="react-trello-lane-header">
                     <div className="flex items-center justify-between w-full">
@@ -1127,6 +1189,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
               // If lane has no title, show a default
               if (!lane.title) {
+                console.log('Lane has no title:', lane);
                 return (
                   <div className="react-trello-lane-header">
                     <div className="flex items-center justify-between w-full">
