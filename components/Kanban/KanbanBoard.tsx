@@ -202,26 +202,56 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
   // Convert data to react-trello format
   const getKanbanData = () => {
-    return {
+    const data = {
       lanes: columns.map(column => ({
         id: column.id,
         title: column.title,
         cards: cards
           .filter(card => card.column_id === column.id)
           .sort((a, b) => a.position - b.position)
-          .map(card => ({
-            id: card.id,
-            title: card.note?.title || 'Untitled',
-            description: card.note?.content || '',
-            note_id: card.note_id,
-            note: card.note,
-            created_at: card.created_at,
-            tags: card.note?.tags || [],
-            label: card.note?.tags?.slice(0, 2).join(', ') || '',
-            laneId: column.id
-          }))
+          .map(card => {
+            const note = card.note;
+            const hasNote = !!note;
+            
+            return {
+              id: card.id,
+              title: note?.title || 'Untitled',
+              description: hasNote ? note.content : 'No content available',
+              note_id: card.note_id,
+              note: note,
+              created_at: card.created_at,
+              tags: note?.tags || [],
+              label: note?.tags?.slice(0, 2).join(', ') || '',
+              laneId: column.id,
+              // Add metadata for styling
+              metadata: {
+                isPinned: note?.is_pinned || false,
+                isPrivate: note?.is_private || false,
+                hasNote: hasNote
+              }
+            };
+          })
       }))
     };
+    
+    console.log('getKanbanData called:', {
+      columnsCount: columns.length,
+      cardsCount: cards.length,
+      lanesWithCards: data.lanes.map(lane => ({
+        laneId: lane.id,
+        laneTitle: lane.title,
+        cardsCount: lane.cards.length,
+        cardTitles: lane.cards.map(c => c.title),
+        cardDetails: lane.cards.map(c => ({
+          id: c.id,
+          title: c.title,
+          hasDescription: !!c.description,
+          descriptionLength: c.description?.length || 0
+        }))
+      }))
+    });
+    
+    return data;
   };
 
   // Handle card creation
@@ -938,6 +968,21 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
             margin-bottom: 0.5rem !important;
           }
           
+          .react-trello-card-label {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6) !important;
+            color: white !important;
+            padding: 2px 8px !important;
+            border-radius: 12px !important;
+            font-size: 0.75rem !important;
+            font-weight: 500 !important;
+            margin-top: 8px !important;
+            display: inline-block !important;
+          }
+          
+          .react-trello-card-label:empty {
+            display: none !important;
+          }
+          
           .react-trello-add-card {
             background-color: transparent !important;
             border: 2px dashed ${isDark ? '#6b7280' : '#9ca3af'} !important;
@@ -1044,6 +1089,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         `}</style>
         
         <Board
+          key={`kanban-${cards.length}-${columns.length}`}
           data={getKanbanData()}
           onCardAdd={handleCardCreate}
           onCardUpdate={handleCardUpdate}
@@ -1065,63 +1111,6 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           cardDraggable
           style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
           components={{
-            Card: ({ card }: any) => {
-              // Add null check to prevent errors
-              if (!card) {
-                return (
-                  <div className="react-trello-card">
-                    <div className="text-center text-gray-500">Loading...</div>
-                  </div>
-                );
-              }
-
-              return (
-                <div className="react-trello-card">
-                  <div className="flex items-start justify-between mb-2">
-                    <div className="react-trello-card-title flex-1">{card.title || 'Untitled'}</div>
-                    <div className="flex items-center gap-1 ml-2">
-                      {card.note?.is_pinned && (
-                        <i className="ri-pushpin-2-fill text-xs text-yellow-500"></i>
-                      )}
-                      {card.note?.is_private && (
-                        <i className="ri-lock-line text-xs text-gray-500"></i>
-                      )}
-                    </div>
-                  </div>
-                  
-                  {card.description && (
-                    <div 
-                      className="react-trello-card-description mb-3"
-                      dangerouslySetInnerHTML={{ __html: card.description }}
-                    />
-                  )}
-                  
-                  <div className="flex items-center justify-between">
-                    {card.tags && card.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1">
-                        {card.tags.slice(0, 2).map((tag: string, index: number) => (
-                          <span
-                            key={index}
-                            className="px-2 py-1 text-xs rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-sm"
-                          >
-                            {tag}
-                          </span>
-                        ))}
-                        {card.tags.length > 2 && (
-                          <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 font-medium">
-                            +{card.tags.length - 2}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                    
-                    <div className="text-xs text-gray-500 ml-auto">
-                      {card.created_at && new Date(card.created_at).toLocaleDateString()}
-                    </div>
-                  </div>
-                </div>
-              );
-            },
             LaneHeader: ({ lane, onLaneDelete, onLaneUpdate }: any) => {
               // Add null checks to prevent errors
               if (!lane) {
