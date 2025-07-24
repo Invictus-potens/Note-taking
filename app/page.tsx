@@ -20,6 +20,7 @@ import Toast from '../components/ui/Toast';
 import DragDropHint from '../components/ui/DragDropHint';
 import CalendarModal from '../components/Calendar/CalendarModal';
 import KanbanBoard from '../components/Kanban/KanbanBoard';
+import KanbanMenu from '../components/Kanban/KanbanMenu';
 import { supabase } from '../lib/supabaseClient';
 import { useRouter } from 'next/navigation';
 import { setDocumentAttribute, setLocalStorage } from '../lib/clientUtils';
@@ -116,6 +117,7 @@ function NotesApp() {
   const [currentNote, setCurrentNote] = useState<Note | null>(null);
   const [showScrollTop, setShowScrollTop] = useState(false);
   const notesContainerRef = useRef<HTMLDivElement>(null);
+  const kanbanButtonRef = useRef<HTMLButtonElement>(null);
 
   // Dual note viewing state
   const [isSplitView, setIsSplitView] = useState(false);
@@ -129,6 +131,7 @@ function NotesApp() {
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [showKanban, setShowKanban] = useState(false);
   const [currentBoardId, setCurrentBoardId] = useState<string>('');
+  const [showKanbanMenu, setShowKanbanMenu] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState('#3b82f6'); // Default blue color
@@ -854,7 +857,6 @@ function NotesApp() {
             onToggleTheme={handleToggleTheme}
             isDark={isDark}
             currentBoardId={currentBoardId}
-            onBoardSelect={setCurrentBoardId}
             showKanbanControls={showKanban}
           />
           
@@ -980,13 +982,29 @@ function NotesApp() {
                 <button className="calendar-btn" onClick={() => setShowCalendarModal(true)} aria-label="Open calendar">
                   <i className="ri-calendar-line"></i>
                 </button>
-                <button 
-                  className={`kanban-btn ${showKanban ? 'active' : ''}`} 
-                  onClick={handleToggleKanban} 
-                  aria-label="Toggle Kanban board"
-                >
-                  <i className="ri-medal-line"></i>
-                </button>
+                <div className="relative">
+                  <button 
+                    ref={kanbanButtonRef}
+                    className={`kanban-btn ${showKanban ? 'active' : ''}`} 
+                    onClick={() => setShowKanbanMenu(!showKanbanMenu)} 
+                    aria-label="Open Kanban menu"
+                  >
+                    <i className="ri-medal-line"></i>
+                  </button>
+                  
+                  <KanbanMenu
+                    isOpen={showKanbanMenu}
+                    onClose={() => setShowKanbanMenu(false)}
+                    currentBoardId={currentBoardId}
+                    onBoardSelect={(boardId) => {
+                      setCurrentBoardId(boardId);
+                      setShowKanban(true);
+                      setShowKanbanMenu(false);
+                    }}
+                    isDark={isDark}
+                    triggerRef={kanbanButtonRef}
+                  />
+                </div>
                 <button className="theme-toggle" onClick={handleToggleTheme} aria-label="Toggle theme">
                   <i className={isDark ? "ri-sun-line" : "ri-moon-line"}></i>
                 </button>
