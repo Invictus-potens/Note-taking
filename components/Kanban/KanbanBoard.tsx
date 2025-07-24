@@ -54,6 +54,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
   const [selectedLaneForLink, setSelectedLaneForLink] = useState<string>('');
   const [editForm, setEditForm] = useState({ title: '', content: '', tags: [] as string[] });
   const [openLaneMenu, setOpenLaneMenu] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   // Fetch Kanban data
   const fetchKanbanData = useCallback(async () => {
@@ -686,6 +687,39 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         </div>
       )}
 
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg p-6 w-96`}>
+            <h3 className={`text-lg font-semibold mb-4 ${isDark ? 'text-white' : 'text-gray-900'}`}>Delete Lane</h3>
+            <p className={`mb-6 ${isDark ? 'text-gray-300' : 'text-gray-600'}`}>
+              Are you sure you want to delete this lane? This action cannot be undone and will also delete all cards in this lane.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => {
+                  handleLaneDelete(showDeleteConfirm);
+                  setShowDeleteConfirm(null);
+                }}
+                className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Delete
+              </button>
+              <button
+                onClick={() => setShowDeleteConfirm(null)}
+                className={`px-4 py-2 rounded-lg transition-colors ${
+                  isDark 
+                    ? 'bg-gray-600 text-white hover:bg-gray-700' 
+                    : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                }`}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Link Note Modal */}
       {showLinkModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -820,19 +854,21 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           }
           
                       .react-trello-lane {
-              background-color: ${isDark ? 'var(--bg-secondary)' : '#ffffff'} !important;
-              border: 1px solid ${isDark ? 'var(--border-color)' : '#e5e7eb'} !important;
+              background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+              border: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
               border-radius: 12px !important;
               margin: 0 8px !important;
               min-height: calc(100vh - 200px) !important;
+              box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
             }
           
           .react-trello-lane-header {
-            background-color: ${isDark ? 'var(--bg-secondary)' : '#ffffff'} !important;
+            background-color: ${isDark ? '#374151' : '#ffffff'} !important;
             color: ${isDark ? 'white' : 'var(--text-primary)'} !important;
-            border-bottom: 1px solid ${isDark ? 'var(--border-color)' : '#e5e7eb'} !important;
-            padding: 12px 16px !important;
+            border-bottom: 1px solid ${isDark ? '#4b5563' : '#e5e7eb'} !important;
+            padding: 16px 20px !important;
             font-weight: 600 !important;
+            border-radius: 12px 12px 0 0 !important;
           }
           
           .react-trello-lane-title {
@@ -842,35 +878,64 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           }
           
           .react-trello-card {
-            background-color: ${isDark ? '#374151' : '#ffffff'} !important;
-            border: 1px solid ${isDark ? '#4b5563' : '#d1d5db'} !important;
-            border-radius: 8px !important;
+            background-color: ${isDark ? '#1f2937' : '#ffffff'} !important;
+            border: 1px solid ${isDark ? '#374151' : '#e5e7eb'} !important;
+            border-radius: 12px !important;
             margin: 8px !important;
-            padding: 12px !important;
-            color: ${isDark ? '#e5e7eb' : '#1f2937'} !important;
+            padding: 16px !important;
+            color: ${isDark ? '#f9fafb' : '#1f2937'} !important;
             cursor: pointer !important;
-            transition: all 0.2s !important;
-            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06) !important;
+            position: relative !important;
+            overflow: hidden !important;
+          }
+          
+          .react-trello-card::before {
+            content: '' !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            height: 3px !important;
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6, #06b6d4) !important;
+            opacity: 0 !important;
+            transition: opacity 0.3s ease !important;
           }
           
           .react-trello-card:hover {
-            background-color: ${isDark ? '#4b5563' : '#f9fafb'} !important;
-            transform: translateY(-1px) !important;
-            border-color: ${isDark ? '#3b82f6' : '#3b82f6'} !important;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
+            background-color: ${isDark ? '#374151' : '#f8fafc'} !important;
+            transform: translateY(-2px) !important;
+            border-color: ${isDark ? '#4b5563' : '#d1d5db'} !important;
+            box-shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+          }
+          
+          .react-trello-card:hover::before {
+            opacity: 1 !important;
           }
           
           .react-trello-card-title {
-            color: ${isDark ? '#e5e7eb' : '#1f2937'} !important;
-            font-weight: 600 !important;
-            margin-bottom: 8px !important;
-            font-size: 1rem !important;
+            color: ${isDark ? '#f9fafb' : '#111827'} !important;
+            font-weight: 700 !important;
+            font-size: 0.95rem !important;
+            line-height: 1.4 !important;
+            letter-spacing: -0.025em !important;
           }
           
           .react-trello-card-description {
-            color: ${isDark ? '#d1d5db' : '#4b5563'} !important;
+            color: ${isDark ? '#d1d5db' : '#6b7280'} !important;
             font-size: 0.875rem !important;
-            line-height: 1.25rem !important;
+            line-height: 1.5 !important;
+            font-weight: 400 !important;
+          }
+          
+          .react-trello-card-description p {
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          
+          .react-trello-card-description p:not(:last-child) {
+            margin-bottom: 0.5rem !important;
           }
           
           .react-trello-add-card {
@@ -1000,6 +1065,52 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
           cardDraggable
           style={{ backgroundColor: isDark ? '#111827' : '#f9fafb' }}
           components={{
+            Card: ({ card }: any) => (
+              <div className="react-trello-card">
+                <div className="flex items-start justify-between mb-2">
+                  <div className="react-trello-card-title flex-1">{card.title}</div>
+                  <div className="flex items-center gap-1 ml-2">
+                    {card.note?.is_pinned && (
+                      <i className="ri-pushpin-2-fill text-xs text-yellow-500"></i>
+                    )}
+                    {card.note?.is_private && (
+                      <i className="ri-lock-line text-xs text-gray-500"></i>
+                    )}
+                  </div>
+                </div>
+                
+                {card.description && (
+                  <div 
+                    className="react-trello-card-description mb-3"
+                    dangerouslySetInnerHTML={{ __html: card.description }}
+                  />
+                )}
+                
+                <div className="flex items-center justify-between">
+                  {card.tags && card.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1">
+                      {card.tags.slice(0, 2).map((tag: string, index: number) => (
+                        <span
+                          key={index}
+                          className="px-2 py-1 text-xs rounded-full bg-gradient-to-r from-blue-500 to-blue-600 text-white font-medium shadow-sm"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                      {card.tags.length > 2 && (
+                        <span className="px-2 py-1 text-xs rounded-full bg-gray-200 text-gray-600 font-medium">
+                          +{card.tags.length - 2}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-gray-500 ml-auto">
+                    {card.created_at && new Date(card.created_at).toLocaleDateString()}
+                  </div>
+                </div>
+              </div>
+            ),
             LaneHeader: ({ lane, onLaneDelete, onLaneUpdate }: any) => {
               // Add null checks to prevent errors
               if (!lane) {
@@ -1068,7 +1179,10 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
                               Link Note
                             </button>
                             <button
-                              onClick={() => onLaneDelete && onLaneDelete(lane.id)}
+                              onClick={() => {
+                                setShowDeleteConfirm(lane.id);
+                                setOpenLaneMenu(null);
+                              }}
                               className={`w-full px-4 py-2 text-left text-sm transition-colors ${
                                 isDark 
                                   ? 'text-red-400 hover:bg-gray-700' 
