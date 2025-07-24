@@ -62,6 +62,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
     try {
       setLoading(true);
+      console.log('Fetching Kanban data for user:', user.id);
       
       // Fetch columns
       const { data: columnsData, error: columnsError } = await supabase
@@ -75,6 +76,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         return;
       }
 
+      console.log('Fetched columns:', columnsData);
+
       // Fetch cards
       const { data: cardsData, error: cardsError } = await supabase
         .from('kanban_cards')
@@ -87,8 +90,9 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         return;
       }
 
-      setCards(cardsData || []);
+      console.log('Fetched cards:', cardsData);
 
+      setCards(cardsData || []);
       setColumns(columnsData || []);
     } catch (error) {
       console.error('Error fetching Kanban data:', error);
@@ -120,6 +124,8 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
   const initializeDefaultColumns = useCallback(async () => {
     if (!user) return;
 
+    console.log('Initializing default columns for user:', user.id);
+
     // Check if user already has columns in the database
     const { data: existingColumns, error: checkError } = await supabase
       .from('kanban_columns')
@@ -132,11 +138,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
       return;
     }
 
+    console.log('Existing columns found:', existingColumns);
+
     // If columns already exist, don't create default ones
     if (existingColumns && existingColumns.length > 0) {
+      console.log('Setting existing columns:', existingColumns);
       setColumns(existingColumns);
       return;
     }
+
+    console.log('No existing columns found, creating defaults');
 
     // Only create default columns if none exist
     const defaultColumns = [
@@ -157,19 +168,24 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
         return;
       }
 
+      console.log('Created default columns:', data);
       setColumns(data || []);
     } catch (error) {
       console.error('Error initializing default columns:', error);
     }
   }, [user]);
 
-  useEffect(() => {
-    fetchKanbanData();
-  }, [fetchKanbanData]);
-
+  // Initialize columns first, then fetch data
   useEffect(() => {
     initializeDefaultColumns();
   }, [initializeDefaultColumns]);
+
+  // Fetch data after columns are initialized
+  useEffect(() => {
+    if (columns.length > 0) {
+      fetchKanbanData();
+    }
+  }, [columns.length, fetchKanbanData]);
 
   // Enrich cards with notes when both are available
   useEffect(() => {
@@ -202,36 +218,47 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
 
   // Convert data to react-trello format
   const getKanbanData = () => {
+    // Ensure columns have valid data
+    if (!columns || columns.length === 0) {
+      console.log('No columns available, returning empty data');
+      return { lanes: [] };
+    }
+
     const data = {
-      lanes: columns.map(column => ({
-        id: column.id,
-        title: column.title,
-        cards: cards
-          .filter(card => card.column_id === column.id)
-          .sort((a, b) => a.position - b.position)
-          .map(card => {
-            const note = card.note;
-            const hasNote = !!note;
-            
-            return {
-              id: card.id,
-              title: note?.title || 'Untitled',
-              description: hasNote ? note.content : 'No content available',
-              note_id: card.note_id,
-              note: note,
-              created_at: card.created_at,
-              tags: note?.tags || [],
-              label: note?.tags?.slice(0, 2).join(', ') || '',
-              laneId: column.id,
-              // Add metadata for styling
-              metadata: {
-                isPinned: note?.is_pinned || false,
-                isPrivate: note?.is_private || false,
-                hasNote: hasNote
-              }
-            };
-          })
-      }))
+      lanes: columns.map(column => {
+        console.log('Processing column:', column);
+        return {
+          id: column.id,
+          title: column.title || 'Untitled Column',
+          cards: cards
+            .filter(card => card.column_id === column.id)
+            .sort((a, b) => a.position - b.position)
+            .map(card => {
+              const note = card.note;
+              const hasNote = !!note;
+              
+              console.log('Processing card:', { cardId: card.id, noteTitle: note?.title });
+              
+              return {
+                id: card.id,
+                title: note?.title || 'Untitled',
+                description: hasNote ? note.content : 'No content available',
+                note_id: card.note_id,
+                note: note,
+                created_at: card.created_at,
+                tags: note?.tags || [],
+                label: note?.tags?.slice(0, 2).join(', ') || '',
+                laneId: column.id,
+                // Add metadata for styling
+                metadata: {
+                  isPinned: note?.is_pinned || false,
+                  isPrivate: note?.is_private || false,
+                  hasNote: hasNote
+                }
+              };
+            })
+        };
+      })
     };
     
     console.log('getKanbanData called:', {
@@ -596,7 +623,16 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ notes, tags, onNoteSelect, is
     }
   };
 
-  if (loading) {
+  console.log('KanbanBoard render state:', {
+    loading,
+    columnsCount: columns.length,
+    cardsCount: cards.length,
+    columns: columns.map(col => ({ id: col.id, title: col.title })),
+    hasUser: !!user
+  });
+
+  // Show loading only if we don't have columns yet
+  if (loading && columns.length === 0) {
     return (
       <div className="flex items-center justify-center h-full bg-gray-900">
         <div className="text-center">
