@@ -441,6 +441,11 @@ html, body {
   position: relative;
 }
 
+.kanban-btn-container {
+  position: relative;
+  display: inline-block;
+}
+
 .kanban-btn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
@@ -459,16 +464,54 @@ html, body {
 /* Kanban Menu Styles */
 .kanban-menu {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 8px);
   right: 0;
-  margin-top: 8px;
-  z-index: 1000;
+  z-index: 9999;
   min-width: 320px;
   border-radius: 12px;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   border: 1px solid var(--border-color);
   background: var(--bg-primary);
   overflow: hidden;
+  transform-origin: top right;
+  animation: kanbanMenuSlideIn 0.2s ease-out;
+}
+
+.kanban-menu::before {
+  content: '';
+  position: absolute;
+  top: -8px;
+  right: 12px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid var(--bg-primary);
+  z-index: 1;
+}
+
+.kanban-menu::after {
+  content: '';
+  position: absolute;
+  top: -9px;
+  right: 12px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 8px solid var(--border-color);
+  z-index: 0;
+}
+
+@keyframes kanbanMenuSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .kanban-menu-header {
@@ -593,6 +636,25 @@ html, body {
 
 .kanban-manage-btn:hover {
   background: var(--bg-hover);
+}
+
+/* Responsive adjustments for kanban menu */
+@media (max-width: 768px) {
+  .kanban-menu {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    right: auto;
+    width: calc(100vw - 32px);
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  
+  .kanban-btn-container {
+    position: static;
+  }
 }
 
 .signout-btn {

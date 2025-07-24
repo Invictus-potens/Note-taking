@@ -979,7 +979,7 @@ function NotesApp() {
                 <button className="calendar-btn" onClick={() => setShowCalendarModal(true)} aria-label="Open calendar">
                   <i className="ri-calendar-line"></i>
                 </button>
-                <div className="relative">
+                <div className="kanban-btn-container">
                   <button 
                     ref={kanbanButtonRef}
                     className={`kanban-btn ${showKanban ? 'active' : ''}`} 
