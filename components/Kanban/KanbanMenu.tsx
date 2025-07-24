@@ -156,6 +156,7 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
 
       {/* Board Selector Modal */}
       {showBoardSelector && (
+        <div className="kanban-menu-container">
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className={`${isDark ? 'bg-gray-800' : 'bg-white'} rounded-lg shadow-xl w-full max-w-md mx-4`}>
             <div className="p-6">
@@ -187,6 +188,7 @@ const KanbanMenu: React.FC<KanbanMenuProps> = ({
               />
             </div>
           </div>
+        </div>
         </div>
       )}
     </>
