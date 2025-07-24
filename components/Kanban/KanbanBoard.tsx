@@ -654,8 +654,13 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ boardId, notes, tags, onNoteS
             Selecione um Board
           </h2>
           <p className={`text-sm ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
-            Use o botão "Boards" no header para selecionar ou criar um board
+            Clique no botão "📋 Boards" no header para selecionar ou criar um board
           </p>
+          <div className={`mt-4 p-3 rounded-lg ${isDark ? 'bg-gray-800' : 'bg-gray-100'}`}>
+            <p className={`text-xs ${isDark ? 'text-gray-400' : 'text-gray-600'}`}>
+              💡 <strong>Dica:</strong> O botão está localizado no header, ao lado do logo "Scribe"
+            </p>
+          </div>
         </div>
       </div>
     );

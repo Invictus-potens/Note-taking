@@ -27,7 +27,10 @@ export default function Header({
   const [showCollaboration, setShowCollaboration] = useState(false);
   const [showBoardSelector, setShowBoardSelector] = useState(false);
   
-  const { permissions } = useCollaboration(currentBoardId);
+  // Temporarily disable collaboration hook to test
+  const permissions = { canInviteUsers: false };
+
+  console.log('Header render - showKanbanControls:', showKanbanControls, 'currentBoardId:', currentBoardId);
 
   return (
     <>
@@ -43,7 +46,7 @@ export default function Header({
               <div className="flex items-center space-x-2 ml-6">
                 <div className="h-6 w-px bg-gray-300 dark:bg-gray-600"></div>
                 
-                {/* Board Selector Button */}
+                {/* Board Selector Button - Always show when in Kanban mode */}
                 <button
                   onClick={() => setShowBoardSelector(true)}
                   className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
@@ -53,8 +56,8 @@ export default function Header({
                   <span>Boards</span>
                 </button>
                 
-                {/* Collaboration Button - Only show if user has permission */}
-                {permissions?.canInviteUsers && (
+                {/* Collaboration Button - Only show if user has permission and board is selected */}
+                {currentBoardId && permissions?.canInviteUsers && (
                   <button
                     onClick={() => setShowCollaboration(true)}
                     className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
